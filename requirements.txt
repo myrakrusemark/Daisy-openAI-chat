@@ -1,0 +1,6 @@
+SpeechRecognition
+requests
+pyttsx3
+openai
+pyaudio
+termcolor
