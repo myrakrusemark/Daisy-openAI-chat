@@ -1,4 +1,4 @@
-SpeechRecognition
+SpeechRecognition==3.8.1
 requests
 pyttsx3
 openai
