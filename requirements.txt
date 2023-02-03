@@ -4,3 +4,4 @@ pyttsx3
 openai
 pyaudio
 termcolor
+python-dotenv

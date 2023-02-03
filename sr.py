@@ -4,11 +4,12 @@ import pyttsx3
 import time
 import openai
 import os
+from dotenv import load_dotenv
 import json
 from termcolor import colored
 
-
-openai.api_key = os.environ['ENV_VARIABLE_NAME']
+load_dotenv()
+openai.api_key = os.environ["API_KEY"]
 
 
 def clrscr():
