@@ -1,10 +1,10 @@
-# Introduction to Daisy
+# Daisy
 
 Daisy is a terminal-based application that listens for the trigger word "Daisy". The voice data is sent to Google for speech recognition, but alternative and offline technologies are also available. The app is optimized to consume minimal bandwidth when speech is not detected.
 
 Built around the OpenAI API, Daisy is not a chatGPT application. Unlike chatGPT, which is trained and fine-tuned for a specific toolset and audience, Daisy behaves in a similar manner but does not include some of the features of chatGPT.
 
-##Background
+## Background
 I have been eager to have a conversation with chatGPT using my voice. I used to search daily for a program that could exchange between speech recognition and TTS for a real human-like conversation, but it was not until recently that I discovered one.
 
 With limited coding skills and no prior experience in Python, I started working on a voice recognition script for chatGPT. It began with simple requests, such as incorporating a request to openAI API and routing the speech recognition output. At the end of the day, it felt like a complicated script that the text model AI couldn't handle, but every time I made changes, chatGPT would recognize and acknowledge my modifications.
