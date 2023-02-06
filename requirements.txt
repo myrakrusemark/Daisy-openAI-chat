@@ -6,3 +6,4 @@ pyaudio
 termcolor
 python-dotenv
 pygame
+bs4
