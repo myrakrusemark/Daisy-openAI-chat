@@ -6,4 +6,5 @@ pyaudio
 termcolor
 python-dotenv
 pygame
-bs4
+selenium
+html2text
