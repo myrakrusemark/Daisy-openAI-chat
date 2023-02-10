@@ -1,4 +1,7 @@
 SpeechRecognition==3.8.1
+pocketsphinx
+sphinxbase
+pocketsphinx-data
 requests
 pyttsx3
 openai
