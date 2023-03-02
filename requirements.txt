@@ -7,3 +7,6 @@ colorama
 python-dotenv
 pygame
 google-search-results
+subprocess
+threading
+platform

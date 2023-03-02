@@ -13,7 +13,10 @@ import re
 import threading
 import argparse
 from serpapi import GoogleSearch
-import colorama 
+import colorama
+import subprocess
+import threading
+import platform
 
 #Arguments
 parser = argparse.ArgumentParser()
@@ -32,6 +35,28 @@ voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[1].id)
 #if args.internet:
     #browser = webdriver.Firefox(executable_path=r'path/to/geckodriver')
+
+class CheckInternetThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.is_connected = False
+
+    def run(self):
+        try:
+            # ping google.com and check if we receive any response
+            if platform.system() == 'Windows':
+                output = subprocess.check_output(['ping', '-n', '1', 'google.com'])
+            else:
+                output = subprocess.check_output(['ping', '-c', '1', 'google.com'])
+            self.is_connected = True
+        except subprocess.CalledProcessError:
+            self.is_connected = False
+
+def check_internet():
+    thread = CheckInternetThread()
+    thread.start()
+    thread.join(timeout=5) # wait for the thread to complete or timeout after 5 seconds
+    return thread.is_connected
 
 # Load sounds
 cwd = os.getcwd()
@@ -90,103 +115,109 @@ def text_to_speech(text):
 
 def speech_to_text(r):
     """Converts speech to text using speech_recognition library"""
-    with sr.Microphone() as source:
-        r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
+    try:
+        with sr.Microphone() as source:
+            r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
 
-        audio = r.listen(source)
-        try:
-            text = r.recognize_google(audio, language='en-US', show_all=False)
-            return text
-        except sr.UnknownValueError:
-            print("Audio not understood")
-        except sr.RequestError as e:
-            print("Could not request results service; {0}".format(e))
-            text-to-speech("Sorry, the request didnt work. Pleasew try again.")
+            audio = r.listen(source)
+            try:
+                text = r.recognize_google(audio, language='en-US', show_all=False)
+                return text
+            except sr.UnknownValueError:
+                print("Audio not understood")
+            except sr.RequestError as e:
+                print("Could not request results service; {0}".format(e))
+                #text_to_speech("Sorry, the request didnt work. Pleasew try again.")
 
-        return ""
+            return ""
+    except sr.WaitTimeoutError:
+        print(f"{colorama.Fore.RED}Connection timed out. {colorama.Fore.WHITE}Are you connected to the Internet? Please try again later.")
 
 def chat():
     """Engages in conversation with the user"""
     while True:
-    
-        #Get and display recognized text
-        print("'Bye Daisy' to end")
-        print("You:")
-        
-        user_input = speech_to_text(r)
-        print(user_input)
-       
-        web_response_text = ""
+        if check_internet():
 
-        #Only request if words spoken
-        if(user_input != ""):
-            #Update context with user input
-            new_message = {"role": "user", "content": user_input}
-            messages.append(new_message)
-
-            response_text = request()
+            #Get and display recognized text
+            print("'Bye Daisy' to end")
+            print("You:")
             
-            if response_text != False:
-                #Find a search term in the response text (If --internet)
-                if "[search:" in response_text.lower() and args.internet:
-                    match = re.search(r"\[search:.*\]", response_text)
-                    if match:
-                        web_response = match.group()
-                        start = web_response.index(":") + 1
-                        end = web_response.index("]")
-                        search_query = web_response[start:end]
-                        print(f"Searching the web ({search_query})...")
-                        text_to_speech("Searching the web.")
-                        new_message = {'role': 'assistant', 'content': 'Searching the web... [search:'+search_query+']'}
-                        messages.append(new_message)
+            user_input = speech_to_text(r)
+            print(user_input)
+           
+            web_response_text = ""
 
-
-
-                        params = {
-                          "engine": "google",
-                          "q": search_query,
-                          "api_key": os.environ["SERPAPI_KEY"]
-                        }
-                        search = GoogleSearch(params)
-                        results = search.get_dict()
-                        organic_results = results["organic_results"]
-
-                        if len(organic_results):
-                            new_prompt="Using only the information below, what is the correct answer for the following prompt: "+user_input+"\n\n"
-                            for organic_result in organic_results:
-                                if("snippet" in organic_result):
-                                    new_prompt += organic_result["snippet"]+"\n"
-
-                            new_message = {"role": "user", "content": new_prompt}
-                            messages.append(new_message)
-
-                            #Get the web answer with no previous context.
-                            web_response_text = request(False, [new_message])
-                        else:
-                            web_response_text = "Sorry, either there was an error or there are no results."
-
-                #Update context with response
-                if(web_response_text != ""):
-                    new_message = {'role': 'assistant', 'content': web_response_text}
-                else:
-                    new_message = {'role': 'assistant', 'content': response_text}
-
+            #Only request if words spoken
+            if(user_input != ""):
+                #Update context with user input
+                new_message = {"role": "user", "content": user_input}
                 messages.append(new_message)
 
-                os.system("cls" if os.name == "nt" else "clear")           
-                for message in messages:
-                    # Check if the message role is in the list of roles to display
-                    print(message)
-                    color = colorama.Fore.BLUE if message['role'] == "assistant" else colorama.Fore.GREEN
-                    print(f"{color}{message['role']}: {colorama.Fore.WHITE}{message['content']}\n")
-
-
-                text_to_speech(new_message["content"])
-
+                response_text = request()
                 
-            #If only sleep phrase, return
-            if user_input.lower() == sleep_word:
-                    return
+                if response_text != False:
+                    #Find a search term in the response text (If --internet)
+                    if "[search:" in response_text.lower() and args.internet:
+                        match = re.search(r"\[search:.*\]", response_text)
+                        if match:
+                            web_response = match.group()
+                            start = web_response.index(":") + 1
+                            end = web_response.index("]")
+                            search_query = web_response[start:end]
+                            print(f"Searching the web ({search_query})...")
+                            text_to_speech("Searching the web.")
+                            new_message = {'role': 'assistant', 'content': 'Searching the web... [search:'+search_query+']'}
+                            messages.append(new_message)
+
+
+
+                            params = {
+                              "engine": "google",
+                              "q": search_query,
+                              "api_key": os.environ["SERPAPI_KEY"]
+                            }
+                            search = GoogleSearch(params)
+                            results = search.get_dict()
+                            organic_results = results["organic_results"]
+
+                            if len(organic_results):
+                                new_prompt="Using only the information below, what is the correct answer for the following prompt: "+user_input+"\n\n"
+                                for organic_result in organic_results:
+                                    if("snippet" in organic_result):
+                                        new_prompt += organic_result["snippet"]+"\n"
+
+                                new_message = {"role": "user", "content": new_prompt}
+                                messages.append(new_message)
+
+                                #Get the web answer with no previous context.
+                                web_response_text = request(False, [new_message])
+                            else:
+                                web_response_text = "Sorry, either there was an error or there are no results."
+
+                    #Update context with response
+                    if(web_response_text != ""):
+                        new_message = {'role': 'assistant', 'content': web_response_text}
+                    else:
+                        new_message = {'role': 'assistant', 'content': response_text}
+
+                    messages.append(new_message)
+
+                    os.system("cls" if os.name == "nt" else "clear")           
+                    for message in messages:
+                        # Check if the message role is in the list of roles to display
+                        color = colorama.Fore.BLUE if message['role'] == "assistant" else colorama.Fore.GREEN
+                        print(f"{color}{message['role']}: {colorama.Fore.WHITE}{message['content']}\n\n")
+
+
+                    text_to_speech(new_message["content"])
+
+                    
+                #If only sleep phrase, return
+                if user_input.lower() == sleep_word:
+                        return
+        else:
+            os.system("cls" if os.name == "nt" else "clear")     
+            print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
                     
         continue
 
@@ -229,6 +260,8 @@ def request(context=True, new_message={}):
 
     
 def listen_for_wake_word():
+    os.system("cls" if os.name == "nt" else "clear")           
+
     print(f"Waiting for wake word: '{wake_word}'")
 
     with sr.Microphone() as source:
@@ -255,12 +288,17 @@ def listen_for_wake_word():
 def main():
 
     while True:
-        #os.system('cls')
-        #Detect a wake word before listening for a prompt
-        if listen_for_wake_word() == True:
-            notification_sound.play()
-            print("LISTENING...");
-            #context = chat(context)
-            chat()
+        os.system("cls" if os.name == "nt" else "clear")           
+
+        if check_internet():
+            #Detect a wake word before listening for a prompt
+            if listen_for_wake_word() == True:
+                notification_sound.play()
+                print("LISTENING...");
+                #context = chat(context)
+                chat()
+        else:
+            print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
+
      
 main()
