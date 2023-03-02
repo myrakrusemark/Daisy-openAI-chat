@@ -1,13 +1,9 @@
 SpeechRecognition==3.8.1
-pocketsphinx
-sphinxbase
-pocketsphinx-data
 requests
 pyttsx3
 openai
 pyaudio
-termcolor
+colorama
 python-dotenv
 pygame
-selenium
-html2text
+google-search-results
