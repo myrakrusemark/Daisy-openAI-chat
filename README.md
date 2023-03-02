@@ -1,4 +1,4 @@
-# Daisy
+# Daisy.py
 
 Daisy is a terminal-based application that listens for the trigger word "Daisy". The voice data is sent to Google for speech recognition, but alternative and offline technologies are also available. The app is optimized to consume minimal bandwidth when speech is not detected. The script has the added capability to search Google by generating relevant search terms, from which it retrieves information to answer user questions.
 
