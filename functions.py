@@ -31,7 +31,7 @@ engine.setProperty('voice', voices[1].id)
 cwd = os.getcwd()
 waiting_sound = pygame.mixer.Sound(os.path.join(cwd, "waiting.wav"))
 waiting_sound.set_volume(0.1) # set volume to 50%
-notification_sound = pygame.mixer.Sound(os.path.join(cwd, "alert.mp3"))
+notification_sound = pygame.mixer.Sound(os.path.join(cwd, "alert.wav"))
 
 #Check if Internet is available
 class CheckInternetThread(threading.Thread):
