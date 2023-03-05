@@ -12,7 +12,7 @@ args = parser.parse_args()
 #Trigger word opens up for full back-and-forth conversation and sleep word returns to wake word state.
 wake_word="daisy"
 similar_wake_words=["daisy", "they seem", "the scene", "dizzy", "lazy", "gazing", "facing", "his aim"]
-sleep_word="bye daisy"
+sleep_word="bye-bye daisy"
 
 
 #Initial prompts

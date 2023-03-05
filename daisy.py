@@ -1,6 +1,7 @@
 import functions
 import os
 
+import play_sound
 
 def main():
 
@@ -10,7 +11,11 @@ def main():
         if functions.check_internet():
             #Detect a wake word before listening for a prompt
             if functions.listen_for_wake_word() == True:
-                functions.notification_sound.play()
+                #functions.notification_sound.play()
+
+                stop_event, thread = play_sound.play_sound_with_stop('alert.wav')
+
+
                 print("LISTENING...");
                 #context = chat(context)
                 functions.chat()

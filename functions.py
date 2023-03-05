@@ -6,7 +6,8 @@ import openai
 import os
 from dotenv import load_dotenv
 import json
-import pygame #pip install pygame --pre
+#import pygame #pip install pygame --pre
+import play_sound
 import re
 import threading
 from serpapi import GoogleSearch
@@ -21,17 +22,17 @@ import constants
 #Initialize
 load_dotenv()
 openai.api_key = os.environ["API_KEY"]
-pygame.init()
+#pygame.init()
 r = sr.Recognizer()
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[1].id)
 
 # Load sounds
-cwd = os.getcwd()
-waiting_sound = pygame.mixer.Sound(os.path.join(cwd, "waiting.wav"))
-waiting_sound.set_volume(0.1) # set volume to 50%
-notification_sound = pygame.mixer.Sound(os.path.join(cwd, "alert.wav"))
+#cwd = os.getcwd()
+#waiting_sound = pygame.mixer.Sound(os.path.join(cwd, "waiting.wav"))
+#waiting_sound.set_volume(0.1) # set volume to 50%
+#notification_sound = pygame.mixer.Sound(os.path.join(cwd, "alert.wav"))
 
 #Check if Internet is available
 class CheckInternetThread(threading.Thread):
@@ -88,7 +89,7 @@ def chat():
         if check_internet():
 
             #Get and display recognized text
-            print("'Bye Daisy' to end")
+            print(f"'{constants.sleep_word}' to end")
             print("You:")
             
             user_input = speech_to_text(r)
@@ -174,7 +175,8 @@ def request(context=True, new_message={}):
     """Requests response from OpenAI model"""
 
     try:
-        waiting_sound.play()
+        #waiting_sound.play()
+        stop_event, thread = play_sound.play_sound_with_stop('waiting.wav', 0.2)
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -182,27 +184,26 @@ def request(context=True, new_message={}):
             )
         response_text=response["choices"][0]["message"]["content"]
         
-        waiting_sound.stop()
-
+        stop_event.set()
         return response_text
     except openai.error.InvalidRequestError as e:
         print(f"Invalid Request Error: {e}")
-        waiting_sound.stop()
+        stop_event.set()
         text_to_speech("Invalid Request Error. Sorry, I can't talk right now.")
         return False        
     except openai.APIError as e:
         print(f"API Error: {e}")
-        waiting_sound.stop()
+        stop_event.set()
         text_to_speech("API Error. Sorry, I can't talk right now.")
         return False
     except ValueError as e:
         print(f"Value Error: {e}")
-        waiting_sound.stop()
+        stop_event.set()
         text_to_speech("Value Error. Sorry, I can't talk right now.")
         return False    
     except TypeError as e:
         print(f"Type Error: {e}")
-        waiting_sound.stop()
+        stop_event.set()
         text_to_speech("Type Error. Sorry, I can't talk right now.")
         return False     
 
