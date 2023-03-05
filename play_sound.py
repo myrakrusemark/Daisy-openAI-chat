@@ -1,7 +1,10 @@
-import wave
-import pyaudio
-import threading
-import numpy as np
+import constants
+
+if not constants.args.no_audio:
+    import wave
+    import pyaudio
+    import threading
+    import numpy as np
 
 def play_sound(file, stop_event, thread, volume):
     wf = wave.open(file, 'rb')
@@ -35,7 +38,8 @@ def play_sound(file, stop_event, thread, volume):
     thread.join()
 
 def play_sound_with_stop(file, volume=1.0):
-    stop_event = threading.Event()
-    thread = threading.Thread(target=play_sound, args=(file, stop_event, threading.current_thread(), volume))
-    thread.start()
-    return stop_event, thread
+    if not constants.args.no_audio:
+        stop_event = threading.Event()
+        thread = threading.Thread(target=play_sound, args=(file, stop_event, threading.current_thread(), volume))
+        thread.start()
+        return stop_event, thread

@@ -7,13 +7,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--internet", help="increase output verbosity", action="store_true")
 parser.add_argument("-d", "--dan", help="use DAN (Do Anything Now) prompt", action="store_true")
 parser.add_argument("-nm", "--no_mic", help="No audio input available", action="store_true")
+parser.add_argument("-na", "--no_audio", help="No audio output available", action="store_true")
+
 args = parser.parse_args()
 
 #Trigger and sleep words
 #Trigger word opens up for full back-and-forth conversation and sleep word returns to wake word state.
 wake_word="daisy"
-similar_wake_words=["daisy", "they seem", "the scene", "dizzy", "lazy", "gazing", "facing", "his aim"]
-sleep_word="bye-bye daisy"
+similar_wake_words=["daisy", "busy", "they seem", "the scene", "dizzy", "lazy", "gazing", "facing", "his aim"]
+sleep_word = "Bye-bye Daisy"
+similar_sleep_words=["bye bye daisy", "bye daisy", "bye-bye daisy", "bye by daisy"]
 
 
 #Initial prompts
