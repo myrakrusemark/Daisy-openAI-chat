@@ -212,24 +212,28 @@ def listen_for_wake_word():
 
     print(f"Waiting for wake word: '{constants.wake_word}'")
 
-    with sr.Microphone() as source:
 
-        try:
+    try:
+        with sr.Microphone() as source:
             r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
             audio = r.listen(source)
-        except sr.WaitTimeoutError:
-            return False
-        
-        try:
-            print("Recognizing...")
-            text = r.recognize_google(audio)
-            text = text.lower()
-            print(text)
-            
-            if text in constants.similar_wake_words:
-                return True
-                    
-        except Exception as error:
-            print(error)
-            return False
+            try:
+                print("Recognizing...")
+                text = r.recognize_google(audio)
+                text = text.lower()
+                print(text)
+                        
+            except Exception as error:
+                print(error)
+                return False
+
+    except Exception as e:
+        print(f"Error: {e}")
+        print("Please type the wake word:")
+        text = input().lower()
+
+    if text in constants.similar_wake_words:
+        return True
+    else:
+        return False
 
