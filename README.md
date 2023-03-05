@@ -31,6 +31,13 @@ This argument enables customization of the language model used.
 Example usage: python daisy.py --model text-davinci-003
 
 ## To-Do List
+- Cool Features
+    - Email context on request
+    - Save context logs
+    - Include weather information on start
+    - Get to know users. For instance, keep track of a persnality profile so you can begin to ask questions like "What would my wife like for her birthday?"
+        - Using pyannote.audio to diarize speakers and identify them in each "user" message
+        - Ask the AI to compare each message from a specific user to their personality profile and add new bits if it hears something new.
 - Implement Command Arguments
     - Implement Additional Initial Prompts
     - Allow for Custom Initial Prompt
