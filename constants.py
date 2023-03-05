@@ -6,6 +6,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--internet", help="increase output verbosity", action="store_true")
 parser.add_argument("-d", "--dan", help="use DAN (Do Anything Now) prompt", action="store_true")
+parser.add_argument("-nm", "--no_mic", help="No audio input available", action="store_true")
 args = parser.parse_args()
 
 #Trigger and sleep words

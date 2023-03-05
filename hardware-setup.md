@@ -590,3 +590,8 @@ Note that the specific steps required to resolve this issue may vary depending o
 
 
 
+Solve issues for pygame errors
+https://forums.raspberrypi.com/viewtopic.php?t=136974
+
+Switch audio output
+https://forums.raspberrypi.com/viewtopic.php?t=203756

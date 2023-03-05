@@ -16,7 +16,7 @@ import subprocess
 import threading
 import platform
 import constants
-
+import sys
 
 
 #Initialize
@@ -65,23 +65,35 @@ def text_to_speech(text):
 
 def speech_to_text(r):
     """Converts speech to text using speech_recognition library"""
-    try:
-        with sr.Microphone() as source:
-            r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
+    #If no miorophone is available, use keyboard input
+    if constants.args.no_mic:
+        text = input().lower()
+    else:
+        try:
+            with sr.Microphone() as source:
+                r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
 
-            audio = r.listen(source)
-            try:
-                text = r.recognize_google(audio, language='en-US', show_all=False)
-                return text
-            except sr.UnknownValueError:
-                print("Audio not understood")
-            except sr.RequestError as e:
-                print("Could not request results service; {0}".format(e))
-                #text_to_speech("Sorry, the request didnt work. Pleasew try again.")
-
+                audio = r.listen(source)
+                try:
+                    text = r.recognize_google(audio, language='en-US', show_all=False)
+                except sr.UnknownValueError:
+                    print("Audio not understood")
+                    return ""
+                except sr.RequestError as e:
+                    print("Could not request results service; {0}".format(e))
+                    #text_to_speech("Sorry, the request didnt work. Pleasew try again.")
+                    return ""
+                
+        except sr.WaitTimeoutError:
+            print(f"{colorama.Fore.RED}Connection timed out. {colorama.Fore.WHITE}Are you connected to the Internet? Please try again later.")
             return ""
-    except sr.WaitTimeoutError:
-        print(f"{colorama.Fore.RED}Connection timed out. {colorama.Fore.WHITE}Are you connected to the Internet? Please try again later.")
+            
+    if text.lower() == "exit program":
+        print("Exiting program...")
+        sys.exit(0)
+    else:
+        return text
+
 
 def chat():
     """Engages in conversation with the user"""
@@ -212,28 +224,32 @@ def listen_for_wake_word():
 
     print(f"Waiting for wake word: '{constants.wake_word}'")
 
-
-    try:
+    #If no miorophone is available, use keyboard input
+    if constants.args.no_mic:
+        text = input().lower()
+    else:
         with sr.Microphone() as source:
-            r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
-            audio = r.listen(source)
+
+
+            try:
+                r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
+                audio = r.listen(source)
+            except sr.WaitTimeoutError:
+                return False
+            
             try:
                 print("Recognizing...")
                 text = r.recognize_google(audio)
                 text = text.lower()
                 print(text)
-                        
+                       
             except Exception as error:
                 print(error)
                 return False
 
-    except Exception as e:
-        print(f"Error: {e}")
-        print("Please type the wake word:")
-        text = input().lower()
-
-    if text in constants.similar_wake_words:
+    if text.lower() == "exit program":
+        print("Exiting program...")
+        sys.exit(0)
+    elif text in constants.similar_wake_words:
         return True
-    else:
-        return False
 
