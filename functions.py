@@ -255,7 +255,7 @@ def chat():
                 if user_input.lower() in constants.similar_sleep_words:
                         return
         else:
-            os.system("cls" if os.name == "nt" else "clear")     
+            #os.system("cls" if os.name == "nt" else "clear")     
             print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
                     
         continue
@@ -303,7 +303,7 @@ def request(context=True, new_message={}):
         return False     
 
 def listen_for_wake_word():
-    os.system("cls" if os.name == "nt" else "clear")           
+    #os.system("cls" if os.name == "nt" else "clear")           
 
     print(f"Waiting for wake word: '{constants.wake_word}'")
 
