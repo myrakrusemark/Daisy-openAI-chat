@@ -145,7 +145,8 @@ def speech_to_text(r):
 
     #If no miorophone is available, use keyboard input
     if constants.args.no_mic:
-        text = input().lower()
+        text = input()
+        text = text.lower()
     else:
         try:
             with sr.Microphone() as source:
