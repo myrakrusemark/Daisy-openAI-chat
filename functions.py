@@ -21,6 +21,7 @@ import urllib.parse
 import io
 import tempfile
 import pyttsx3
+import string
 
 #Initialize
 load_dotenv()
@@ -38,6 +39,41 @@ if not constants.args.no_audio:
 #waiting_sound = pygame.mixer.Sound(os.path.join(cwd, "waiting.wav"))
 #waiting_sound.set_volume(0.1) # set volume to 50%
 #notification_sound = pygame.mixer.Sound(os.path.join(cwd, "alert.wav"))
+
+def google_tts_split_text(text):
+    # Split the text into individual words
+    words = text.split()
+
+    # Initialize an empty list to hold the split strings
+    split_strings = []
+
+    # Initialize a string variable to hold the current split string
+    current_string = ''
+
+    # Loop over each word in the text
+    for word in words:
+        # If adding the current word to the current split string would make it too long, add the current split string to the list and start a new one
+        if len(current_string + ' ' + word) > 200:
+            split_strings.append(current_string.strip())
+            current_string = ''
+
+        # Add the current word to the current split string
+        current_string += ' ' + word
+
+    # Add the last split string to the list
+    if current_string.strip():
+        split_strings.append(current_string.strip())
+
+    return split_strings
+
+def remove_non_alphanumeric(text):
+    # Create a set of all valid characters
+    valid_chars = set(string.ascii_letters + string.digits + string.punctuation + ' ')
+
+    # Use a generator expression to filter out any invalid characters
+    filtered_text = ''.join(filter(lambda x: x in valid_chars, text))
+
+    return filtered_text
 
 #Check if Internet is available
 class CheckInternetThread(threading.Thread):
@@ -65,34 +101,49 @@ def check_internet():
 
 def text_to_speech(text):
     if not constants.args.no_audio:
-        url = "http://translate.google.com/translate_tts"
-        params = {"q": text,
-                    "ie": "UTF-8",
-                    "client": "tw-ob",
-                    "tl": "en"}
-
         try:
-            print('speaking')
-            response = requests.get(url, params=params)
-            response.raise_for_status()  # Raise an exception for non-2xx response codes
+            text_parts = google_tts_split_text(text)
+            file_paths = []
+            print(text_parts)
 
-            # Read the audio data from the response object
-            audio_data = io.BytesIO(response.content)
+            #Request multiple text parts and save to multiple temp files
+            for text in text_parts:
+                url = "http://translate.google.com/translate_tts"
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+                params = {"q": remove_non_alphanumeric(text),
+                            "ie": "UTF-8",
+                            "client": "tw-ob",
+                            "tl": "en"}
 
-            # Save the contents of the BytesIO object to a temporary file
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    tmp_file.write(audio_data.getvalue())
-                    file_path = tmp_file.name
-                    print(file_path)
+                try:
+                    response = requests.get(url, params=params, headers=headers)
+                    response.raise_for_status()  # Raise an exception for non-2xx response codes
 
-            if not constants.args.no_audio:
-                stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
+                    # Read the audio data from the response object
+                    audio_data = io.BytesIO(response.content)
+                except requests.exceptions.RequestException as error:
+                    print(error)
+                    break
 
-        except requests.exceptions.RequestException as error:
-            print("Error making request:", error)
+
+                # Save the contents of the BytesIO object to a temporary file
+                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                        tmp_file.write(audio_data.getvalue())
+                        file_path = tmp_file.name
+                        file_paths.append(file_path)  # Add the file path to the list
+
+            #Play each file in sequence
+            for file_path in file_paths:
+                    stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
+                    thread.join()  # Wait for the current sound to finish before playing the next one
+
+        #If Google TTS somehow fails, fallback to local TTS
+        except:
             """Converts the given text to speech using pyttsx3"""
             engine.say(text)
-            engine.runAndWait()
+            engine.runAndWait()           
+
+
 
 
 def speech_to_text(r):
@@ -194,7 +245,7 @@ def chat():
 
                     constants.messages.append(new_message)
 
-                    os.system("cls" if os.name == "nt" else "clear")           
+                    #os.system("cls" if os.name == "nt" else "clear")           
                     for message in constants.messages:
                         # Check if the message role is in the list of roles to display
                         color = colorama.Fore.BLUE if message['role'] == "assistant" else colorama.Fore.GREEN
@@ -208,7 +259,7 @@ def chat():
                 if user_input.lower() in constants.similar_sleep_words:
                         return
         else:
-            #os.system("cls" if os.name == "nt" else "clear")     
+            os.system("cls" if os.name == "nt" else "clear")     
             print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
                     
         continue
