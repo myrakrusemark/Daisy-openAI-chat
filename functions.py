@@ -127,7 +127,7 @@ def text_to_speech(text):
 
             #Play each file in sequence
             for file_path in file_paths:
-                play_sound.play_mpeg(file_path)
+                play_sound.play_mpeg(file_path, 1)
 
         #If Google TTS somehow fails, fallback to local TTS
         except Exception as e:
