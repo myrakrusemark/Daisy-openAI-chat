@@ -60,22 +60,22 @@ def check_internet():
 
 
 def text_to_speech(text):
-    if platform.system() == 'Windows':
-        if not constants.args.no_audio:
-        """Converts the given text to speech using pyttsx3"""
-        engine.say(text)
-        engine.runAndWait()
-    if platform.system() == 'Linux':
-        try:
-            # Run the Bash script and pass the text as an argument
-            result = subprocess.run(['./speech.sh', text], check=True, capture_output=True, text=True)
+    if not constants.args.no_audio:
+        if platform.system() == 'Windows':
+            """Converts the given text to speech using pyttsx3"""
+            engine.say(text)
+            engine.runAndWait()
+        if platform.system() == 'Linux':
+            try:
+                # Run the Bash script and pass the text as an argument
+                result = subprocess.run(['./speech.sh', text], check=True, capture_output=True, text=True)
 
-            # Print the output of the Bash script
-            print(result.stdout)
+                # Print the output of the Bash script
+                print(result.stdout)
 
-        except subprocess.CalledProcessError as error:
-            # The subprocess returned a non-zero exit code, so there was an error
-            print(f"Error running speech.sh: {error}")
+            except subprocess.CalledProcessError as error:
+                # The subprocess returned a non-zero exit code, so there was an error
+                print(f"Error running speech.sh: {error}")
 
 
 def speech_to_text(r):
