@@ -17,6 +17,7 @@ import platform
 import constants
 import sys
 import play_sound
+import urllib.parse
 
 #Initialize
 load_dotenv()
@@ -27,7 +28,7 @@ r = sr.Recognizer()
 if not constants.args.no_audio:
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[0].id)
+    engine.setProperty('voice', voices[1].id)
 
 # Load sounds
 #cwd = os.getcwd()
@@ -68,7 +69,7 @@ def text_to_speech(text):
         if platform.system() == 'Linux':
             try:
                 # Run the Bash script and pass the text as an argument
-                result = subprocess.run(['./speech.sh', text], check=True, capture_output=True, text=True)
+                result = subprocess.run(['./speech.sh', urllib.parse.quote(text)], check=True, capture_output=True, text=True)
 
                 # Print the output of the Bash script
                 print(result.stdout)
