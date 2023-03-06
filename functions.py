@@ -67,16 +67,18 @@ def text_to_speech(text):
             engine.say(text)
             engine.runAndWait()
         if platform.system() == 'Linux':
+            url = "http://translate.google.com/translate_tts"
+            params = {"q": text,
+                        "ie": "UTF-8",
+                        "client": "tw-ob",
+                        "tl": "en"}
+
             try:
-                # Run the Bash script and pass the text as an argument
-                result = subprocess.run(['./speech.sh', urllib.parse.quote(text)], check=True, capture_output=True, text=True)
-
-                # Print the output of the Bash script
-                print(result.stdout)
-
-            except subprocess.CalledProcessError as error:
-                # The subprocess returned a non-zero exit code, so there was an error
-                print(f"Error running speech.sh: {error}")
+                response = requests.get(url, params=params)
+                response.raise_for_status()  # Raise an exception for non-2xx response codes
+                #print(response.text)
+            except requests.exceptions.RequestException as error:
+                print("Error making request:", error)
 
 
 def speech_to_text(r):
