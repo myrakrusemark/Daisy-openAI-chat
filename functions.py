@@ -130,7 +130,7 @@ def text_to_speech(text):
                 play_sound.play_mpeg(file_path)
 
         #If Google TTS somehow fails, fallback to local TTS
-        except as e:
+        except Exception as e:
             """Converts the given text to speech using pyttsx3"""
             print(e)
             engine.say(text)
