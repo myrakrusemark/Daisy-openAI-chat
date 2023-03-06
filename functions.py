@@ -20,6 +20,7 @@ import urllib.parse
 import io
 import tempfile
 import string
+import pygame
 
 #Initialize
 load_dotenv()
@@ -127,8 +128,6 @@ def text_to_speech(text):
             #Play each file in sequence
             for file_path in file_paths:
                 play_sound.play_mpeg(file_path)
-                #stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
-                #thread.join()  # Wait for the current sound to finish before playing the next one
 
         #If Google TTS somehow fails, fallback to local TTS
         except:
@@ -265,7 +264,7 @@ def request(context=True, new_message={}):
 
     try:
         if not constants.args.no_audio:
-            stop_event, thread = play_sound.play_sound_with_stop('waiting.wav', 0.2)
+            stop_event, thread = play_sound.play_sound_with_thread('waiting.wav', 0.2)
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -280,25 +279,25 @@ def request(context=True, new_message={}):
     except openai.error.InvalidRequestError as e:
         print(f"Invalid Request Error: {e}")
         if not constants.args.no_audio:
-            stop_event.set()
+            constants.stop_sound = True
         text_to_speech("Invalid Request Error. Sorry, I can't talk right now.")
         return False        
     except openai.APIError as e:
         print(f"API Error: {e}")
         if not constants.args.no_audio:
-            stop_event.set()
+            constants.stop_sound = True
         text_to_speech("API Error. Sorry, I can't talk right now.")
         return False
     except ValueError as e:
         print(f"Value Error: {e}")
         if not constants.args.no_audio:
-            stop_event.set()
+            constants.stop_sound = True
         text_to_speech("Value Error. Sorry, I can't talk right now.")
         return False    
     except TypeError as e:
         print(f"Type Error: {e}")
         if not constants.args.no_audio:
-            stop_event.set()
+            constants.stop_sound = True
         text_to_speech("Type Error. Sorry, I can't talk right now.")
         return False     
 
@@ -308,29 +307,28 @@ def listen_for_wake_word():
     print(f"Waiting for wake word: '{constants.wake_word}'")
 
     #If no miorophone is available, use keyboard input
-    #if constants.args.no_mic:
-    print("no mic")
-    text = input()
-    text = text.lower()
-    #else:
-    with sr.Microphone() as source:
+    if constants.args.no_mic:
+        text = input()
+        text = text.lower()
+    else:
+        with sr.Microphone() as source:
 
 
-        try:
-            r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
-            audio = r.listen(source)
-        except sr.WaitTimeoutError:
-            return False
-        
-        try:
-            print("Recognizing...")
-            text = r.recognize_google(audio)
-            text = text.lower()
-            print(text)
-                   
-        except Exception as error:
-            print(error)
-            return False
+            try:
+                r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
+                audio = r.listen(source)
+            except sr.WaitTimeoutError:
+                return False
+            
+            try:
+                print("Recognizing...")
+                text = r.recognize_google(audio)
+                text = text.lower()
+                print(text)
+                       
+            except Exception as error:
+                print(error)
+                return False
 
     if not constants.args.hardware_mode:
         if text.lower() == "exit program":
@@ -338,7 +336,7 @@ def listen_for_wake_word():
             sys.exit(0)
 
     if text in constants.similar_wake_words:
-        play_sound.play_mpeg('alert.wav')
-        #stop_event, thread = play_sound.play_sound_with_stop('alert.wav')
+        stop_event, thread = play_sound.play_sound_with_thread('alert.wav')
+
         return True
 
