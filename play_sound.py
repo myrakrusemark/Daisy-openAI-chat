@@ -5,7 +5,6 @@ if not constants.args.no_audio:
     import pyaudio
     import threading
     import numpy as np
-    from mutagen.mp3 import MP3
     import pygame
 
 def play_wave(file, stop_event, thread, volume):

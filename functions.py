@@ -20,12 +20,16 @@ import play_sound
 import urllib.parse
 import io
 import tempfile
+import pyttsx3
 
 #Initialize
 load_dotenv()
 openai.api_key = os.environ["API_KEY"]
 #pygame.init()
 r = sr.Recognizer()
+engine = pyttsx3.init()
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
 
 if not constants.args.no_audio:
     engine = pyttsx3.init()
@@ -89,6 +93,9 @@ def text_to_speech(text):
 
         except requests.exceptions.RequestException as error:
             print("Error making request:", error)
+            """Converts the given text to speech using pyttsx3"""
+            engine.say(text)
+            engine.runAndWait()
 
 
 def speech_to_text(r):
