@@ -29,7 +29,7 @@ openai.api_key = os.environ["API_KEY"]
 r = sr.Recognizer()
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
+engine.setProperty('voice', "english")
 
 if not constants.args.no_audio:
     engine = pyttsx3.init()
