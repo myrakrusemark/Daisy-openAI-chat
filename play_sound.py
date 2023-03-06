@@ -1,7 +1,5 @@
 import constants
-
-if not constants.args.hardware_mode:
-    import keyboard
+import keyboard
 
 if not constants.args.no_audio:
     import wave

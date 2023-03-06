@@ -162,7 +162,7 @@ def speech_to_text(r):
             print(f"{colorama.Fore.RED}Connection timed out. {colorama.Fore.WHITE}Are you connected to the Internet? Please try again later.")
 
     #Enable the ability to exit the program in a keyboard blocking state
-    if constants.args.hardware_mode:
+    if not constants.args.hardware_mode:
         if text.lower() == "exit program":
             print("Exiting program...")
             sys.exit(0)
@@ -328,10 +328,12 @@ def listen_for_wake_word():
                 print(error)
                 return False
 
-    if text.lower() == "exit program":
-        print("Exiting program...")
-        sys.exit(0)
-    elif text in constants.similar_wake_words:
+    if not constants.args.hardware_mode:
+        if text.lower() == "exit program":
+            print("Exiting program...")
+            sys.exit(0)
+
+    if text in constants.similar_wake_words:
         stop_event, thread = play_sound.play_sound_with_stop('alert.wav')
         return True
 
