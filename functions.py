@@ -309,6 +309,7 @@ def listen_for_wake_word():
 
     #If no miorophone is available, use keyboard input
     if constants.args.no_mic:
+        print("no mic")
         text = input()
         text = text.lower()
     else:
