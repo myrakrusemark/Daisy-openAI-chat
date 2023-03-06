@@ -59,7 +59,7 @@ def play_mpeg(file_path):
         #If user pressed ESC, stop TTS playback (will incorporate GPIO button)
         #There is no de-bouncing of the key, so it will quickly stop playback of all audio files in the list of file_paths. That's fine for now.
         if not constants.args.hardware_mode:
-            if keyboard.is_pressed("esc") or constants.stop_sound:
+            if keyboard.is_pressed("esc"):
                 # Do something when the ESC key is pressed
                 print("Sound stopped")
                 constants.stop_sound = False
