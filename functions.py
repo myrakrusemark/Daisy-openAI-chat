@@ -126,8 +126,9 @@ def text_to_speech(text):
 
             #Play each file in sequence
             for file_path in file_paths:
-                stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
-                thread.join()  # Wait for the current sound to finish before playing the next one
+                play_sound.play_mpeg(file_path)
+                #stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
+                #thread.join()  # Wait for the current sound to finish before playing the next one
 
         #If Google TTS somehow fails, fallback to local TTS
         except:
@@ -141,6 +142,7 @@ def text_to_speech(text):
 def speech_to_text(r):
     text = ""
     """Converts speech to text using speech_recognition library"""
+
     #If no miorophone is available, use keyboard input
     if constants.args.no_mic:
         text = input().lower()
@@ -180,7 +182,6 @@ def chat():
             print("You:")
             
             user_input = speech_to_text(r)
-            print(user_input)
            
             web_response_text = ""
 
@@ -247,6 +248,7 @@ def chat():
 
 
                     text_to_speech(new_message["content"])
+                    print ("TTS DONE")
 
                     
                 #If only sleep phrase, return
