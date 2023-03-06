@@ -7,7 +7,12 @@ if not constants.args.no_audio:
     import numpy as np
     import pygame
     import mutagen.mp3
+    import keyboard
+    pygame.init()
 
+
+
+#I think this function plays sound faster than pygame but it will need some testing.
 def play_wave(file, stop_event, thread, volume):
     wf = wave.open(file, 'rb')
     audio = pyaudio.PyAudio()
@@ -39,17 +44,25 @@ def play_wave(file, stop_event, thread, volume):
     audio.terminate()
     thread.join()
 
+#MPEG playback required for TTS files
 def play_mpeg(file_path):
     mp3 = mutagen.mp3.MP3(file_path)
-    pygame.mixer.init(frequency=mp3.info.sample_rate)
+    pygame.mixer.init(frequency=mp3.info.sample_rate) #Match sample rate. On Raspberry Pi, the TTS files play too slow.
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.play()
 
     # Wait until music has finished playing
     while pygame.mixer.music.get_busy():
+        #If user pressed ESC, stop TTS playback (will incorporate GPIO button)
+        #There is no de-bouncing of the key, so it will quickly stop playback of all audio files in the list of file_paths. That's fine for now.
+        if keyboard.is_pressed("esc"):
+            # Do something when the ESC key is pressed
+            print("ESC key pressed")
+            break  # Exit the loop when the ESC key is pressed
         continue
 
     pygame.mixer.music.stop()
+
 
 def play_sound_with_stop(file, volume=1.0, type="wave"):
     if not constants.args.no_audio:
@@ -59,5 +72,7 @@ def play_sound_with_stop(file, volume=1.0, type="wave"):
         if type=="mpeg":
             thread = threading.Thread(target=play_mpeg, args=(file,))
 
+        # Start the sound playback thread
         thread.start()
+
         return stop_event, thread

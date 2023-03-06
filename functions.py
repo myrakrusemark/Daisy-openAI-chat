@@ -1,6 +1,5 @@
 import speech_recognition as sr
 import requests
-import pyttsx3
 import time
 import openai
 import os
@@ -20,25 +19,19 @@ import play_sound
 import urllib.parse
 import io
 import tempfile
-import pyttsx3
 import string
 
 #Initialize
 load_dotenv()
 openai.api_key = os.environ["API_KEY"]
-#pygame.init()
 r = sr.Recognizer()
 
 if not constants.args.no_audio:
+    import pyttsx3
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
     engine.setProperty('voice', "english-us")
 
-# Load sounds
-#cwd = os.getcwd()
-#waiting_sound = pygame.mixer.Sound(os.path.join(cwd, "waiting.wav"))
-#waiting_sound.set_volume(0.1) # set volume to 50%
-#notification_sound = pygame.mixer.Sound(os.path.join(cwd, "alert.wav"))
 
 def google_tts_split_text(text):
     # Split the text into individual words
@@ -168,11 +161,13 @@ def speech_to_text(r):
         except sr.WaitTimeoutError:
             print(f"{colorama.Fore.RED}Connection timed out. {colorama.Fore.WHITE}Are you connected to the Internet? Please try again later.")
 
-    if text.lower() == "exit program":
-        print("Exiting program...")
-        sys.exit(0)
-    else:
-        return text
+    #Enable the ability to exit the program in a keyboard blocking state
+    if constants.args.hardware_mode:
+        if text.lower() == "exit program":
+            print("Exiting program...")
+            sys.exit(0)
+
+    return text
 
 
 def chat():
@@ -337,5 +332,6 @@ def listen_for_wake_word():
         print("Exiting program...")
         sys.exit(0)
     elif text in constants.similar_wake_words:
+        stop_event, thread = play_sound.play_sound_with_stop('alert.wav')
         return True
 

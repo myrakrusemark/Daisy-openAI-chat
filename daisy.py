@@ -14,10 +14,6 @@ def main():
             if functions.listen_for_wake_word() == True:
                 #functions.notification_sound.play()
 
-                if not constants.args.no_audio:
-                    stop_event, thread = play_sound.play_sound_with_stop('alert.wav')
-
-
                 print("LISTENING...");
                 #context = chat(context)
                 functions.chat()

@@ -11,3 +11,4 @@ subprocess
 threading
 platform
 mutagen
+keyboard
