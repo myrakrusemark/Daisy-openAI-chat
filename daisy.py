@@ -3,10 +3,6 @@ import os
 import constants
 
 import play_sound
-import warnings
-
-# Disable all warnings
-warnings.filterwarnings("ignore")
 
 
 def main():
