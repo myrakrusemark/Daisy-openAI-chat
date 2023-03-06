@@ -308,29 +308,29 @@ def listen_for_wake_word():
     print(f"Waiting for wake word: '{constants.wake_word}'")
 
     #If no miorophone is available, use keyboard input
-    if constants.args.no_mic:
-        print("no mic")
-        text = input()
-        text = text.lower()
-    else:
-        with sr.Microphone() as source:
+    #if constants.args.no_mic:
+    print("no mic")
+    text = input()
+    text = text.lower()
+    #else:
+    with sr.Microphone() as source:
 
 
-            try:
-                r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
-                audio = r.listen(source)
-            except sr.WaitTimeoutError:
-                return False
-            
-            try:
-                print("Recognizing...")
-                text = r.recognize_google(audio)
-                text = text.lower()
-                print(text)
-                       
-            except Exception as error:
-                print(error)
-                return False
+        try:
+            r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
+            audio = r.listen(source)
+        except sr.WaitTimeoutError:
+            return False
+        
+        try:
+            print("Recognizing...")
+            text = r.recognize_google(audio)
+            text = text.lower()
+            print(text)
+                   
+        except Exception as error:
+            print(error)
+            return False
 
     if not constants.args.hardware_mode:
         if text.lower() == "exit program":
