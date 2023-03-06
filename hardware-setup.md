@@ -595,3 +595,10 @@ https://forums.raspberrypi.com/viewtopic.php?t=136974
 
 Switch audio output
 https://forums.raspberrypi.com/viewtopic.php?t=203756
+
+
+
+for microphone audio conversion
+```
+sudo apt-get install flac
+```

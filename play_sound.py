@@ -6,6 +6,7 @@ if not constants.args.no_audio:
     import threading
     import numpy as np
     import pygame
+    import mutagen.mp3
 
 def play_wave(file, stop_event, thread, volume):
     wf = wave.open(file, 'rb')
@@ -39,7 +40,8 @@ def play_wave(file, stop_event, thread, volume):
     thread.join()
 
 def play_mpeg(file_path):
-    pygame.mixer.init()
+    mp3 = mutagen.mp3.MP3(file_path)
+    pygame.mixer.init(frequency=mp3.info.sample_rate)
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.play()
 
