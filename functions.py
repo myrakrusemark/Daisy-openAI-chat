@@ -104,7 +104,6 @@ def text_to_speech(text):
         try:
             text_parts = google_tts_split_text(text)
             file_paths = []
-            print(text_parts)
 
             #Request multiple text parts and save to multiple temp files
             for text in text_parts:
@@ -128,14 +127,14 @@ def text_to_speech(text):
 
                 # Save the contents of the BytesIO object to a temporary file
                 with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                        tmp_file.write(audio_data.getvalue())
-                        file_path = tmp_file.name
-                        file_paths.append(file_path)  # Add the file path to the list
+                    tmp_file.write(audio_data.getvalue())
+                    file_path = tmp_file.name
+                    file_paths.append(file_path)  # Add the file path to the list
 
             #Play each file in sequence
             for file_path in file_paths:
-                    stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
-                    thread.join()  # Wait for the current sound to finish before playing the next one
+                stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
+                thread.join()  # Wait for the current sound to finish before playing the next one
 
         #If Google TTS somehow fails, fallback to local TTS
         except:

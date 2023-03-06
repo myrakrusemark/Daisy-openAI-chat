@@ -50,7 +50,6 @@ def play_mpeg(file_path):
     pygame.mixer.music.stop()
 
 def play_sound_with_stop(file, volume=1.0, type="wave"):
-    print("Audio file: "+file)
     if not constants.args.no_audio:
         stop_event = threading.Event()
         if type=="wave":
