@@ -25,8 +25,10 @@ openai.api_key = os.environ["API_KEY"]
 r = sr.Recognizer()
 
 if not constants.args.no_audio:
-    engine = pyttsx3.init()
+    engine = pyttsx3.init('sapi5')
     voices = engine.getProperty('voices')
+    engine.setProperty('rate', 196)
+    engine.setProperty('volume', 2.7)
     engine.setProperty('voice', voices[1].id)
 
 # Load sounds
