@@ -18,6 +18,8 @@ import constants
 import sys
 import play_sound
 import urllib.parse
+import io
+import tempfile
 
 #Initialize
 load_dotenv()
@@ -62,23 +64,31 @@ def check_internet():
 
 def text_to_speech(text):
     if not constants.args.no_audio:
-        if platform.system() == 'Windows':
-            """Converts the given text to speech using pyttsx3"""
-            engine.say(text)
-            engine.runAndWait()
-        if platform.system() == 'Linux':
-            url = "http://translate.google.com/translate_tts"
-            params = {"q": text,
-                        "ie": "UTF-8",
-                        "client": "tw-ob",
-                        "tl": "en"}
+        url = "http://translate.google.com/translate_tts"
+        params = {"q": text,
+                    "ie": "UTF-8",
+                    "client": "tw-ob",
+                    "tl": "en"}
 
-            try:
-                response = requests.get(url, params=params)
-                response.raise_for_status()  # Raise an exception for non-2xx response codes
-                #print(response.text)
-            except requests.exceptions.RequestException as error:
-                print("Error making request:", error)
+        try:
+            print('speaking')
+            response = requests.get(url, params=params)
+            response.raise_for_status()  # Raise an exception for non-2xx response codes
+
+            # Read the audio data from the response object
+            audio_data = io.BytesIO(response.content)
+
+            # Save the contents of the BytesIO object to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                    tmp_file.write(audio_data.getvalue())
+                    file_path = tmp_file.name
+                    print(file_path)
+
+            if not constants.args.no_audio:
+                stop_event, thread = play_sound.play_sound_with_stop(file_path, type="mpeg")
+
+        except requests.exceptions.RequestException as error:
+            print("Error making request:", error)
 
 
 def speech_to_text(r):
@@ -194,7 +204,7 @@ def chat():
                 if user_input.lower() in constants.similar_sleep_words:
                         return
         else:
-            os.system("cls" if os.name == "nt" else "clear")     
+            #os.system("cls" if os.name == "nt" else "clear")     
             print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
                     
         continue

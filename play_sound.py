@@ -5,8 +5,10 @@ if not constants.args.no_audio:
     import pyaudio
     import threading
     import numpy as np
+    from mutagen.mp3 import MP3
+    import pygame
 
-def play_sound(file, stop_event, thread, volume):
+def play_wave(file, stop_event, thread, volume):
     wf = wave.open(file, 'rb')
     audio = pyaudio.PyAudio()
 
@@ -37,9 +39,25 @@ def play_sound(file, stop_event, thread, volume):
     audio.terminate()
     thread.join()
 
-def play_sound_with_stop(file, volume=1.0):
+def play_mpeg(file_path):
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+
+    # Wait until music has finished playing
+    while pygame.mixer.music.get_busy():
+        continue
+
+    pygame.mixer.music.stop()
+
+def play_sound_with_stop(file, volume=1.0, type="wave"):
+    print("Audio file: "+file)
     if not constants.args.no_audio:
         stop_event = threading.Event()
-        thread = threading.Thread(target=play_sound, args=(file, stop_event, threading.current_thread(), volume))
+        if type=="wave":
+            thread = threading.Thread(target=play_wave, args=(file, stop_event, threading.current_thread(), volume))
+        if type=="mpeg":
+            thread = threading.Thread(target=play_mpeg, args=(file,))
+
         thread.start()
         return stop_event, thread
