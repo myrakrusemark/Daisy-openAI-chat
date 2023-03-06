@@ -8,9 +8,8 @@ if not constants.args.no_audio:
     import numpy as np
     import pygame
     import mutagen.mp3
+
     pygame.init()
-
-
 
 #I think this function plays sound faster than pygame but it will need some testing.
 def play_wave(file, stop_event, thread, volume):
@@ -46,9 +45,13 @@ def play_wave(file, stop_event, thread, volume):
 
 #MPEG playback required for TTS files
 def play_mpeg(file_path):
-    mp3 = mutagen.mp3.MP3(file_path)
-    pygame.mixer.init(frequency=mp3.info.sample_rate) #Match sample rate. On Raspberry Pi, the TTS files play too slow.
+
+    if not file_path.endswith(".wav"):
+        mp3 = mutagen.mp3.MP3(file_path)
+        pygame.mixer.init(frequency=mp3.info.sample_rate) #Match sample rate. On Raspberry Pi, the TTS files play too slow.
+
     pygame.mixer.music.load(file_path)
+    pygame.mixer.music.set_volume(constants.args.volume)
     pygame.mixer.music.play()
 
     # Wait until music has finished playing

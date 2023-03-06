@@ -249,7 +249,6 @@ def chat():
 
 
                     text_to_speech(new_message["content"])
-                    print ("TTS DONE")
 
                     
                 #If only sleep phrase, return
@@ -338,6 +337,7 @@ def listen_for_wake_word():
             sys.exit(0)
 
     if text in constants.similar_wake_words:
-        stop_event, thread = play_sound.play_sound_with_stop('alert.wav')
+        play_sound.play_mpeg('alert.wav')
+        #stop_event, thread = play_sound.play_sound_with_stop('alert.wav')
         return True
 

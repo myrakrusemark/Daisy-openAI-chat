@@ -4,12 +4,12 @@ import argparse
 
 #Arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-v", "--internet", help="Introduce a tool-former so chatGPT can trigger a page scrape of Google Search results via SerpAPI", action="store_true")
+parser.add_argument("-i", "--internet", help="Introduce a tool-former so chatGPT can trigger a page scrape of Google Search results via SerpAPI", action="store_true")
 parser.add_argument("-d", "--dan", help="Use DAN (Do Anything Now) prompt", action="store_true")
 parser.add_argument("-nm", "--no_mic", help="No audio input available", action="store_true")
 parser.add_argument("-na", "--no_audio", help="No audio output available", action="store_true")
 parser.add_argument("-hm", "--hardware_mode", help="Hardware mode: Disables 'Exit Program' control", action="store_true")
-
+parser.add_argument("-v", "--volume", type=float, help='Set output volume', default=0.75)
 
 args = parser.parse_args()
 
