@@ -12,3 +12,5 @@ threading
 platform
 mutagen
 pynput
+assemblyai
+websockets

@@ -21,6 +21,8 @@ import io
 import tempfile
 import string
 import pygame
+from aai_sst import speech_to_text
+
 
 #Initialize
 load_dotenv()
@@ -32,6 +34,22 @@ if not constants.args.no_audio:
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
     engine.setProperty('voice', "english-us")
+
+
+import re
+
+def remove_non_alpha(s):
+    """
+    Removes all non-alphanumeric characters (including punctuation and numbers)
+    from a string and returns the result.
+    """
+    # Use regular expression to replace non-alphanumeric characters with empty string
+    s = re.sub(r'[^a-zA-Z]+', '', s)
+
+    # Return the modified string
+    return s.lower()
+
+
 
 
 def google_tts_split_text(text):
@@ -138,10 +156,10 @@ def text_to_speech(text):
 
 
 
-
+"""
 def speech_to_text(r):
     text = ""
-    """Converts speech to text using speech_recognition library"""
+    #Converts speech to text using speech_recognition library
 
     #If no miorophone is available, use keyboard input
     if constants.args.no_mic:
@@ -151,7 +169,7 @@ def speech_to_text(r):
         try:
             with sr.Microphone() as source:
                 r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
-
+                stop_event, thread = play_sound.play_sound_with_thread('beep.wav', 0.2)
                 audio = r.listen(source)
                 try:
                     text = r.recognize_google(audio, language='en-US', show_all=False)
@@ -171,7 +189,7 @@ def speech_to_text(r):
             sys.exit(0)
 
     return text
-
+"""
 
 def chat():
     """Engages in conversation with the user"""
@@ -180,10 +198,10 @@ def chat():
 
             #Get and display recognized text
             print(f"'{constants.sleep_word}' to end")
-            print("You:")
             
-            user_input = speech_to_text(r)
-           
+            user_input = speech_to_text()
+            print("You: "+user_input)
+
             web_response_text = ""
 
             #Only request if words spoken
@@ -250,10 +268,13 @@ def chat():
 
                     text_to_speech(new_message["content"])
 
-                    
                 #If only sleep phrase, return
-                if user_input.lower() in constants.similar_sleep_words:
+                #Enable the ability to exit the program in a keyboard blocking state
+                if not constants.args.hardware_mode:
+                    exit_string = remove_non_alpha(user_input.lower())
+                    if exit_string == "byebyedaisy":
                         return
+
         else:
             #os.system("cls" if os.name == "nt" else "clear")     
             print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
@@ -330,8 +351,10 @@ def listen_for_wake_word():
                 print(error)
                 return False
 
+    #Enable the ability to exit the program in a keyboard blocking state
     if not constants.args.hardware_mode:
-        if text.lower() == "exit program":
+        exit_string = remove_non_alpha(text.lower())
+        if exit_string == "exitprogram":
             print("Exiting program...")
             sys.exit(0)
 

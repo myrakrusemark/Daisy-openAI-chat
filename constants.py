@@ -18,7 +18,7 @@ args = parser.parse_args()
 wake_word="daisy"
 similar_wake_words=["daisy", "busy", "they seem", "the scene", "dizzy", "lazy", "gazing", "facing", "his aim"]
 sleep_word = "Bye-bye Daisy"
-similar_sleep_words=["bye bye daisy", "bye daisy", "bye-bye daisy", "bye by daisy"]
+similar_sleep_words=["bye, bye, daisy.", "bye bye daisy", "bye daisy", "bye-bye daisy", "bye by daisy"]
 
 
 #Initial prompts

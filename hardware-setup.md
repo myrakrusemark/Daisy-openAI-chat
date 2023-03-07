@@ -656,3 +656,16 @@ sudo systemctl enable daisy.service
 ```
 
 Now your service is set up and will automatically start and restart as necessary, and will be run by the "daisy" user.
+
+
+
+install WM89860 hat
+https://github.com/waveshare/WM8960-Audio-HAT
+
+
+
+
+Choose audio output
+```
+raspi-config
+```
