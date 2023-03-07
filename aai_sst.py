@@ -68,7 +68,6 @@ async def send_receive():
                     break
                 await asyncio.sleep(0.01)
             functions.log("TTS Send done")
-            stream.flush_input()
             return
         
         async def receive():

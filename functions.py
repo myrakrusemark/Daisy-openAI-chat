@@ -214,7 +214,7 @@ def chat():
                 log(new_message)
                 constants.messages.append(new_message)
                 
-
+                log("Sending openAI request")
                 response_text = request()
                 
                 if response_text != False:

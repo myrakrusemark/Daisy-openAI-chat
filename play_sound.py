@@ -7,7 +7,6 @@ from pynput import keyboard
 
 if not constants.args.no_audio:
     import wave
-    import pyaudio
     import threading
     import numpy as np
     import pygame
@@ -44,6 +43,8 @@ def play_mpeg(file_path, volume=1):
 
 
     pygame.mixer.music.stop()
+    pygame.mixer.music.unload()
+
 
     return pygame.mixer.music
 
