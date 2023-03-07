@@ -67,7 +67,7 @@ async def send_receive():
                     print(f"Unexpected error: {e}")
                     break
                 await asyncio.sleep(0.01)
-            functions.log("TTS Receive done")
+            functions.log("TTS Send done")
             return
         
         async def receive():
