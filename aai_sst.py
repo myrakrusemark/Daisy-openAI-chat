@@ -49,11 +49,11 @@ async def send_receive():
 
 
         async def send():
+            functions.log("TTS Send start")
             #When a result is received, close the loop, allowing send_receive to finish (Let me diiiiieeeee)
 
             #Get the beep as CLOSE to the audio recorder as possible
             stop_event, thread = play_sound.play_sound_with_thread('beep.wav', 0.2)
-
             while result_received == False:
                 try:
                     data = stream.read(FRAMES_PER_BUFFER)
@@ -71,6 +71,7 @@ async def send_receive():
             return
         
         async def receive():
+            functions.log("TTS Receive start")
             global result_str, result_received, new_result_str
             result_str = ""
             new_result_str = ""
