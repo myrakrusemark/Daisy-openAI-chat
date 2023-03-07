@@ -24,6 +24,10 @@ stream = p.open(
     frames_per_buffer=FRAMES_PER_BUFFER
 )
 
+# Read and discard the current audio data in the buffer
+while stream.get_read_available() > 0:
+    stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+
 # Set up AssemblyAI API key and websocket endpoint
 auth_key = "f7754f3d71ac422caf4cfc54bace4306"
 URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"

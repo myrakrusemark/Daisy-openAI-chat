@@ -43,8 +43,6 @@ def play_mpeg(file_path, volume=1):
 
 
     pygame.mixer.music.stop()
-    pygame.mixer.music.unload()
-
 
     return pygame.mixer.music
 
