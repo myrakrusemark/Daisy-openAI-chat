@@ -82,6 +82,11 @@ async def send_receive():
                         new_result_str = json.loads(new_result)['text']
                         if len(new_result_str) >= len(result_str):
                             result_str = new_result_str
+                            # Move the cursor to the beginning of the last line
+                            sys.stdout.write('\033[F')
+                            # Clear the line
+                            sys.stdout.write('\033[2K')
+                            print("You: "+result_str)
                         else:
                             result_received = True
                             return

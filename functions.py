@@ -200,7 +200,7 @@ def chat():
             print(f"'{constants.sleep_word}' to end")
             
             user_input = speech_to_text()
-            print("You: "+user_input)
+            #print("You: "+user_input)
 
             web_response_text = ""
 
@@ -259,7 +259,7 @@ def chat():
 
                     constants.messages.append(new_message)
 
-                    #os.system("cls" if os.name == "nt" else "clear")           
+                    os.system("cls" if os.name == "nt" else "clear")           
                     for message in constants.messages:
                         # Check if the message role is in the list of roles to display
                         color = colorama.Fore.BLUE if message['role'] == "assistant" else colorama.Fore.GREEN
@@ -276,7 +276,7 @@ def chat():
                         return
 
         else:
-            #os.system("cls" if os.name == "nt" else "clear")     
+            os.system("cls" if os.name == "nt" else "clear")     
             print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
                     
         continue
@@ -324,7 +324,7 @@ def request(context=True, new_message={}):
         return False     
 
 def listen_for_wake_word():
-    #os.system("cls" if os.name == "nt" else "clear")           
+    os.system("cls" if os.name == "nt" else "clear")           
 
     #If no miorophone is available, use keyboard input
     if constants.args.no_mic:

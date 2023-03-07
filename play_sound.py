@@ -39,8 +39,9 @@ def play_mpeg(file_path, volume=1):
     # Listen for the Escape key
     with keyboard.Listener(on_press=on_press) as listener:
         # Wait until music has finished playing
-        while pygame.mixer.music.get_busy():
+        while pygame.mixer.music.get_busy() and listener.running:
             continue
+
 
     pygame.mixer.music.stop()
 

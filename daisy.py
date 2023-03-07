@@ -9,7 +9,7 @@ import play_sound
 def main():
 
     while True:
-        #os.system("cls" if os.name == "nt" else "clear")           
+        os.system("cls" if os.name == "nt" else "clear")           
 
         if functions.check_internet():
             #Detect a wake word before listening for a prompt
