@@ -11,6 +11,8 @@ if not constants.args.no_audio:
 
     pygame.init()
 
+# Set the DISPLAY environment variable for pynput
+os.environ['DISPLAY'] = ':0'
 
 #MPEG playback required for TTS files
 def play_mpeg(file_path, volume=1):
