@@ -9,7 +9,8 @@ parser.add_argument("-d", "--dan", help="Use DAN (Do Anything Now) prompt", acti
 parser.add_argument("-nm", "--no_mic", help="No audio input available", action="store_true")
 parser.add_argument("-na", "--no_audio", help="No audio output available", action="store_true")
 parser.add_argument("-hm", "--hardware_mode", help="Hardware mode: Disables 'Exit Program' control", action="store_true")
-parser.add_argument("-v", "--volume", type=float, help='Set output volume', default=0.75)
+parser.add_argument("-vol", "--volume", type=float, help='Set output volume', default=0.75)
+parser.add_argument("-v", "--verbose", help='Display all output', action="store_true")
 
 args = parser.parse_args()
 

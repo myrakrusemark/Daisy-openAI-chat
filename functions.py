@@ -49,7 +49,9 @@ def remove_non_alpha(s):
     # Return the modified string
     return s.lower()
 
-
+def log(string):
+    if constants.args.verbose:
+        print(string)
 
 
 def google_tts_split_text(text):
@@ -208,6 +210,8 @@ def chat():
             if(user_input != ""):
                 #Update context with user input
                 new_message = {"role": "user", "content": user_input}
+                log("User message:")
+                log(new_message)
                 constants.messages.append(new_message)
                 
 
@@ -225,6 +229,8 @@ def chat():
                             print(f"Searching the web ({search_query})...")
                             text_to_speech("Searching the web.")
                             new_message = {'role': 'assistant', 'content': 'Searching the web... [search:'+search_query+']'}
+                            log("Assistant message (web search):")
+                            log(new_message)
                             constants.messages.append(new_message)
 
 
@@ -253,13 +259,19 @@ def chat():
                                 web_response_text = "Sorry, either there was an error or there are no results."
                     #Update context with response
                     if(web_response_text != ""):
+                        log("Assistant message (web response):")
+                        log(new_message)
                         new_message = {'role': 'assistant', 'content': web_response_text}
                     else:
+                        log("Assistant message:")
+                        log(new_message)
                         new_message = {'role': 'assistant', 'content': response_text}
 
                     constants.messages.append(new_message)
 
-                    os.system("cls" if os.name == "nt" else "clear")           
+                    if not constants.args.verbose:
+                        os.system("cls" if os.name == "nt" else "clear")   
+
                     for message in constants.messages:
                         # Check if the message role is in the list of roles to display
                         color = colorama.Fore.BLUE if message['role'] == "assistant" else colorama.Fore.GREEN
@@ -276,7 +288,8 @@ def chat():
                         return
 
         else:
-            os.system("cls" if os.name == "nt" else "clear")     
+            if not constants.args.verbose:
+                os.system("cls" if os.name == "nt" else "clear")     
             print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
                     
         continue
@@ -324,7 +337,8 @@ def request(context=True, new_message={}):
         return False     
 
 def listen_for_wake_word():
-    os.system("cls" if os.name == "nt" else "clear")           
+    if not constants.args.verbose:
+        os.system("cls" if os.name == "nt" else "clear")           
 
     #If no miorophone is available, use keyboard input
     if constants.args.no_mic:
