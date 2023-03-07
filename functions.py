@@ -305,8 +305,6 @@ def request(context=True, new_message={}):
 def listen_for_wake_word():
     #os.system("cls" if os.name == "nt" else "clear")           
 
-    print(f"Waiting for wake word: '{constants.wake_word}'")
-
     #If no miorophone is available, use keyboard input
     if constants.args.no_mic:
         text = input()
@@ -317,6 +315,7 @@ def listen_for_wake_word():
 
             try:
                 r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
+                print(f"Waiting for wake word: '{constants.wake_word}'")
                 audio = r.listen(source)
             except sr.WaitTimeoutError:
                 return False
