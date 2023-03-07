@@ -67,7 +67,7 @@ async def send_receive():
                     print(f"Unexpected error: {e}")
                     break
                 await asyncio.sleep(0.01)
-            
+            functions.log("TTS Receive done")
             return
         
         async def receive():
@@ -89,6 +89,7 @@ async def send_receive():
                             print("You: "+result_str)
                         else:
                             result_received = True
+                            functions.log("TTS Receive done")
                             return
                     except websockets.exceptions.ConnectionClosedError as e:
                         print(f"Connection closed with error code {e.code}: {e.reason}")
