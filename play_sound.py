@@ -1,5 +1,6 @@
 import constants
 from pynput import keyboard
+import os
 
 if not constants.args.no_audio:
     import wave
