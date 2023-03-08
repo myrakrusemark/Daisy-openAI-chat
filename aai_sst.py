@@ -9,6 +9,8 @@ import time
 import functions
 import constants
 import sys
+import logging
+import logging_setup
 
 
 # Set up AssemblyAI API key and websocket endpoint
@@ -51,11 +53,12 @@ async def send_receive():
 
         async def send():
             # Clear the audio buffer
-            if stream.get_read_available() > 0:
-                print("cleaning stream")
-                stream.read(stream.get_read_available())
+            # This was originally to help Daisy from speaking over itself. Delete if no problem.
+            #if stream.get_read_available() > 0:
+            #    print("cleaning stream")
+            #    stream.read(stream.get_read_available())
 
-            functions.log("TTS Send start")
+            logging.info("TTS Send start")
             #When a result is received, close the loop, allowing send_receive to finish (Let me diiiiieeeee)
 
             #Get the beep as CLOSE to the audio recorder as possible
@@ -73,11 +76,11 @@ async def send_receive():
                     print(f"Unexpected error: {e}")
                     break
                 await asyncio.sleep(0.01)
-            functions.log("TTS Send done")
+            logging.info("TTS Send done")
             return
         
         async def receive():
-            functions.log("TTS Receive start")
+            logging.info("TTS Receive start")
             global result_str, result_received, new_result_str
             result_str = ""
             new_result_str = ""
@@ -96,7 +99,7 @@ async def send_receive():
                             print("You: "+result_str)
                         else:
                             result_received = True
-                            functions.log("TTS Receive done")
+                            logging.info("TTS Receive done")
                             return
                     except websockets.exceptions.ConnectionClosedError as e:
                         print(f"Connection closed with error code {e.code}: {e.reason}")

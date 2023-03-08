@@ -22,12 +22,14 @@ import tempfile
 import string
 import pygame
 from aai_sst import speech_to_text
-
+import logging
+import logging_setup
 
 #Initialize
 load_dotenv()
 openai.api_key = os.environ["API_KEY"]
 r = sr.Recognizer()
+
 
 if not constants.args.no_audio:
     import pyttsx3
@@ -48,10 +50,6 @@ def remove_non_alpha(s):
 
     # Return the modified string
     return s.lower()
-
-def log(string):
-    if constants.args.verbose:
-        print(string)
 
 
 def google_tts_split_text(text):
@@ -210,11 +208,11 @@ def chat():
             if(user_input != ""):
                 #Update context with user input
                 new_message = {"role": "user", "content": user_input}
-                log("User message:")
-                log(new_message)
+                logging.info('User message:')
+                logging.info(new_message)
                 constants.messages.append(new_message)
                 
-                log("Sending openAI request")
+                logging.info("Sending openAI request")
                 response_text = request()
                 
                 if response_text != False:
@@ -229,8 +227,8 @@ def chat():
                             print(f"Searching the web ({search_query})...")
                             text_to_speech("Searching the web.")
                             new_message = {'role': 'assistant', 'content': 'Searching the web... [search:'+search_query+']'}
-                            log("Assistant message (web search):")
-                            log(new_message)
+                            logging.info("Assistant message (web search):")
+                            logging.info(new_message)
                             constants.messages.append(new_message)
 
 
@@ -259,12 +257,12 @@ def chat():
                                 web_response_text = "Sorry, either there was an error or there are no results."
                     #Update context with response
                     if(web_response_text != ""):
-                        log("Assistant message (web response):")
-                        log(new_message)
+                        logging.info("Assistant message (web response):")
+                        logging.info(new_message)
                         new_message = {'role': 'assistant', 'content': web_response_text}
                     else:
-                        log("Assistant message:")
-                        log(new_message)
+                        logging.info("Assistant message:")
+                        logging.info(new_message)
                         new_message = {'role': 'assistant', 'content': response_text}
 
                     constants.messages.append(new_message)

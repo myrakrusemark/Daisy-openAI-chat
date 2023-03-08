@@ -2,9 +2,9 @@ import functions
 import os
 import constants
 import asyncio
-
 import play_sound
-
+import logging
+import logging_setup
 
 def main():
 
@@ -19,5 +19,5 @@ def main():
         else:
             print(f"{colorama.Fore.RED}No Internet connection. {colorama.Fore.WHITE}When a connection is available the script will automatically re-activate.")
 
-
-main()
+if __name__ == '__main__':
+    main()
