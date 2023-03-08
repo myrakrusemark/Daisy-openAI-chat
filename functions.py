@@ -299,7 +299,7 @@ def request(context=True, new_message={}):
 
     try:
         if not constants.args.no_audio:
-            stop_event, thread = play_sound.play_sound_with_thread('waiting.wav', 0.2)
+            stop_event, thread = play_sound.play_sound_with_thread(constants.cwd+'waiting.wav', 0.2)
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -373,7 +373,7 @@ def listen_for_wake_word():
             sys.exit(0)
 
     if text in constants.similar_wake_words:
-        stop_event, thread = play_sound.play_sound_with_thread('alert.wav')
+        stop_event, thread = play_sound.play_sound_with_thread(constants.cwd+'alert.wav')
 
         return True
 

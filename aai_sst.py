@@ -59,7 +59,7 @@ async def send_receive():
             #When a result is received, close the loop, allowing send_receive to finish (Let me diiiiieeeee)
 
             #Get the beep as CLOSE to the audio recorder as possible
-            stop_event, thread = play_sound.play_sound_with_thread('beep.wav', 0.2)
+            stop_event, thread = play_sound.play_sound_with_thread(constants.cwd+'beep.wav', 0.2)
             while result_received == False:
                 try:
                     data = stream.read(FRAMES_PER_BUFFER)

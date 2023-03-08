@@ -1,6 +1,8 @@
 from datetime import datetime
 import argparse
+import os
 
+cwd = os.path.dirname(os.path.abspath(__file__))+"/"
 
 #Arguments
 parser = argparse.ArgumentParser()
