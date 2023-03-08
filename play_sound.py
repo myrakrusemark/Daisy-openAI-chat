@@ -8,7 +8,6 @@ from pynput import keyboard
 if not constants.args.no_audio:
     import wave
     import threading
-    import numpy as np
     import pygame
     import mutagen.mp3
 

@@ -10,20 +10,6 @@ import functions
 import constants
 import sys
 
-# Set up PyAudio
-FRAMES_PER_BUFFER = 3200
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 16000
-p = pyaudio.PyAudio()
-stream = p.open(
-    format=FORMAT,
-    channels=CHANNELS,
-    rate=RATE,
-    input=True,
-    frames_per_buffer=FRAMES_PER_BUFFER
-)
-
 
 # Set up AssemblyAI API key and websocket endpoint
 auth_key = "f7754f3d71ac422caf4cfc54bace4306"
@@ -36,6 +22,20 @@ result_received = False
 
 # Define async function to send and receive data
 async def send_receive():
+    # Set up PyAudio
+    FRAMES_PER_BUFFER = 3200
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 1
+    RATE = 16000
+    p = pyaudio.PyAudio()
+    stream = p.open(
+        format=FORMAT,
+        channels=CHANNELS,
+        rate=RATE,
+        input=True,
+        frames_per_buffer=FRAMES_PER_BUFFER
+    )
+
     async with websockets.connect(
         URL,
         extra_headers=(("Authorization", auth_key),),
