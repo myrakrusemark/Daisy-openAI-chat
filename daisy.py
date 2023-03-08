@@ -7,7 +7,7 @@ import logging
 import logging_setup
 
 def main():
-    logging.info("Program start...")
+    logging.info("Program start")
     while True:
         if not constants.args.verbose:
             os.system("cls" if os.name == "nt" else "clear")           
