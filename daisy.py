@@ -5,6 +5,16 @@ import asyncio
 import play_sound
 import logging
 import logging_setup
+import signal
+import sys
+
+
+def signal_handler(sig, frame):
+    print('Ctrl+C: Exiting Program...')
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
 
 def main():
     logging.info("Program start :)")
