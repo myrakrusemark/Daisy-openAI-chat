@@ -669,3 +669,8 @@ Choose audio output
 ```
 raspi-config
 ```
+
+Give all users access to /tmp to play TTS files
+```
+sudo chmod -R 777 /tmp
+```

@@ -95,8 +95,7 @@ class ChatSpeechProcessor:
             params = {"q": self.remove_non_alphanumeric(text),
                         "ie": "UTF-8",
                         "client": "tw-ob",
-                        "tl": "en",
-                        "ttsspeed":"4.0"}
+                        "tl": "en"}
 
             try:
                 response = requests.get(url, params=params, headers=headers)

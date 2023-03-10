@@ -2,13 +2,13 @@ import os
 from plugins import constants
 import pygame
 import threading
-from pynput import keyboard
+#from pynput import keyboard
 import time
 import logging
 import numpy as np
 
 # Set the DISPLAY environment variable for pynput
-os.environ['DISPLAY'] = ':0'
+#os.environ['DISPLAY'] = ':0'
 
 pygame.init()
 
@@ -52,8 +52,9 @@ class SoundManager:
         logging.debug(f"Playing sound {name_or_path} with volume {volume}")
 
         # Define function to stop playback when escape key is pressed or stop_event is set
-        key_not_pressed = True
         event = threading.Event()
+
+        """key_not_pressed = True
         def on_press(key):
             nonlocal key_not_pressed
             if key == keyboard.Key.esc:
@@ -70,7 +71,7 @@ class SoundManager:
                 key_not_pressed = False
                 event.set()  # Set the event to signal the main thread to stop waiting
                 return False  # Stop the listener
-
+        """
 
         # Play the sound object
         sound.set_volume(1)
@@ -82,12 +83,12 @@ class SoundManager:
 
         # Wait for the sound to finish playing or the escape key/stop_event to be pressed
         sound_length = sound.get_length()
-        with keyboard.Listener(on_press=on_press) as listener:
-            while not event.is_set() and sound_length > 0:
-                event.wait(min(sound_length, 0.1))  # Wait for the event to be set or the timeout to expire
-                sound_length -= 0.1  # Subtract the time waited from the remaining sound length
-            if listener.running and key_not_pressed:
-                listener.stop()
+        #with keyboard.Listener(on_press=on_press) as listener:
+        while not event.is_set() and sound_length > 0:
+            event.wait(min(sound_length, 0.1))  # Wait for the event to be set or the timeout to expire
+            sound_length -= 0.1  # Subtract the time waited from the remaining sound length
+        #if listener.running and key_not_pressed:
+         #   listener.stop()
 
         logging.debug(f"Playback of sound {name_or_path} completed")
 
