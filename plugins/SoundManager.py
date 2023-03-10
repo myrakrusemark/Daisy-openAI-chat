@@ -1,10 +1,11 @@
 import os
-from . import constants
+from plugins import constants
 import pygame
 import threading
 from pynput import keyboard
 import time
 import logging
+import numpy as np
 
 # Set the DISPLAY environment variable for pynput
 os.environ['DISPLAY'] = ':0'
@@ -70,9 +71,12 @@ class SoundManager:
                 event.set()  # Set the event to signal the main thread to stop waiting
                 return False  # Stop the listener
 
+
         # Play the sound object
         sound.set_volume(1)
         sound.play()
+
+
         # Set the currently playing sound
         self.current_sound = sound
 

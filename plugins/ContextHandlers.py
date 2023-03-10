@@ -1,4 +1,4 @@
-from . import constants
+from plugins import constants
 import logging
 
 class ContextHandlers:

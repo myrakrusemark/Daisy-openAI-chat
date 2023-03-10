@@ -6,7 +6,7 @@ import base64
 import json
 import threading
 import time
-from . import constants
+from plugins import constants
 import sys
 import os
 import re
@@ -22,7 +22,7 @@ import logging
 load_dotenv()
 
 #Initialize available sound effects
-from . import SoundManager
+from plugins import SoundManager
 sounds = SoundManager.SoundManager('sounds/')
 
 
@@ -95,7 +95,8 @@ class ChatSpeechProcessor:
             params = {"q": self.remove_non_alphanumeric(text),
                         "ie": "UTF-8",
                         "client": "tw-ob",
-                        "tl": "en"}
+                        "tl": "en",
+                        "ttsspeed":"4.0"}
 
             try:
                 response = requests.get(url, params=params, headers=headers)

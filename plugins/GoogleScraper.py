@@ -3,17 +3,13 @@ import openai
 from serpapi import GoogleSearch
 import logging
 import os
-from . import constants
+from plugins import constants
 import re
 
 from plugins.ContextHandlers import ContextHandlers
 from plugins.ChatSpeechProcessor import ChatSpeechProcessor
-
-
 ch = ContextHandlers(constants.messages)
 csp = ChatSpeechProcessor()
-
-
 
 class GoogleScraper():
 	"""
@@ -21,7 +17,7 @@ class GoogleScraper():
 	Module Hook: The hook in the program where method main() will be passed into.
 	"""
 	description = "A class for scraping Google search results based on a given search query."
-	module_hook = "Chat chat inner"
+	module_hook = "Chat_chat_inner"
 
 	def __init__(self):
 		self.api_key = os.environ["SERPAPI_KEY"]
@@ -75,5 +71,6 @@ class GoogleScraper():
 					web_response_text = "Sorry, either there was an error or there are no results."
 
 			return web_response_text
+			
 		else:
 			return response_text

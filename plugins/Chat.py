@@ -3,18 +3,18 @@ import re
 from dotenv import load_dotenv
 import colorama
 import openai
-from . import ConnectionStatus
-from . import constants
+from plugins import ConnectionStatus
+from plugins import constants
 import logging
 import os
 import importlib
 
-from . import ChatSpeechProcessor
+from plugins import ChatSpeechProcessor
 csp = ChatSpeechProcessor.ChatSpeechProcessor()
 cs = ConnectionStatus.ConnectionStatus()
 
 #Initialize available sound effects
-from . import SoundManager
+from plugins import SoundManager
 sounds = SoundManager.SoundManager('sounds/')
 
 
@@ -23,58 +23,14 @@ sounds = SoundManager.SoundManager('sounds/')
 class Chat:
 	description = "Implements a chatbot using OpenAI's GPT-3 language model and allows for interaction with the user through speech or text."
 
-	def __init__(self, api_key="", messages=[], modules=[], modules_directory=""):
+	def __init__(self, api_key="", messages=[], chat_module_hooks = []):
 		self.messages = messages
 		self.api_key = api_key
-		self.modules = modules
-		self.modules_directory=modules_directory
 
-		#Module hooks
-		self.Chat_chat_inner_instances = []
-		globals()["Chat_chat_inner_instances"] = self.Chat_chat_inner_instances
-
-		logging.info("Chat - Loading plugins...")
-		self.import_and_instantiate_classes(self.modules, self.modules_directory)
-		print(Chat_chat_inner_instances)
-
-
+		self.Chat_chat_inner_instances = chat_module_hooks["Chat_chat_inner_instances"]
 
 		#Initialize
 		load_dotenv()
-
-	def import_and_instantiate_classes(self, modules, plugins_directory=""):
-		#global Chat_chat_inner_instances
-    	# Iterate over the module names
-		for module in modules:
-			module_name = module["name"]
-			module_hook = module["module_hook"]
-			if module_hook + "_instances" in globals():
-				target_instance_list = globals()[module_hook+"_instances"]
-				if(module_hook): #and self.[module_hook+"_instances"]:
-					try:
-						# Import the module dynamically using importlib
-						#module_path = os.path.join(directory, f"{module_name}.py")
-						#print(module_path)
-						module = importlib.import_module(plugins_directory+"."+module_name)
-					except ModuleNotFoundError:
-						logging.error(f"Module '{module_name}' not found")
-						continue
-
-					# Iterate over the contents of the module
-					for name in dir(module):
-						# Get the class definition for the name
-						obj = getattr(module, name)
-						# Check if the object is a class and has the same name as the module
-						if isinstance(obj, type) and obj.__module__ == module.__name__:
-							# Instantiate the class and append the instance to the array
-							instance = obj()
-							target_instance_list.append(instance)
-							logging.info(f"Instantiated {name} from module {module_name} to {module_hook}")
-			else:
-				logging.error("Target hook, "+module_hook+" not available in Chat.")
-
-
-
 
 	def chat(self):
 		"""Engages in conversation with the user by sending and receiving messages from an OpenAI model."""

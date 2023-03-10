@@ -12,6 +12,11 @@ from plugins.Logging import Logging
 from plugins import constants
 from plugins.ContextHandlers import ContextHandlers
 from plugins.Chat import Chat
+from PluginLoader import PluginLoader
+
+#Init modules from list of installed modules
+pl = PluginLoader("plugins/")
+
 
 #Init
 sh = SignalHandlers()
@@ -22,8 +27,8 @@ csp = ChatSpeechProcessor()
 cs = ConnectionStatus()
 ch = ContextHandlers(constants.messages)
 
-modules = [{"name":"GoogleScraper", "module_hook":"Chat_chat_inner"}]
-chat = Chat(os.environ["API_KEY"], ch.messages, modules, "plugins")
+Chat_module_hooks = {"Chat_chat_inner_instances":pl.Chat_chat_inner_instances}
+chat = Chat(os.environ["API_KEY"], ch.messages, Chat_module_hooks)
 
 # Flag to indicate whether the warning message has already been logged
 internet_warning_logged = False

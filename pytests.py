@@ -3,6 +3,7 @@ from plugins.ChatSpeechProcessor import ChatSpeechProcessor
 from unittest.mock import MagicMock
 from plugins.ContextHandlers import ContextHandlers
 from plugins.SoundManager import SoundManager
+from PluginLoader import PluginLoader
 from plugins.Chat import Chat
 from plugins import constants
 import os
@@ -11,10 +12,15 @@ test_messages=[{"role": "system", "content": "Daisy"}]
 
 csp = ChatSpeechProcessor()
 ch = ContextHandlers(test_messages)
-chat = Chat(os.environ["API_KEY"], test_messages)
+#chat = Chat(os.environ["API_KEY"], test_messages)
 sm = SoundManager("sounds/")
+pl = PluginLoader("plugins")
 
+def test_PluginLoader(capsys):
+    with capsys.disabled():
+        print(pl.get_available_classes_json())
 
+"""
 def test_SoundManager(capsys):
     with capsys.disabled():
         print("Press ESC to stop the sound")
@@ -70,3 +76,4 @@ def test_Chat(capsys):
         print("Instances: "+str(chat.Chat_chat_inner_instances))
 
     assert str(chat.Chat_chat_inner_instances).find("GoogleScraper")
+"""
