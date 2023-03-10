@@ -87,7 +87,8 @@ class ChatSpeechProcessor:
     def tts(self, text):
         """Converts text to speech using Google TTS or a fallback TTS engine."""
         text_parts = self.split_text_for_google_tts(text)
-        file_paths = []
+        #file_paths = []
+        audio_datas = []
 
         # Request multiple text parts and save to multiple temp files
         for text in text_parts:
@@ -113,13 +114,14 @@ class ChatSpeechProcessor:
 
 
             # Save the contents of the BytesIO object to a temporary file
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                tmp_file.write(audio_data.getvalue())
-                file_path = tmp_file.name
-                file_paths.append(file_path)  # Add the file path to the list
+            #with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            #    tmp_file.write(audio_data.getvalue())
+             #   file_path = tmp_file.name
+             #   file_paths.append(file_path)  # Add the file path to the list
+            audio_datas.append(audio_data)
 
         # Play each file in sequence
-        for file_path in file_paths:
+        for audio_data in audio_datas:
             sounds.play_sound(audio_data, 1)
 
         # If Google TTS somehow fails, fallback to local TTS
