@@ -47,7 +47,7 @@ class SoundManager:
         if isinstance(name_or_path, BytesIO):
             logging.debug(f"Playing BytesIO with volume {volume}")
 
-            sound = pygame.mixer.music.load(name_or_path, "mp3")
+            sound = pygame.mixer.music.load(name_or_path)
             pygame.mixer.music.play()
 
             # Wait for the music to finish playing
