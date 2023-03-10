@@ -17,6 +17,7 @@ import requests
 import io
 import tempfile
 import logging
+import pygame
 
 
 load_dotenv()
@@ -103,6 +104,8 @@ class ChatSpeechProcessor:
 
                 # Read the audio data from the response object
                 audio_data = io.BytesIO(response.content)
+                # Create a file-like object from the BytesIO object
+                audio_data.seek(0)
             except requests.exceptions.RequestException as error:
                 # Log the error message instead of printing it to stdout
                 logging.error(f'RequestException: {error}')
@@ -117,7 +120,7 @@ class ChatSpeechProcessor:
 
         # Play each file in sequence
         for file_path in file_paths:
-            sounds.play_sound(file_path, 1)
+            sounds.play_sound(audio_data, 1)
 
         # If Google TTS somehow fails, fallback to local TTS
         #except Exception as e:

@@ -6,6 +6,7 @@ import threading
 import time
 import logging
 import numpy as np
+from io import BytesIO
 
 # Set the DISPLAY environment variable for pynput
 #os.environ['DISPLAY'] = ':0'
@@ -42,17 +43,35 @@ class SoundManager:
     # Function to play MPEG files
     def play_sound(self, name_or_path, volume=1, stop_event=None):
         """Function to play sound files and define function to stop playback when escape key is pressed or stop_event is set."""
-        if os.path.isfile(name_or_path):
-            # Load sound from file
-            sound = pygame.mixer.Sound(name_or_path)
+        sound = ""
+        if isinstance(name_or_path, BytesIO):
+            logging.debug(f"Playing BytesIO with volume {volume}")
+
+            sound = pygame.mixer.music.load(name_or_path, "mp3")
+            pygame.mixer.music.play()
+
+            # Wait for the music to finish playing
+            while pygame.mixer.music.get_busy():
+                pygame.time.wait(100)  # Wait for 100 milliseconds before checking again
         else:
+            logging.debug(f"Playing sound {name_or_path} with volume {volume}")
+
             # Load sound from dictionary
             sound = self.sounds.get(name_or_path)
+            sound.set_volume(1)
+            sound.play()
 
-        logging.debug(f"Playing sound {name_or_path} with volume {volume}")
+            # Define function to stop playback when escape key is pressed or stop_event is set
+            event = threading.Event()
 
-        # Define function to stop playback when escape key is pressed or stop_event is set
-        event = threading.Event()
+            # Set the currently playing sound
+            self.current_sound = sound
+
+            # Wait for the sound to finish playing or the escape key/stop_event to be pressed
+            sound_length = sound.get_length()
+            while not event.is_set() and sound_length > 0:
+                event.wait(min(sound_length, 0.1))  # Wait for the event to be set or the timeout to expire
+                sound_length -= 0.1  # Subtract the time waited from the remaining sound length
 
         """key_not_pressed = True
         def on_press(key):
@@ -72,24 +91,6 @@ class SoundManager:
                 event.set()  # Set the event to signal the main thread to stop waiting
                 return False  # Stop the listener
         """
-
-        # Play the sound object
-        sound.set_volume(1)
-        sound.play()
-
-
-        # Set the currently playing sound
-        self.current_sound = sound
-
-        # Wait for the sound to finish playing or the escape key/stop_event to be pressed
-        sound_length = sound.get_length()
-        #with keyboard.Listener(on_press=on_press) as listener:
-        while not event.is_set() and sound_length > 0:
-            event.wait(min(sound_length, 0.1))  # Wait for the event to be set or the timeout to expire
-            sound_length -= 0.1  # Subtract the time waited from the remaining sound length
-        #if listener.running and key_not_pressed:
-         #   listener.stop()
-
         logging.debug(f"Playback of sound {name_or_path} completed")
 
         return sound
