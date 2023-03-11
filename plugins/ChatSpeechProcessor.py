@@ -18,6 +18,9 @@ import io
 import tempfile
 import logging
 import pygame
+import pvporcupine
+import platform
+
 
 
 load_dotenv()
@@ -26,7 +29,8 @@ load_dotenv()
 from plugins import SoundManager
 sounds = SoundManager.SoundManager('sounds/')
 
-
+#Initialize Porcupine Wake Word
+from plugins import Porcupine
 
 #Init fallback TTS and set voice
 engine = pyttsx3.init()
@@ -45,45 +49,29 @@ class ChatSpeechProcessor:
         self.new_result_str = ""
         self.result_received = False
         self.api_key = os.environ["AAI_KEY"]
-
-
-
         self.r = sr.Recognizer()
 
+        keyword_paths = None
+        if platform.system() == "Windows":
+            print("Windows")
+            keyword_paths = "plugins/daisy-daisy_en_windows_v2_1_0.ppn"
+        elif platform.system() == "Linux":
+            print("Linux") #Raspberry pi
+            keyword_paths = "plugins/daisy-daisy_en_raspberry-pi_v2_1_0.ppn"
+        else:
+            print("Unknown operating system")
 
-    def listen_for_wake_word(self):          
-        """Listens for a wake word and returns True if detected."""
-
-        with sr.Microphone() as source:
-            try:
-                self.r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
-                logging.info(f"Waiting for wake word: '{constants.wake_word}'")
-                audio = self.r.listen(source)
-            except sr.WaitTimeoutError:
-                logging.error("Timeout occurred while waiting for wake word.")
-                return False
-            
-            try:
-                logging.info("Recognizing...")
-                text = self.r.recognize_google(audio)
-                text = text.lower()
-                logging.info(f"Recognized text: {text}")
-                       
-            except Exception as error:
-                logging.error(f"Could not understand: {error}")
-                return False
-
-        #Enable the ability to exit the program in a keyboard blocking state
-        exit_string = self.remove_non_alpha(text.lower())
-        if exit_string == "exitprogram":
-            logging.info("Exiting program...")
-            sys.exit(0)
-
-        if text in constants.similar_wake_words:
-            sounds.play_sound_with_thread('alert')
-            logging.info("Wake word detected.")
-            return True
+        self.porcupine = Porcupine.Porcupine(
+                keyword_paths=keyword_paths,
+                sensitivities=0.5,
+                input_device_index=1)
         
+
+    def listen_for_wake_word(self):
+        self.porcupine.show_audio_devices()
+        return self.porcupine.run()
+
+
     def tts(self, text):
         """Converts text to speech using Google TTS or a fallback TTS engine."""
         text_parts = self.split_text_for_google_tts(text)
@@ -114,10 +102,6 @@ class ChatSpeechProcessor:
 
 
             # Save the contents of the BytesIO object to a temporary file
-            #with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            #    tmp_file.write(audio_data.getvalue())
-             #   file_path = tmp_file.name
-             #   file_paths.append(file_path)  # Add the file path to the list
             audio_datas.append(audio_data)
 
         # Play each file in sequence

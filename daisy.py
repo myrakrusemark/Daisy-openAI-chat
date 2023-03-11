@@ -48,9 +48,15 @@ def main():
 
             # Detect a wake word before listening for a prompt
             if csp.listen_for_wake_word():
+                sounds.play_sound_with_thread('alert')
 
+                sleep_word_detected = False
                 while True:
                     stt_text = csp.stt()
+                    if csp.remove_non_alpha(stt_text) == csp.remove_non_alpha(constants.sleep_word):
+                        logging.info("Done with conversation. Returning to wake word waiting.")
+                        sounds.play_sound_with_thread('end')
+                        sleep_word_detected = True
 
                     ch.add_message_object('user', stt_text)
 
@@ -63,9 +69,7 @@ def main():
                     csp.tts(text)
 
                     #If 'Bye bye, Daisy' end the loop after response
-                    if csp.remove_non_alpha(stt_text) == csp.remove_non_alpha(constants.sleep_word):
-                        sounds.play_sound_with_thread('end')
-                        logging.info("Done with conversation. Returning to wake word waiting.")
+                    if sleep_word_detected:
                         break
         else:
             # Log a warning message if there is no internet connection and the warning hasn't already been logged

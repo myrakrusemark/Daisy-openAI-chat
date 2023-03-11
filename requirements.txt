@@ -14,3 +14,4 @@ mutagen
 pynput
 assemblyai
 websockets
+pvporcupine
