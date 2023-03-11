@@ -58,7 +58,7 @@ class SoundManager:
 
             # Load sound from dictionary
             sound = self.sounds.get(name_or_path)
-            sound.set_volume(1)
+            sound.set_volume(volume)
             sound.play()
 
             # Define function to stop playback when escape key is pressed or stop_event is set

@@ -171,7 +171,7 @@ class ChatSpeechProcessor:
                 #When a result is received, close the loop, allowing stt_send_receive to finish (Let me diiiiieeeee)
 
                 #Get the beep as CLOSE to the audio recorder as possible
-                sounds.play_sound("beep")
+                sounds.play_sound("beep", 0.5)
                 while self.result_received == False:
                     try:
                         data = stream.read(FRAMES_PER_BUFFER)
