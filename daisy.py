@@ -47,7 +47,16 @@ def main():
                 internet_warning_logged = False
 
             # Detect a wake word before listening for a prompt
-            if csp.listen_for_wake_word():
+            awoken=False
+            try:
+                # Initialize Porcupine
+                awoken = csp.listen_for_wake_word()
+            except Exception as e:
+                # Catch the exception and handle it
+                print("Error initializing Porcupine:", e)
+                continue
+
+            if awoken:
                 sounds.play_sound_with_thread('alert')
 
                 sleep_word_detected = False
