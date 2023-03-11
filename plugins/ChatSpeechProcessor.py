@@ -63,8 +63,7 @@ class ChatSpeechProcessor:
 
         self.porcupine = Porcupine.Porcupine(
                 keyword_paths=keyword_paths,
-                sensitivities=0.5,
-                input_device_index=1)
+                sensitivities=0.5)
         
 
     def listen_for_wake_word(self):

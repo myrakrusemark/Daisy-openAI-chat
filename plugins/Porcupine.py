@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+
+
 #
 # Copyright 2018-2021 Picovoice Inc.
 #
@@ -19,6 +22,7 @@ from threading import Thread
 import pvporcupine
 from pvrecorder import PvRecorder
 
+load_dotenv()
 
 class Porcupine(Thread):
     """
@@ -31,7 +35,7 @@ class Porcupine(Thread):
             self,
             keyword_paths,
             sensitivities,
-            input_device_index=None,
+            input_device_index=int(os.environ["INPUT_DEVICE"]),
             ):
 
         """
