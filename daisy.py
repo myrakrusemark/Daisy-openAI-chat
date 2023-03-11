@@ -17,6 +17,9 @@ from PluginLoader import PluginLoader
 #Init modules from list of installed modules
 pl = PluginLoader("plugins/")
 
+#Initialize available sound effects
+from plugins import SoundManager
+sounds = SoundManager.SoundManager('sounds/')
 
 #Init
 sh = SignalHandlers()
@@ -61,6 +64,7 @@ def main():
 
                     #If 'Bye bye, Daisy' end the loop after response
                     if csp.remove_non_alpha(stt_text) == csp.remove_non_alpha(constants.sleep_word):
+                        sounds.play_sound_with_thread('end')
                         logging.info("Done with conversation. Returning to wake word waiting.")
                         break
         else:
