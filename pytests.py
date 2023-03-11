@@ -20,7 +20,6 @@ def test_PluginLoader(capsys):
     with capsys.disabled():
         print(pl.get_available_classes_json())
 
-"""
 def test_SoundManager(capsys):
     with capsys.disabled():
         print("Press ESC to stop the sound")
@@ -35,8 +34,6 @@ def test_ChatSpeechProcessor_text():
     assert csp.remove_non_alpha("!abc. 123?") == 'abc'
     assert csp.remove_non_alphanumeric("!abc. /?{]^123?[]{}|^") == "!abc. /?123?"
     assert str(csp.split_text_for_google_tts(csp.remove_non_alphanumeric("In publishing and graphic design, Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be used as a placeholder before final copy is available."))) == "['In publishing and graphic design, Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content. Lorem ipsum may be', 'used as a placeholder before final copy is available.']"
-
-
 
 def test_ChatSpeechProcessor(capsys):
     text = ""
@@ -76,4 +73,3 @@ def test_Chat(capsys):
         print("Instances: "+str(chat.Chat_chat_inner_instances))
 
     assert str(chat.Chat_chat_inner_instances).find("GoogleScraper")
-"""

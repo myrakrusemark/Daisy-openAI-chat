@@ -242,6 +242,7 @@ class ChatSpeechProcessor:
 
             return self.result_str
 
+
         # Set up AssemblyAI stt_send_receive loop
         def start_stt_send_receive():
             asyncio.run(self.stt_send_receive())
@@ -252,6 +253,7 @@ class ChatSpeechProcessor:
 
         # Start watching results in the main thread
         result_str = watch_results()
+
         return result_str
 
     def split_text_for_google_tts(self, text):

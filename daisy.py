@@ -53,7 +53,9 @@ def main():
                 sleep_word_detected = False
                 while True:
                     stt_text = csp.stt()
-                    if csp.remove_non_alpha(stt_text) == csp.remove_non_alpha(constants.sleep_word):
+
+                    #Detect sleep word and play a sound
+                    if csp.remove_non_alpha(stt_text) == csp.remove_non_alpha(constants.sleep_word) or stt_text == False:
                         logging.info("Done with conversation. Returning to wake word waiting.")
                         sounds.play_sound_with_thread('end')
                         sleep_word_detected = True
