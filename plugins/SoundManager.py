@@ -8,21 +8,15 @@ import logging
 import numpy as np
 from io import BytesIO
 
-# Set the DISPLAY environment variable for pynput
-#os.environ['DISPLAY'] = ':0'
-
-pygame.init()
 
 class SoundManager:
     description = "A class for managing sound files in a directory, playing sounds, and stopping playback."
     def __init__(self, directory):
-        """
-        A class for managing sound files in a directory.
-
-        :param directory: The directory containing sound files.
-        """
         self.directory = directory
         self.sounds = {}
+        self.current_sound = None
+
+        pygame.init()
 
         # Load all sound files in the directory
         for filename in os.listdir(directory):
@@ -37,8 +31,6 @@ class SoundManager:
                     self.sounds[name] = sound
                 except pygame.error:
                     logging.warning(f"Failed to load sound file '{filename}'")
-
-        self.current_sound = None
 
     # Function to play MPEG files
     def play_sound(self, name_or_path, volume=1, stop_event=None):

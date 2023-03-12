@@ -21,21 +21,8 @@ import pygame
 import pvporcupine
 import platform
 
-
-
-load_dotenv()
-
-#Initialize available sound effects
 from plugins import SoundManager
-sounds = SoundManager.SoundManager('sounds/')
-
-#Initialize Porcupine Wake Word
 from plugins import Porcupine
-
-#Init fallback TTS and set voice
-engine = pyttsx3.init()
-voices = engine.getProperty('voices')
-engine.setProperty('voice', "english-us")
 
 class ChatSpeechProcessor:
     description = "A class that handles speech recognition and text-to-speech processing for a chatbot."
@@ -43,6 +30,13 @@ class ChatSpeechProcessor:
         # Set up AssemblyAI API key and websocket endpoint
         self.auth_key = "f7754f3d71ac422caf4cfc54bace4306"
         self.uri = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
+
+        self.sounds = SoundManager.SoundManager('sounds/')
+        self.engine = pyttsx3.init()
+        self.engine.getProperty('voices')
+        self.engine.setProperty('voice', "english-us")
+
+        load_dotenv()
 
         # Define global variables
         self.result_str = ""
@@ -105,7 +99,7 @@ class ChatSpeechProcessor:
 
         # Play each file in sequence
         for audio_data in audio_datas:
-            sounds.play_sound(audio_data, 1)
+            self.sounds.play_sound(audio_data, 1)
 
         # If Google TTS somehow fails, fallback to local TTS
         #except Exception as e:
@@ -154,7 +148,7 @@ class ChatSpeechProcessor:
                 #When a result is received, close the loop, allowing stt_send_receive to finish (Let me diiiiieeeee)
 
                 #Get the beep as CLOSE to the audio recorder as possible
-                sounds.play_sound("beep", 0.5)
+                self.sounds.play_sound("beep", 0.5)
                 while self.result_received == False:
                     try:
                         data = stream.read(FRAMES_PER_BUFFER)

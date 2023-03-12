@@ -4,8 +4,7 @@ from plugins import constants
 
 from plugins.ContextHandlers import ContextHandlers
 from plugins.ChatSpeechProcessor import ChatSpeechProcessor
-ch = ContextHandlers(constants.messages)
-csp = ChatSpeechProcessor()
+
 
 class Calculator:
     """
@@ -16,6 +15,9 @@ class Calculator:
     module_hook = "Chat_chat_inner"
 
     def __init__(self):
+
+        self.ch = ContextHandlers(constants.messages)
+        self.csp = ChatSpeechProcessor()
 
         self.start_prompt_Search = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5]. For example:
     User: What is 53 percent of 1,203?
@@ -41,7 +43,7 @@ class Calculator:
     """
 
         logging.info("Adding 'Calculator' start prompt to context")
-        ch.add_message_object('user', self.start_prompt_Search)
+        self.ch.add_message_object('user', self.start_prompt_Search)
 
     def main(self, response_text, request):
         """Main method that takes in response_text and performs the web search, returning the search results."""
@@ -56,8 +58,8 @@ class Calculator:
                 start = processed_string.index(":") + 1
                 end = processed_string.index("]")
                 expression = processed_string[start:end]
-                csp.tts("Calculating.")
-                ch.add_message_object('assistant', 'Calculating... [calculator:'+expression+']')
+                self.csp.tts("Calculating.")
+                self.ch.add_message_object('assistant', 'Calculating... [calculator:'+expression+']')
 
 
                 answer = self.evaluate_expression(expression)
@@ -66,7 +68,7 @@ class Calculator:
                 new_prompt="This is an automatic response to your tool form. Please respond to the user's last message using the information below.\n\n"
                 new_prompt += answer+"\n"
 
-                ch.add_message_object('user', new_prompt)
+                self.ch.add_message_object('user', new_prompt)
 
             return answer
 

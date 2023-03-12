@@ -16,9 +16,12 @@ class PluginLoader:
         self.directory = directory
         self.loaded_classes = []
 
-        #Define and register module_hooks
+        #Define and register module_hooks here
         self.Chat_chat_inner_instances = []
         globals()["Chat_chat_inner_instances"] = self.Chat_chat_inner_instances
+
+        self.Main_start_instances = []
+        globals()["Main_start_instances"] = self.Main_start_instances
 
         #Load modules and capabilities prompts and classes
         self.available_modules_json = self.get_available_classes_json()

@@ -3,6 +3,7 @@ import logging
 
 class ContextHandlers:
 	description = "A class for handling and managing messages in the chatGPT context object"
+	
 	def __init__(self, messages):
 		self.messages = messages
 

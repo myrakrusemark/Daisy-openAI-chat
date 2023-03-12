@@ -3,29 +3,31 @@ import re
 from dotenv import load_dotenv
 import colorama
 import openai
-from plugins import ConnectionStatus
-from plugins import constants
 import logging
 import os
 import importlib
+from plugins import constants
 
+from plugins import ConnectionStatus
 from plugins import ChatSpeechProcessor
-csp = ChatSpeechProcessor.ChatSpeechProcessor()
-cs = ConnectionStatus.ConnectionStatus()
-
-#Initialize available sound effects
 from plugins import SoundManager
-sounds = SoundManager.SoundManager('sounds/')
-
-
+from plugins.ContextHandlers import ContextHandlers
 
 
 class Chat:
 	description = "Implements a chatbot using OpenAI's GPT-3 language model and allows for interaction with the user through speech or text."
 
-	def __init__(self, api_key="", messages=[], chat_module_hooks = []):
-		self.messages = messages
+	def __init__(self, api_key="", chat_module_hooks = []):
 		self.api_key = api_key
+
+		self.csp = ChatSpeechProcessor.ChatSpeechProcessor()
+		self.cs = ConnectionStatus.ConnectionStatus()
+		self.sounds = SoundManager.SoundManager('sounds/')
+		self.ch = ContextHandlers(constants.messages)
+
+		self.messages = self.ch.messages
+
+
 
 		self.Chat_chat_inner_instances = chat_module_hooks["Chat_chat_inner_instances"]
 
@@ -35,12 +37,9 @@ class Chat:
 	def chat(self):
 		"""Engages in conversation with the user by sending and receiving messages from an OpenAI model."""
 		while True:
-			if cs.check_internet():
+			if self.cs.check_internet():
 
-				#Get and display recognized text
 				print(f"'{constants.sleep_word}' to end")
-				#user_input = csp.stt()
-				#print("You: "+user_input)
 
 				web_response_text = ""
 					
@@ -64,7 +63,7 @@ class Chat:
 
 		try:
 			# If audio is enabled, play a sound to indicate waiting for response
-			sounds.play_sound_with_thread('waiting', 0.2)
+			self.sounds.play_sound_with_thread('waiting', 0.2)
 
 
 			# Send request to OpenAI model
@@ -77,7 +76,7 @@ class Chat:
 			response_text=response["choices"][0]["message"]["content"]
 
 			# If audio is enabled, stop the waiting sound
-			sounds.stop_playing()
+			self.sounds.stop_playing()
 
 			# Return response text
 			logging.debug("Response text: "+response_text)
@@ -87,22 +86,22 @@ class Chat:
 		except openai.error.InvalidRequestError as e:
 			logging.error(f"Invalid Request Error: {e}")
 			constants.stop_sound = True
-			csp.tts("Invalid Request Error. Sorry, I can't talk right now.")
+			self.csp.tts("Invalid Request Error. Sorry, I can't talk right now.")
 			return False        
 		except openai.APIError as e:
 			logging.error(f"API Error: {e}")
 			constants.stop_sound = True
-			csp.tts("API Error. Sorry, I can't talk right now.")
+			self.csp.tts("API Error. Sorry, I can't talk right now.")
 			return False
 		except ValueError as e:
 			logging.error(f"Value Error: {e}")
 			constants.stop_sound = True
-			csp.tts("Value Error. Sorry, I can't talk right now.")
+			self.csp.tts("Value Error. Sorry, I can't talk right now.")
 			return False    
 		except TypeError as e:
 			logging.error(f"Type Error: {e}")
 			constants.stop_sound = True
-			csp.tts("Type Error. Sorry, I can't talk right now.")
+			self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False 
 
 	def display_messages(self):

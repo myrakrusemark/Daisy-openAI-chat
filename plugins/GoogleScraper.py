@@ -8,8 +8,6 @@ import re
 
 from plugins.ContextHandlers import ContextHandlers
 from plugins.ChatSpeechProcessor import ChatSpeechProcessor
-ch = ContextHandlers(constants.messages)
-csp = ChatSpeechProcessor()
 
 class GoogleScraper():
 	"""
@@ -28,9 +26,11 @@ class GoogleScraper():
 	User: How many airplanes are in the sky right now?
 	Daisy: [search: airplanes in the sky right now]"""
 
-		logging.info("Adding 'GoogleScraper' start prompt to context")
-		ch.add_message_object('user', self.start_prompt_Search)
+		self.ch = ContextHandlers(constants.messages)
+		self.csp = ChatSpeechProcessor()
 
+		logging.info("Adding 'GoogleScraper' start prompt to context")
+		self.ch.add_message_object('user', self.start_prompt_Search)
 
 	def main(self, response_text, request):
 		"""Main method that takes in response_text and performs the web search, returning the search results."""
@@ -45,8 +45,8 @@ class GoogleScraper():
 				end = web_response.index("]")
 				search_query = web_response[start:end]
 				print(f"Searching the web ({search_query})...")
-				csp.tts("Searching the web.")
-				ch.add_message_object('assistant', 'Searching the web... [search:'+search_query+']')
+				self.csp.tts("Searching the web.")
+				self.ch.add_message_object('assistant', 'Searching the web... [search:'+search_query+']')
 
 				params = {
 				  "engine": "google",
@@ -63,7 +63,7 @@ class GoogleScraper():
 						if("snippet" in organic_result):
 							new_prompt += organic_result["snippet"]+"\n"
 
-					ch.add_message_object('user', new_prompt)
+					self.ch.add_message_object('user', new_prompt)
 
 					#Get the web answer with no previous context.
 					web_response_text = request()
