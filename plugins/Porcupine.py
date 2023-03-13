@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-
+import logging
 
 #
 # Copyright 2018-2021 Picovoice Inc.
@@ -16,15 +16,15 @@ import argparse
 import os
 import struct
 import wave
+import platform
 from datetime import datetime
-from threading import Thread
 
 import pvporcupine
 from pvrecorder import PvRecorder
 
 load_dotenv()
 
-class Porcupine(Thread):
+class Porcupine():
     """
     Microphone Demo for Porcupine wake word engine. It creates an input audio stream from a microphone, monitors it, and
     upon detecting the specified wake word(s) prints the detection time and wake word on console. It optionally saves
@@ -90,12 +90,12 @@ class Porcupine(Thread):
             #    wav_file = wave.open(self._output_path, "w")
             #    wav_file.setparams((1, 2, 16000, 512, "NONE", "NONE"))
 
-            print('Using device: %s' % recorder.selected_device)
+            logging.debug('Using device: %s' % recorder.selected_device)
 
-            print('Listening {')
+            logging.info('Listening {')
             for keyword, sensitivity in zip(keywords, self._sensitivities):
-                print('  %s (%.2f)' % (keyword, sensitivity))
-            print('}')
+                logging.info('  %s (%.2f)' % (keyword, sensitivity))
+            logging.info('}')
 
             while True:
                 pcm = recorder.read()
@@ -105,7 +105,7 @@ class Porcupine(Thread):
 
                 result = porcupine.process(pcm)
                 if result >= 0:
-                    print('[%s] Detected %s' % (str(datetime.now()), keywords[result]))
+                    logging.debug('[%s] Detected %s' % (str(datetime.now()), keywords[result]))
                     return True
         except pvporcupine.PorcupineInvalidArgumentError as e:
             args = (
@@ -115,27 +115,27 @@ class Porcupine(Thread):
                 self._keyword_paths,
                 self._sensitivities,
             )
-            print("One or more arguments provided to Porcupine is invalid: ", args)
-            print("If all other arguments seem valid, ensure that '%s' is a valid AccessKey" % self._access_key)
+            logging.error("One or more arguments provided to Porcupine is invalid: ", args)
+            logging.error("If all other arguments seem valid, ensure that '%s' is a valid AccessKey" % self._access_key)
             raise e
 
         except pvporcupine.PorcupineActivationError as e:
-            print("AccessKey activation error")
+            logging.error("AccessKey activation error")
             raise e
         except pvporcupine.PorcupineActivationLimitError as e:
-            print("AccessKey '%s' has reached it's temporary device limit" % self._access_key)
+            logging.error("AccessKey '%s' has reached it's temporary device limit" % self._access_key)
             raise e
         except pvporcupine.PorcupineActivationRefusedError as e:
-            print("AccessKey '%s' refused" % self._access_key)
+            logging.error("AccessKey '%s' refused" % self._access_key)
             raise e
         except pvporcupine.PorcupineActivationThrottledError as e:
-            print("AccessKey '%s' has been throttled" % self._access_key)
+            logging.error("AccessKey '%s' has been throttled" % self._access_key)
             raise e
         except pvporcupine.PorcupineError as e:
-            print("Failed to initialize Porcupine")
+            logging.error("Failed to initialize Porcupine")
             raise e
         except KeyboardInterrupt:
-            print('Stopping ...')
+            logging.error('Stopping ...')
         finally:
             if porcupine is not None:
                 porcupine.delete()
@@ -151,6 +151,16 @@ class Porcupine(Thread):
         devices = PvRecorder.get_audio_devices()
 
         for i in range(len(devices)):
-            print('index: %d, device name: %s' % (i, devices[i]))
+            logging.info('index: %d, device name: %s' % (i, devices[i]))
 
-
+#Instantiate DEFAULT ("daisy daisy") wake word
+keyword_paths = None
+if platform.system() == "Windows":
+    keyword_paths = "plugins/daisy-daisy_en_windows_v2_1_0.ppn"
+elif platform.system() == "Linux":
+    keyword_paths = "plugins/daisy-daisy_en_raspberry-pi_v2_1_0.ppn"
+else:
+    logging.error("Unknown operating system, can't load wake word model.")
+instance = Porcupine(
+                keyword_paths=keyword_paths,
+                sensitivities=0.5)

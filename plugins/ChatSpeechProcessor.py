@@ -1,7 +1,8 @@
-import speech_recognition as sr
+#import speech_recognition as sr
 import pyaudio
 import websockets
 import asyncio
+import concurrent.futures
 import base64
 import json
 import threading
@@ -19,22 +20,18 @@ import tempfile
 import logging
 import pygame
 import pvporcupine
-import platform
 
-from plugins import SoundManager
-from plugins import Porcupine
+import plugins.SoundManager as sm
+import plugins.Porcupine as porcupine
 
 class ChatSpeechProcessor:
     description = "A class that handles speech recognition and text-to-speech processing for a chatbot."
+    module_hook = "ai_available"
+
     def __init__(self):
         # Set up AssemblyAI API key and websocket endpoint
         self.auth_key = "f7754f3d71ac422caf4cfc54bace4306"
         self.uri = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
-
-        self.sounds = SoundManager.SoundManager('sounds/')
-        self.engine = pyttsx3.init()
-        self.engine.getProperty('voices')
-        self.engine.setProperty('voice', "english-us")
 
         load_dotenv()
 
@@ -43,22 +40,13 @@ class ChatSpeechProcessor:
         self.new_result_str = ""
         self.result_received = False
         self.api_key = os.environ["AAI_KEY"]
-        self.r = sr.Recognizer()
+        #self.r = sr.Recognizer()
 
-        keyword_paths = None
-        if platform.system() == "Windows":
-            print("Windows")
-            keyword_paths = "plugins/daisy-daisy_en_windows_v2_1_0.ppn"
-        elif platform.system() == "Linux":
-            print("Linux") #Raspberry pi
-            keyword_paths = "plugins/daisy-daisy_en_raspberry-pi_v2_1_0.ppn"
-        else:
-            print("Unknown operating system")
-
-        self.porcupine = Porcupine.Porcupine(
-                keyword_paths=keyword_paths,
-                sensitivities=0.5)
-        
+        self.sounds = sm.instance
+        self.porcupine = porcupine.instance
+        self.engine = pyttsx3.init()
+        self.engine.getProperty('voices')
+        self.engine.setProperty('voice', "english-us")
 
     def listen_for_wake_word(self):
         self.porcupine.show_audio_devices()
@@ -110,6 +98,7 @@ class ChatSpeechProcessor:
 
     async def stt_send_receive(self):
         """Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
+        
 
         # Set up PyAudio
         FRAMES_PER_BUFFER = 3200
@@ -149,6 +138,7 @@ class ChatSpeechProcessor:
 
                 #Get the beep as CLOSE to the audio recorder as possible
                 self.sounds.play_sound("beep", 0.5)
+
                 while self.result_received == False:
                     try:
                         data = stream.read(FRAMES_PER_BUFFER)
@@ -165,41 +155,52 @@ class ChatSpeechProcessor:
                 logging.info("TTS Send done")
                 return
             
+            
             async def receive():
-                logging.info("TTS Receive start")
-                #global result_str, result_received, new_result_str
-                self.result_str = ""
-                self.new_result_str = ""
-                self.result_received = False
-                tts_fail = False
+
                 while True:
+                    logging.info("TTS Receive start")
+                    self.result_str = ""
+                    self.new_result_str = ""
+                    self.result_received = False
+
+                    
                     while self.result_received == False:
+                        
+                        cancel_loop = os.environ["CANCEL_LOOP"]
+
+                        if cancel_loop == "True":
+                            logging.info("STT canceled by sleep word 'Daisy cancel'")
+                            self.result_received = True
+                            self.result_str = False
                         try:
                             self.new_result = await _ws.recv()
                             self.new_result_str = json.loads(self.new_result)['text']
+                            #if self.result_str:
                             if len(self.new_result_str) >= len(self.result_str):
                                 self.result_str = self.new_result_str
-                                # Move the cursor to the beginning of the last line
-                                sys.stdout.write('\033[F')
-                                # Clear the line
-                                sys.stdout.write('\033[2K')
-                                print("You: "+self.result_str)
+                            
+
+                                logging.info("You: "+str(self.result_str))
+
+
                             else:
-                                self.result_received = True
+                                #DONE
                                 logging.info("TTS Receive done")
-                                return
+                            
+                                self.result_received = True
+
                         except websockets.exceptions.ConnectionClosedError as e:
                             logging.error(f"Connection closed with error code {e.code}: {e.reason}")
-                            tts_fail = True
-                            break
+                            self.result_str = False
+                            self.result_received = True
                         except Exception as e:
                             logging.exception(f"Unexpected error: {e}")
-                            tts_fail = True
-                            break
-                    if tts_fail:
-                        logging.error(f"STT Receive failed")
-                        break
+                            self.result_str = False
+                            self.result_received = True
 
+                    return
+            
             
             send_result, receive_result = await asyncio.gather(send(), receive())
 
@@ -228,7 +229,9 @@ class ChatSpeechProcessor:
             logging.info("Thread stopped")
 
             # Enable the ability to exit the program in a keyboard blocking state
-            exit_string = self.remove_non_alpha(self.result_str.lower())
+            if self.result_str:
+                self.result_str = self.result_str.lower()
+            exit_string = self.remove_non_alpha(self.result_str)
             if exit_string == "exitprogram":
                 logging.info("Exiting program...")
                 sys.exit(0)
@@ -237,6 +240,7 @@ class ChatSpeechProcessor:
 
 
         # Set up AssemblyAI stt_send_receive loop
+        #This is a thread in a thread. I think it can be reduced.
         def start_stt_send_receive():
             asyncio.run(self.stt_send_receive())
 
@@ -297,18 +301,22 @@ class ChatSpeechProcessor:
 
     def remove_non_alpha(self, text):
         """Removes all non-alphabetic characters (including punctuation and numbers) from a string and returns the modified string in lowercase."""
+        if text:
+            # Log a debug message with the input string
+            logging.debug(f'Removing non-alpha characters from string: {text}')
 
-        # Log a debug message with the input string
-        logging.debug(f'Removing non-alpha characters from string: {text}')
+            # Use regular expression to replace non-alphanumeric characters with empty string
+            text = re.sub(r'[^a-zA-Z]+', '', text)
 
-        # Use regular expression to replace non-alphanumeric characters with empty string
-        text = re.sub(r'[^a-zA-Z]+', '', text)
+            # Log a debug message with the modified string
+            logging.debug(f'Filtered text: {text}')
 
-        # Log a debug message with the modified string
-        logging.debug(f'Filtered text: {text}')
+            # Return the modified string
+            return text.lower()
+        else:
+            return False
 
-        # Return the modified string
-        return text.lower()
+instance = ChatSpeechProcessor()
     
 """
 # Initialize the ChatProcessor

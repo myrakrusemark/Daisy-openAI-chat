@@ -7,7 +7,7 @@ from plugins import constants
 import re
 
 from plugins.ContextHandlers import ContextHandlers
-from plugins.ChatSpeechProcessor import ChatSpeechProcessor
+import plugins.ChatSpeechProcessor as csp
 
 class GoogleScraper():
 	"""
@@ -27,7 +27,6 @@ class GoogleScraper():
 	Daisy: [search: airplanes in the sky right now]"""
 
 		self.ch = ContextHandlers(constants.messages)
-		self.csp = ChatSpeechProcessor()
 
 		logging.info("Adding 'GoogleScraper' start prompt to context")
 		self.ch.add_message_object('user', self.start_prompt_Search)
@@ -45,7 +44,7 @@ class GoogleScraper():
 				end = web_response.index("]")
 				search_query = web_response[start:end]
 				print(f"Searching the web ({search_query})...")
-				self.csp.tts("Searching the web.")
+				csp.instance.tts("Searching the web.")
 				self.ch.add_message_object('assistant', 'Searching the web... [search:'+search_query+']')
 
 				params = {

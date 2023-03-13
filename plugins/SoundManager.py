@@ -103,3 +103,5 @@ class SoundManager:
         """Function to stop the current sound playback."""
         if self.current_sound:
             self.current_sound.stop()
+
+instance = SoundManager('sounds/')

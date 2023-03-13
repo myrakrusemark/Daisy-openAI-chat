@@ -36,3 +36,5 @@ class ContextHandlers:
     remove_message_object(self, index)
     set_message_object(self, index, role, message)
     """
+
+instance = ContextHandlers(constants.messages)

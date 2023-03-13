@@ -13,6 +13,7 @@ ch = ContextHandlers(constants.messages)
 
 class PluginLoader:
     def __init__(self, directory=""):
+        logging.info("Loading modules...")
         self.directory = directory
         self.loaded_classes = []
 
@@ -24,7 +25,7 @@ class PluginLoader:
         globals()["Main_start_instances"] = self.Main_start_instances
 
         #Load modules and capabilities prompts and classes
-        self.available_modules_json = self.get_available_classes_json()
+        self.available_modules_json = self.get_available_modules_json()
         self.new_capabilities_prompt = f'''
 You are Daisy, a chat assistant running on a dedicated device. You have one or more added capabilities available to you that you can use whenever you feel like you need to. Below is a JSON object with a list of classes that you can call. Each class comes with a description, and the methods it contains. This way you know exactly what you can do, so you can work with me to solve problems, look up information, and play games.
 {self.available_modules_json}
@@ -44,87 +45,60 @@ Example #2:
 The above are only examples and it is okay that they may not be included in the JSON.   
         '''
         self.insert_capabilities_prompt_to_context()
-        self.import_and_instantiate_classes()
+        #self.import_and_instantiate_classes()
 
 
-
-    def import_and_instantiate_classes(self):
-        logging.info("LOADING MODULES...")
-        available_modules = json.loads(self.available_modules_json)
-        # Iterate over the module names
-        for module in available_modules:
-            module_name = module["class_name"]
-
-            try:
-                # Import the module dynamically using importlib
-                module = importlib.import_module(self.directory.rstrip('/')+"."+module_name)
-            except ModuleNotFoundError:
-                logging.error(f"Module '{module_name}' not found")
-                continue
-
-
-            # Get the class definition for the name
-            obj = getattr(module, module_name)
-            module_hook = getattr(obj, "module_hook", "")
-            if module_hook:
-                if module_hook + "_instances" in globals():
-                    target_instance_list = globals()[module_hook+"_instances"]
-                    # Check if the object is a class and has the same name as the module
-                    if isinstance(obj, type) and obj.__module__ == module.__name__:
-                        # Instantiate the class and append the instance to the array
-                        instance = obj()
-                        target_instance_list.append(instance)
-                        logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
-                    else:
-                        logging.error(module_name+" failed to load.")
-                else:
-                    logging.error(module_hook+" module_hook not available.")
-            else:
-                logging.warning("Class "+module_name+" has no module_hook value. Skipped.")
-
-        return
-
-
-    def get_available_classes_json(self):
+    def get_available_modules_json(self):
         logging.info("Creating classes JSON")
-        available_classes = []
+        available_modules = []
         for filename in os.listdir(self.directory):
             if filename.endswith('.py'):
                 module_name = filename[:-3]  # remove .py extension
-                module_spec = importlib.util.spec_from_file_location(module_name, os.path.join(self.directory, filename))
-                module = importlib.util.module_from_spec(module_spec)
-                module_spec.loader.exec_module(module)
+                module = importlib.import_module(self.directory+"."+module_name, package=None)
                 for name in dir(module):
-                    obj = getattr(module, name)
-                    if isinstance(obj, type):
-                        class_methods = []
-                        init_params = []
-                        for method_name in dir(obj):
-                            method = getattr(obj, method_name)
-                            if callable(method) and not method_name.startswith("__"):
-                                method_description = method.__doc__ or "No description."
-                                try:
-                                    sig = inspect.signature(method)
-                                except ValueError:
-                                    logging.info("Invalid method, "+method_name)
-                                    break
-                                method_args = [param.name for param in sig.parameters.values() if param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD]
-                                class_methods.append({"method_name": method_name, "description": method_description, "args": method_args})
-                        if hasattr(obj, '__init__'):
-                            init_sig = inspect.signature(obj.__init__)
-                            init_params = [param.name for param in init_sig.parameters.values() if param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and param.name != 'self']
-                        class_description = getattr(obj, "description", "No description.")
-                        module_hook = getattr(obj, "module_hook", "")
-                        if module_hook: #Last bit to make it a valid module
-                            available_classes.append({"class_name": obj.__name__, "description": class_description, "init_params": init_params, "methods": class_methods})
-
-        return json.dumps(available_classes)
+                    if name == module_name:
+                        obj = getattr(module, name)
+                        if isinstance(obj, type):
+                            class_methods = []
+                            init_params = []
+                            module_hook = getattr(obj, "module_hook", "")
+                            if module_hook: #Last bit to make it a valid hooked module
+                                for method_name in dir(obj):
+                                    method = getattr(obj, method_name)
+                                    if callable(method) and not method_name.startswith("__"):
+                                        method_description = method.__doc__ or "No description."
+                                        try:
+                                            sig = inspect.signature(method)
+                                        except ValueError:
+                                            logging.info("Invalid method, "+method_name)
+                                            break
+                                        method_args = [param.name for param in sig.parameters.values() if param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD]
+                                        class_methods.append({"method_name": method_name, "description": method_description, "args": method_args})
+                                if hasattr(obj, '__init__'):
+                                    init_sig = inspect.signature(obj.__init__)
+                                    init_params = [param.name for param in init_sig.parameters.values() if param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and param.name != 'self']
+                                class_description = getattr(obj, "description", "No description.")
+                                available_modules.append({"class_name": obj.__name__, "description": class_description, "init_params": init_params, "methods": class_methods})
+                                if module_hook + "_instances" in globals():
+                                    target_instance_list = globals()[module_hook+"_instances"]
+                                    # Check if the object is a class and has the same name as the module
+                                    if isinstance(obj, type) and obj.__module__ == module.__name__:
+                                        # Instantiate the class and append the instance to the array
+                                        instance = obj()
+                                        target_instance_list.append(instance)
+                                        logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
+                                    else:
+                                        logging.debug(module_name+" failed to load.")
+                                else:
+                                    logging.debug(module_hook+" module_hook not available.")
+                            else:
+                                logging.debug("Class "+module_name+" has no module_hook value. Skipped.")
+        return_val = json.dumps(available_modules)
+        return return_val
 
 
     def insert_capabilities_prompt_to_context(self):
         logging.info("Inserting Available Capabilities prompt.")
         ch.add_message_object('user', self.new_capabilities_prompt)
 
-
-# Print the JSON string of available classes and methods
-#print(loader.get_available_classes_json())
+instance = PluginLoader("plugins")

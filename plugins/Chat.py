@@ -8,32 +8,27 @@ import os
 import importlib
 from plugins import constants
 
-from plugins import ConnectionStatus
-from plugins import ChatSpeechProcessor
-from plugins import SoundManager
-from plugins.ContextHandlers import ContextHandlers
+import plugins.ConnectionStatus as cs
+import plugins.ChatSpeechProcessor as csp
+import plugins.SoundManager as sm
+import plugins.ContextHandlers as ch
+import PluginLoader as pl
 
 
 class Chat:
 	description = "Implements a chatbot using OpenAI's GPT-3 language model and allows for interaction with the user through speech or text."
 
-	def __init__(self, api_key="", chat_module_hooks = []):
+	#def __init__(self, api_key="", chat_module_hooks = []):
+	def __init__(self, api_key=""):
+
 		self.api_key = api_key
 
-		self.csp = ChatSpeechProcessor.ChatSpeechProcessor()
-		self.cs = ConnectionStatus.ConnectionStatus()
-		self.sounds = SoundManager.SoundManager('sounds/')
-		self.ch = ContextHandlers(constants.messages)
-
+		self.csp = csp.instance
+		self.cs = cs.instance
+		self.sounds = sm.instance
+		self.ch = ch.instance
 		self.messages = self.ch.messages
-
-
-
-		self.Chat_chat_inner_instances = chat_module_hooks["Chat_chat_inner_instances"]
-
-		#Initialize
-		load_dotenv()
-
+		
 	def chat(self):
 		"""Engages in conversation with the user by sending and receiving messages from an OpenAI model."""
 		while True:
@@ -48,8 +43,10 @@ class Chat:
 				
 				if response_text:
 					#HOOK: Chat_chat_inner
-					if self.Chat_chat_inner_instances:
-						for instance in self.Chat_chat_inner_instances:
+					Chat_chat_inner_instances = pl.instance.Chat_chat_inner_instances
+
+					if Chat_chat_inner_instances:
+						for instance in Chat_chat_inner_instances:
 							logging.info("Running Chat_chat_inner plugin: "+type(instance).__name__)
 							response_text = instance.main(response_text, self.request)
 
@@ -105,7 +102,10 @@ class Chat:
 			return False 
 
 	def display_messages(self):
-		"""Displays the messages stored in the messages attribute of the Chat object."""
-		for message in self.messages:
+		"""Displays the messages stored in the messages attribute of ContectHandlers."""
+		for message in self.ch.messages:
 			# Check if the message role is in the list of roles to display
 			print(f"{message['role'].upper()}: {message['content']}\n\n")
+
+load_dotenv()
+instance = Chat(os.environ["API_KEY"])

@@ -2,8 +2,8 @@ import logging
 import re
 from plugins import constants
 
-from plugins.ContextHandlers import ContextHandlers
-from plugins.ChatSpeechProcessor import ChatSpeechProcessor
+import plugins.ContextHandlers as ch
+import plugins.ChatSpeechProcessor as csp
 
 
 class Calculator:
@@ -16,8 +16,8 @@ class Calculator:
 
     def __init__(self):
 
-        self.ch = ContextHandlers(constants.messages)
-        self.csp = ChatSpeechProcessor()
+        self.ch = ch.instance
+        self.csp = csp.instance
 
         self.start_prompt_Search = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5]. For example:
     User: What is 53 percent of 1,203?
@@ -79,4 +79,3 @@ class Calculator:
     def evaluate_expression(self, formula):
         """Evaluates mathematical expressions"""
         return eval(formula)
-

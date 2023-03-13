@@ -50,3 +50,5 @@ class ConnectionStatus(threading.Thread):
         # Check if the thread is connected and return the result
         is_connected = thread.is_connected
         return is_connected
+
+instance = ConnectionStatus()
