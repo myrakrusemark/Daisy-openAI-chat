@@ -1,6 +1,5 @@
 import logging
 import re
-from plugins import constants
 
 import plugins.ContextHandlers as ch
 import plugins.ChatSpeechProcessor as csp
@@ -13,13 +12,7 @@ class Calculator:
     """
     description = "A plugin for evaluating mathematical expressions."
     module_hook = "Chat_chat_inner"
-
-    def __init__(self):
-
-        self.ch = ch.instance
-        self.csp = csp.instance
-
-        self.start_prompt_Search = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5]. For example:
+    start_prompt = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5]. For example:
     User: What is 53 percent of 1,203?
 
     Daisy: [calculator: 1203*.53]
@@ -42,8 +35,10 @@ class Calculator:
 
     """
 
-        logging.info("Adding 'Calculator' start prompt to context")
-        self.ch.add_message_object('user', self.start_prompt_Search)
+    def __init__(self):
+
+        self.ch = ch.instance
+        self.csp = csp.instance
 
     def main(self, response_text, request):
         """Main method that takes in response_text and performs the web search, returning the search results."""

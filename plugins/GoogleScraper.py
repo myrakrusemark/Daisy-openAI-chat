@@ -16,20 +16,17 @@ class GoogleScraper():
 	"""
 	description = "A class for scraping Google search results based on a given search query."
 	module_hook = "Chat_chat_inner"
-
-	def __init__(self):
-		self.api_key = os.environ["SERPAPI_KEY"]
-		self.start_prompt_Search = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. For example:
+	start_prompt = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. For example:
 	User: What is the weather today in st louis?
 	Daisy: [search: weather st louis]
 
 	User: How many airplanes are in the sky right now?
 	Daisy: [search: airplanes in the sky right now]"""
 
+	def __init__(self):
+		self.api_key = os.environ["SERPAPI_KEY"]
 		self.ch = ContextHandlers(constants.messages)
 
-		logging.info("Adding 'GoogleScraper' start prompt to context")
-		self.ch.add_message_object('user', self.start_prompt_Search)
 
 	def main(self, response_text, request):
 		"""Main method that takes in response_text and performs the web search, returning the search results."""
