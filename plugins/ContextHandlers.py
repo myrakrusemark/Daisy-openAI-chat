@@ -19,7 +19,7 @@ class ContextHandlers:
 	def add_message_object(self, role, message):
 		"""Method for adding a message object to the messages list with the given role and message"""
 		logging.debug("Adding "+role+" message to context")
-		new_message = {'role': role, 'content': message}
+		new_message = {'role': role, 'content': str(message)}
 		self.messages.append(new_message)
 		logging.debug(self.messages)
 

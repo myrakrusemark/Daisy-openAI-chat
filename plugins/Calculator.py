@@ -70,8 +70,10 @@ class Calculator:
 
                 self.ch.add_message_object('user', new_prompt)
 
-            return answer
+                #Get the answer
+                ai_response_text = request()
 
+            return ai_response_text
         else:
             return response_text
 

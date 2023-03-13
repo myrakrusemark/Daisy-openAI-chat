@@ -64,12 +64,11 @@ class GoogleScraper():
 
 					self.ch.add_message_object('user', new_prompt)
 
-					#Get the web answer with no previous context.
+					#Get the web answer
 					web_response_text = request()
 				else:
 					web_response_text = "Sorry, either there was an error or there are no results."
 
 			return web_response_text
-			
 		else:
 			return response_text

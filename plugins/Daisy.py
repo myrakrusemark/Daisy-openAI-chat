@@ -1,6 +1,5 @@
 import asyncio
 import signal
-import os
 import sys
 import logging
 import platform
@@ -13,6 +12,7 @@ import plugins.ContextHandlers as ch
 import plugins.SoundManager as sm
 import plugins.Chat as chat
 import plugins.Porcupine as porcupine
+import plugins.DaisyMethods as dm
 
 
 
@@ -28,28 +28,10 @@ class Daisy:
         self.ch = ch.instance
         self.sounds = sm.instance
         self.chat = chat.instance
+        self.dm = dm.instance
 
-
-        # Flag to indicate whether the warning message has already been logged
         self.internet_warning_logged = False
-
-        #Instantiate ("daisy cancel") wake word
-        keyword_paths = None
-        if platform.system() == "Windows":
-            keyword_paths = "plugins/daisy-cancel_en_windows_v2_1_0.ppn"
-        elif platform.system() == "Linux":
-            keyword_paths = "plugins/daisy-daisy_en_raspberry-pi_v2_1_0.ppn"
-        else:
-            logging.error("Unknown operating system, can't load wake word model.")
-        self.porcupine_daisy_cancel = porcupine.Porcupine(
-                        keyword_paths=keyword_paths,
-                        sensitivities=0.5)
-
-    def daisy_cancel(self):
-       # os.environ["CANCEL_LOOP"] = str(self.porcupine_daisy_cancel.run())
-        os.environ["CANCEL_LOOP"] = str(self.csp.listen_for_wake_word())
         
-
     def main(self):
         #global internet_warning_logged  # Add this line to access the global variable
 
@@ -76,43 +58,53 @@ class Daisy:
                     sleep_word_detected = False
 
 
-                    thread = threading.Thread(target=self.daisy_cancel)
+                    thread = threading.Thread(target=self.dm.daisy_cancel)
                     thread.start()
 
-                    os.environ["CANCEL_LOOP"] = "False"
+                    self.dm.set_cancel_loop(False)
 
                     while True:
-                        
                         if thread.is_alive():
                             
                             stt_text = self.csp.stt()
+                            #get_cancel_loop is already part of stt()
+
                             
-                            #Detect "Daisy cancel" and immediately break the loop
-                            if stt_text == False:
-                                self.sounds.play_sound_with_thread('end')
-                                break
-                            """
-                            #Detect sleep word ("Bye bye, Daisy."), play a sound and respond with a goodbye
+                            #Detect sleep word ("Bye bye, Daisy."), play a sound and give Daisy a chance to respond with a goodbye
                             if self.csp.remove_non_alpha(stt_text) == self.csp.remove_non_alpha(constants.sleep_word):
                                 logging.info("Done with conversation. Returning to wake word waiting.")
                                 self.sounds.play_sound_with_thread('end')
                                 sleep_word_detected = True
 
                             self.ch.add_message_object('user', stt_text)
+                            if self.dm.get_cancel_loop():
+                                self.sounds.play_sound_with_thread('end')
+                                break
 
                             text = self.chat.chat()
+                            if self.dm.get_cancel_loop():
+                                self.sounds.play_sound_with_thread('end')
+                                break
 
                             self.ch.add_message_object('assistant', text)
+                            if self.dm.get_cancel_loop():
+                                self.sounds.play_sound_with_thread('end')
+                                break
 
                             self.chat.display_messages()
-                            
+                            if self.dm.get_cancel_loop():
+                                self.sounds.play_sound_with_thread('end')
+                                break
+
                             self.csp.tts(text)
+                            #get_cancel_loop is already part of play_sound()
 
                             #If 'Bye bye, Daisy' end the loop after response
                             if sleep_word_detected:
+                                self.dm.set_cancel_loop(True)
                                 break
                             pass
-                            """
+                            
                         else:
                             thread.join()
                             break

@@ -23,6 +23,7 @@ import pvporcupine
 
 import plugins.SoundManager as sm
 import plugins.Porcupine as porcupine
+import plugins.DaisyMethods as dm
 
 class ChatSpeechProcessor:
     description = "A class that handles speech recognition and text-to-speech processing for a chatbot."
@@ -44,6 +45,7 @@ class ChatSpeechProcessor:
 
         self.sounds = sm.instance
         self.porcupine = porcupine.instance
+        self.dm = dm.instance
         self.engine = pyttsx3.init()
         self.engine.getProperty('voices')
         self.engine.setProperty('voice', "english-us")
@@ -99,6 +101,13 @@ class ChatSpeechProcessor:
     async def stt_send_receive(self):
         """Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
         
+        #If cancel keyword (Daisy cancel)
+        #if os.environ["CANCEL_LOOP"] == "True":
+        if self.dm.get_cancel_loop():
+            self.result_received = True
+            self.result_str = False
+            return
+
 
         # Set up PyAudio
         FRAMES_PER_BUFFER = 3200
@@ -152,7 +161,7 @@ class ChatSpeechProcessor:
                         logging.exception(f"Unexpected error: {e}")
                         break
                     await asyncio.sleep(0.01)
-                logging.info("TTS Send done")
+                logging.info("Send(): STT Send done")
                 return
             
             
@@ -167,9 +176,8 @@ class ChatSpeechProcessor:
                     
                     while self.result_received == False:
                         
-                        cancel_loop = os.environ["CANCEL_LOOP"]
-
-                        if cancel_loop == "True":
+                        #if cancel_loop == "True":
+                        if self.dm.get_cancel_loop():
                             logging.info("STT canceled by sleep word 'Daisy cancel'")
                             self.result_received = True
                             self.result_str = False
@@ -186,7 +194,8 @@ class ChatSpeechProcessor:
 
                             else:
                                 #DONE
-                                logging.info("TTS Receive done")
+                                logging.info("Receive(): STT Receive done")
+                                logging.info("Receive(): You said: "+str(self.result_str))
                             
                                 self.result_received = True
 
