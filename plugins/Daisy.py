@@ -46,7 +46,9 @@ class Daisy:
                         sensitivities=0.5)
 
     def daisy_cancel(self):
-        os.environ["CANCEL_LOOP"] = str(self.porcupine_daisy_cancel.run())
+       # os.environ["CANCEL_LOOP"] = str(self.porcupine_daisy_cancel.run())
+        os.environ["CANCEL_LOOP"] = str(self.csp.listen_for_wake_word())
+        
 
     def main(self):
         #global internet_warning_logged  # Add this line to access the global variable
@@ -82,14 +84,14 @@ class Daisy:
                     while True:
                         
                         if thread.is_alive():
-                            """
+                            
                             stt_text = self.csp.stt()
-
+                            
                             #Detect "Daisy cancel" and immediately break the loop
                             if stt_text == False:
                                 self.sounds.play_sound_with_thread('end')
                                 break
-
+                            """
                             #Detect sleep word ("Bye bye, Daisy."), play a sound and respond with a goodbye
                             if self.csp.remove_non_alpha(stt_text) == self.csp.remove_non_alpha(constants.sleep_word):
                                 logging.info("Done with conversation. Returning to wake word waiting.")
