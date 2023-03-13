@@ -82,6 +82,7 @@ class Daisy:
                     while True:
                         
                         if thread.is_alive():
+                            """
                             stt_text = self.csp.stt()
 
                             #Detect "Daisy cancel" and immediately break the loop
@@ -109,6 +110,7 @@ class Daisy:
                             if sleep_word_detected:
                                 break
                             pass
+                            """
                         else:
                             thread.join()
                             break
