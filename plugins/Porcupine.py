@@ -54,8 +54,8 @@ class Porcupine():
         self._access_key = os.environ["PORCUPINE_KEY"]
         #self._library_path = None #library_path
         #self._model_path = model_path
-        self._keyword_paths = [keyword_paths]
-        self._sensitivities = [sensitivities]
+        self._keyword_paths = keyword_paths
+        self._sensitivities = sensitivities
         self._input_device_index = input_device_index
         #self._output_path = output_path
 
@@ -156,11 +156,11 @@ class Porcupine():
 #Instantiate DEFAULT ("daisy daisy") wake word
 keyword_paths = None
 if platform.system() == "Windows":
-    keyword_paths = "plugins/daisy-daisy_en_windows_v2_1_0.ppn"
+    keyword_paths = ["plugins/daisy-daisy_en_windows_v2_1_0.ppn", "plugins/hey-daisy_en_windows_v2_1_0.ppn"]
 elif platform.system() == "Linux":
-    keyword_paths = "plugins/daisy-daisy_en_raspberry-pi_v2_1_0.ppn"
+    keyword_paths = ["plugins/daisy-daisy_en_raspberry-pi_v2_1_0.ppn", "plugins/hey-daisy_en_raspberry-pi_v2_1_0.ppn"]
 else:
     logging.error("Unknown operating system, can't load wake word model.")
 instance = Porcupine(
                 keyword_paths=keyword_paths,
-                sensitivities=0.5)
+                sensitivities=[0.5,0.5])

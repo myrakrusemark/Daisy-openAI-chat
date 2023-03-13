@@ -30,5 +30,5 @@ Main_start_instances = Main_start_hooks["Main_start_instances"]
 if Main_start_instances:
 	for instance in Main_start_instances:
 		logging.info("Running Main_start_instances plugin: "+type(instance).__name__)
-		asyncio.run(instance.main())
+		instance.main()
 

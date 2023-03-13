@@ -17,14 +17,14 @@ class DaisyMethods:
 		#Instantiate ("daisy cancel") wake word
 		keyword_paths = None
 		if platform.system() == "Windows":
-			keyword_paths = "plugins/daisy-cancel_en_windows_v2_1_0.ppn"
+			keyword_paths = ["plugins/daisy-cancel_en_windows_v2_1_0.ppn"]
 		elif platform.system() == "Linux":
-			keyword_paths = "plugins/daisy-cancel_en_raspberry-pi_v2_1_0.ppn"
+			keyword_paths = ["plugins/daisy-cancel_en_raspberry-pi_v2_1_0.ppn"]
 		else:
 			logging.error("Unknown operating system, can't load wake word model.")
 		self.porcupine_daisy_cancel = porcupine.Porcupine(
 						keyword_paths=keyword_paths,
-						sensitivities=0.5)
+						sensitivities=[0.5])
 
 
 
