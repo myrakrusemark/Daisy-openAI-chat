@@ -13,8 +13,9 @@ Apart from in-situ modules, Daisy also accepts interchangeable front-end modules
 
 It is worth noting that Daisy is still in development, and it can evolve significantly in terms of compatibility and functionality. However, the premise will always remain the same, and added capabilities will not be removed, although their functionality may change.
 
+
 ### Services
-To use Daisy, you can trigger it by saying "Daisy Daisy" or "Hey Daisy". It uses the following APIs for conversation processing:
+Daisy uses the following APIs for conversation processing:
   - Language model: OpenAI chatGPT
   - Speech-to-text (STT): AssemlyAI
   - Text-To-Speech(TTS): Google TTS
@@ -31,26 +32,24 @@ One of the most surprising moments was when I included a self-written clrscr() f
 
 Some people argue that text models and AI are not thinking, but just using heuristics. However, when we examine ourselves, we too are simply a collection of learned behavior and responses. Although GPT-3.5 may not be perfect, it is important to reflect on ourselves and determine how much better we truly are.
 
-##Compatibility
+### Compatibility
 This software is designed to run on Windows and Raspberry Pi, as well as other ARM Linux implementations. This means you can easily repurpose an old desktop as a voice assistant using the Windows version, or use a Raspberry Pi to create a standalone voice assistant device.
 
 I am also working on developing a case for the Pi (with WM8960 audio hat) and a breakout box for desktops, which will make it even easier to set up and use this software.
 
-Example usage: python daisy.py --model text-davinci-003
 
 ### To-Do
-- Cool Features
-    - Configure external services as modules
-    - Currently working on hardware (Raspberry PI case, Desktop breakout box)
-    - Save and email contexts
-    - Web UI configuration
-        - Manage modules
-        - Configure services (Language model, TTS/STT, wake word, etc)
-        - Manage load or export conversation contexts
-    - Insert weather information start prompt
-    - Get to know users. For instance, keep track of a persnality profile so you can begin to ask questions like "What would my wife like for her birthday?"
-        - Using pyannote.audio to diarize speakers and identify them in each "user" message
-        - Ask the AI to compare each message from a specific user to their personality profile and add new bits if it hears something new.
-    - Summarize and reset contexts when a conversation reaches max token value
+- Configure external services as modules
+- Currently working on hardware (Raspberry PI case, Desktop breakout box)
+- Save and email contexts
+- Web UI configuration
+    - Manage modules
+    - Configure services (Language model, TTS/STT, wake word, etc)
+    - Manage load or export conversation contexts
+- Insert weather information start prompt
+- Get to know users. For instance, keep track of a persnality profile so you can begin to ask questions like "What would my wife like for her birthday?"
+    - Using pyannote.audio to diarize speakers and identify them in each "user" message
+    - Ask the AI to compare each message from a specific user to their personality profile and add new bits if it hears something new.
+- Summarize and reset contexts when a conversation reaches max token value
 - Incorporate a prompt to encourage the use of SSML for adding emotional inflection to Daisy's responses
     - This is achievable and by using a DAN-style prompt, Daisy will generate outputs in SSML with appropriate emphasis.
