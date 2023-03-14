@@ -2,3 +2,5 @@
 geckodriver.log
 .vs
 .vs/Daisy-openAI-chat/v17/.wsuo
+__pycache__/
+*.pyc

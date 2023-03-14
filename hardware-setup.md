@@ -590,3 +590,89 @@ Note that the specific steps required to resolve this issue may vary depending o
 
 
 
+Solve issues for pygame errors
+https://forums.raspberrypi.com/viewtopic.php?t=136974
+
+Switch audio output
+https://forums.raspberrypi.com/viewtopic.php?t=203756
+
+
+
+for microphone audio conversion
+```
+sudo apt-get install flac
+```
+
+
+
+
+To set up a service for your Python file /home/daisy/daisy.py that restarts always and is run by the user "daisy", you can follow the steps below:
+
+    Create a systemd service unit file:
+
+    bash
+
+sudo nano /etc/systemd/system/daisy.service
+
+Add the following content to the file, replacing <path_to_python> with the path to your Python executable:
+
+```[Unit]
+Description=Daisy Service
+After=network.target
+
+[Service]
+User=daisy
+Restart=always
+ExecStart=python3 /home/daisy/Daisy-openAI-chat/daisy.py -hm
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Save and close the file.
+
+Reload the systemd daemon to pick up the new service:
+
+```
+sudo systemctl daemon-reload
+```
+
+Start the service:
+
+```
+sudo systemctl start daisy.service
+```
+
+Check the status of the service to make sure it is running:
+
+```
+sudo systemctl status daisy.service
+```
+
+Enable the service to start automatically at boot:
+
+```
+sudo systemctl enable daisy.service
+```
+
+Now your service is set up and will automatically start and restart as necessary, and will be run by the "daisy" user.
+
+
+
+install WM89860 hat
+https://github.com/waveshare/WM8960-Audio-HAT
+
+
+
+
+Choose audio output
+```
+raspi-config
+```
+
+
+
+
+add neopixel ring
+pip install adafruit-blinka
+pip install neopixel
