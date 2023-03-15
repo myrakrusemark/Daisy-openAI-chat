@@ -1,11 +1,10 @@
-from plugins.ChatSpeechProcessor import ChatSpeechProcessor
-#from plugins.SignalHandlers import SignalHandlers
+from modules.ChatSpeechProcessor import ChatSpeechProcessor
 from unittest.mock import MagicMock
-from plugins.ContextHandlers import ContextHandlers
-from plugins.SoundManager import SoundManager
-from PluginLoader import PluginLoader
-from plugins.Chat import Chat
-from plugins import constants
+from modules.ContextHandlers import ContextHandlers
+from modules.SoundManager import SoundManager
+from ModuleLoader import ModuleLoader
+from modules.Chat import Chat
+from modules import constants
 import os
 
 test_messages=[{"role": "system", "content": "Daisy"}]
@@ -14,11 +13,11 @@ csp = ChatSpeechProcessor()
 ch = ContextHandlers(test_messages)
 #chat = Chat(os.environ["API_KEY"], test_messages)
 sm = SoundManager("sounds/")
-pl = PluginLoader("plugins")
+ml = ModuleLoader("modules")
 
-def test_PluginLoader(capsys):
+def test_ModuleLoader(capsys):
     with capsys.disabled():
-        print(pl.get_available_classes_json())
+        print(ml.get_available_classes_json())
 
 def test_SoundManager(capsys):
     with capsys.disabled():
@@ -69,7 +68,7 @@ def test_Chat(capsys):
     modules = [{"name":"GoogleScraper", "module_hook":"Chat_chat_inner"}]
     with capsys.disabled():
 
-        chat.import_and_instantiate_classes(modules, "plugins")
+        chat.import_and_instantiate_classes(modules, "modules")
         print("Instances: "+str(chat.Chat_chat_inner_instances))
 
     assert str(chat.Chat_chat_inner_instances).find("GoogleScraper")

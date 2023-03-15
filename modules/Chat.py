@@ -6,13 +6,13 @@ import openai
 import logging
 import os
 import importlib
-from plugins import constants
+from modules import constants
 
-import plugins.ConnectionStatus as cs
-import plugins.ChatSpeechProcessor as csp
-import plugins.SoundManager as sm
-import plugins.ContextHandlers as ch
-import PluginLoader as pl
+import modules.ConnectionStatus as cs
+import modules.ChatSpeechProcessor as csp
+import modules.SoundManager as sm
+import modules.ContextHandlers as ch
+import ModuleLoader as ml
 
 
 class Chat:
@@ -43,11 +43,11 @@ class Chat:
 				
 				if response_text:
 					#HOOK: Chat_chat_inner
-					Chat_chat_inner_instances = pl.instance.Chat_chat_inner_instances
+					Chat_chat_inner_instances = ml.instance.Chat_chat_inner_instances
 
 					if Chat_chat_inner_instances:
 						for instance in Chat_chat_inner_instances:
-							logging.info("Running Chat_chat_inner plugin: "+type(instance).__name__)
+							logging.info("Running Chat_chat_inner module: "+type(instance).__name__)
 							response_text = instance.main(response_text, self.request)
 
 					return response_text

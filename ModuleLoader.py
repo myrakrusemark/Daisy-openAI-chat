@@ -5,13 +5,13 @@ import inspect
 import logging
 import json
 
-from plugins import constants
-from plugins.ContextHandlers import ContextHandlers
+from modules import constants
+from modules.ContextHandlers import ContextHandlers
 ch = ContextHandlers(constants.messages)
 
 
 
-class PluginLoader:
+class ModuleLoader:
     def __init__(self, directory=""):
         logging.info("Loading modules...")
         self.directory = directory
@@ -108,7 +108,6 @@ The above are only examples and it is okay that they may not be included in the 
                             else:
                                 logging.debug("Class " + module_name + " has no module_hook value. Skipped.")
         return_val = json.dumps(available_modules)
-        print(self.start_prompts)
         return return_val
 
     def insert_start_prompts_to_context(self):
@@ -123,4 +122,4 @@ The above are only examples and it is okay that they may not be included in the 
     #    logging.info("Inserting Available Capabilities prompt.")
     #    ch.add_message_object('user', self.start_prompt)
 
-instance = PluginLoader("plugins")
+instance = ModuleLoader("modules")

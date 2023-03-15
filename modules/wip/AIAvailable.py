@@ -1,7 +1,7 @@
 import logging
-from plugins import constants
+from modules import constants
 
-from plugins.ContextHandlers import ContextHandlers
+from modules.ContextHandlers import ContextHandlers
 
 
 class AIAvailable:

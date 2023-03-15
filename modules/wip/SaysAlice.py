@@ -1,5 +1,5 @@
-class GreetingPlugin:
-    description = "A plugin for greeting people."
+class GreetingModule:
+    description = "A module for greeting people."
 
     def __init__(self, name):
         self.name = name

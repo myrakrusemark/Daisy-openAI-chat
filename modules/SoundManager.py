@@ -1,5 +1,5 @@
 import os
-from plugins import constants
+from modules import constants
 import pygame
 import threading
 #from pynput import keyboard
@@ -8,7 +8,7 @@ import logging
 import numpy as np
 from io import BytesIO
 
-import plugins.DaisyMethods as dm 
+import modules.DaisyMethods as dm 
 
 
 class SoundManager:
