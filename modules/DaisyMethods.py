@@ -3,7 +3,7 @@ import platform
 import pvporcupine
 import logging
 
-import plugins.Porcupine as porcupine
+import modules.Porcupine as porcupine
 
 
 class DaisyMethods:
@@ -17,9 +17,9 @@ class DaisyMethods:
 		#Instantiate ("daisy cancel") wake word
 		keyword_paths = None
 		if platform.system() == "Windows":
-			keyword_paths = ["plugins/porcupine_models/daisy-cancel_en_windows_v2_1_0.ppn"]
+			keyword_paths = ["modules/porcupine_models/daisy-cancel_en_windows_v2_1_0.ppn"]
 		elif platform.system() == "Linux":
-			keyword_paths = ["plugins/porcupine_models/daisy-cancel_en_raspberry-pi_v2_1_0.ppn"]
+			keyword_paths = ["modules/porcupine_models/daisy-cancel_en_raspberry-pi_v2_1_0.ppn"]
 		else:
 			logging.error("Unknown operating system, can't load wake word model.")
 		self.porcupine_daisy_cancel = porcupine.Porcupine(

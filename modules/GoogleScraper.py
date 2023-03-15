@@ -3,11 +3,11 @@ import openai
 from serpapi import GoogleSearch
 import logging
 import os
-from plugins import constants
+from modules import constants
 import re
 
-from plugins.ContextHandlers import ContextHandlers
-import plugins.ChatSpeechProcessor as csp
+from modules.ContextHandlers import ContextHandlers
+import modules.ChatSpeechProcessor as csp
 
 class GoogleScraper():
 	"""

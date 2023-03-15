@@ -7,7 +7,7 @@ import base64
 import json
 import threading
 import time
-from plugins import constants
+from modules import constants
 import sys
 import os
 import re
@@ -21,9 +21,9 @@ import logging
 import pygame
 import pvporcupine
 
-import plugins.SoundManager as sm
-import plugins.Porcupine as porcupine
-import plugins.DaisyMethods as dm
+import modules.SoundManager as sm
+import modules.Porcupine as porcupine
+import modules.DaisyMethods as dm
 
 class ChatSpeechProcessor:
     description = "A class that handles speech recognition and text-to-speech processing for a chatbot."

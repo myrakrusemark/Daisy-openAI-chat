@@ -5,14 +5,14 @@ import logging
 import platform
 import pvporcupine
 import threading
-from plugins import constants
-import plugins.ChatSpeechProcessor as csp
-import plugins.ConnectionStatus as cs
-import plugins.ContextHandlers as ch
-import plugins.SoundManager as sm
-import plugins.Chat as chat
-import plugins.Porcupine as porcupine
-import plugins.DaisyMethods as dm
+from modules import constants
+import modules.ChatSpeechProcessor as csp
+import modules.ConnectionStatus as cs
+import modules.ContextHandlers as ch
+import modules.SoundManager as sm
+import modules.Chat as chat
+import modules.Porcupine as porcupine
+import modules.DaisyMethods as dm
 
 
 

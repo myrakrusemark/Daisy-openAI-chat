@@ -1,8 +1,8 @@
 import logging
 import re
 
-import plugins.ContextHandlers as ch
-import plugins.ChatSpeechProcessor as csp
+import modules.ContextHandlers as ch
+import modules.ChatSpeechProcessor as csp
 
 
 class Calculator:
@@ -10,7 +10,7 @@ class Calculator:
     Description: A description of this class and its capabilities.
     Module Hook: The hook in the program where method main() will be passed into.
     """
-    description = "A plugin for evaluating mathematical expressions."
+    description = "A module for evaluating mathematical expressions."
     module_hook = "Chat_chat_inner"
     start_prompt = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5]. For example:
     User: What is 53 percent of 1,203?

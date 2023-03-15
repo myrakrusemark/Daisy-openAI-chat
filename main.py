@@ -5,17 +5,17 @@ import os
 import logging
 logging.basicConfig(level=logging.INFO)
 
-import PluginLoader
+import ModuleLoader
 
 
-import plugins.ChatSpeechProcessor
-import plugins.Logging as l
-from plugins.SignalHandlers import SignalHandlers
-from plugins.ConnectionStatus import ConnectionStatus
-from plugins.Logging import Logging
-from plugins import constants
-from plugins.ContextHandlers import ContextHandlers
-from plugins.Chat import Chat
+import modules.ChatSpeechProcessor
+import modules.Logging as l
+from modules.SignalHandlers import SignalHandlers
+from modules.ConnectionStatus import ConnectionStatus
+from modules.Logging import Logging
+from modules import constants
+from modules.ContextHandlers import ContextHandlers
+from modules.Chat import Chat
 
 
 #Init
@@ -25,10 +25,10 @@ signal.signal(signal.SIGINT, sh.signal_handler)
 
 
 #HOOK: Main_start
-Main_start_hooks = {"Main_start_instances":PluginLoader.Main_start_instances}
+Main_start_hooks = {"Main_start_instances":ModuleLoader.Main_start_instances}
 Main_start_instances = Main_start_hooks["Main_start_instances"]
 if Main_start_instances:
 	for instance in Main_start_instances:
-		logging.info("Running Main_start_instances plugin: "+type(instance).__name__)
+		logging.info("Running Main_start_instances module: "+type(instance).__name__)
 		instance.main()
 
