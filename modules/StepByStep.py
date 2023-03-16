@@ -50,3 +50,6 @@ Example #2:
 
         #logging.info("Adding 'Calculator' start prompt to context")
         #self.ch.add_message_object('user', self.start_prompt_Search)
+
+    def main(self):
+        return

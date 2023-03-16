@@ -5,6 +5,7 @@ import logging
 import platform
 import pvporcupine
 import threading
+import os
 from modules import constants
 import modules.ChatSpeechProcessor as csp
 import modules.ConnectionStatus as cs
@@ -14,15 +15,14 @@ import modules.Chat as chat
 import modules.Porcupine as porcupine
 import modules.DaisyMethods as dm
 
-
-
+if os.environ["LED"]=="True":
+    from modules.RgbLed import RgbLed
 
 class Daisy:
     description = "Provides a user flow for Chat"
     module_hook = "Main_start"
 
     def __init__(self):
-
         self.csp = csp.instance
         self.cs = cs.instance
         self.ch = ch.instance
@@ -30,12 +30,16 @@ class Daisy:
         self.chat = chat.instance
         self.dm = dm.instance
 
+        if os.environ["LED"]=="True":
+                self.led = led.instance
+
         self.internet_warning_logged = False
         
     def main(self):
-        #global internet_warning_logged  # Add this line to access the global variable
+        # Access the shared data dictionary and print the value of the "value" key
+        #print("Shared data value in subprocess:", shared_data["value"])
 
-        self.sounds.play_sound("beep", 0.5)
+        #global internet_warning_logged  # Add this line to access the global variable
         while True:
             if self.cs.check_internet():
                 # If internet connection is restored, log a message
@@ -45,6 +49,11 @@ class Daisy:
 
                 # Detect a wake word before listening for a prompt
                 awoken=False
+
+                if os.environ["LED"]=="True":
+                    self.led.breathe_color(0,0,100)
+                self.sounds.play_sound("beep", 0.5)
+
                 try:
                     # Initialize Porcupine
                     awoken = self.csp.listen_for_wake_word()

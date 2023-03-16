@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import subprocess
 
 from flask import Flask, render_template
 from flask_bootstrap import Bootstrap
@@ -13,16 +14,16 @@ class WebConfig:
     module_hook = "Main_start"
 
     def __init__(self):
-        self.shared_data = []
         self.app = Flask(__name__)
         self.app.add_url_rule('/', view_func=self.home)
 
         
     def home(self):
-        return self.shared_data[0]
+        return
     
-    def main(self, shared_data):
-        self.shared_data = list(shared_data)
+    def main(self, shared_data=[]):
+        sd = list(shared_data)
+        print("Shared data value in subprocess:", shared_data["value"])
         self.app.run()
 
 #if __name__ == '__main__':

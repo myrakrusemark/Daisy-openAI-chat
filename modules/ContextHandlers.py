@@ -7,7 +7,10 @@ class ContextHandlers:
 	def __init__(self, messages):
 		self.messages = messages
 
-	
+	def get_context(self):
+		"""Method for retrieving the messages object"""
+		return self.messages
+		
 	def create_context(self):
 		"""Method for creating a context with initial prompt"""
 		self.messages = messages
