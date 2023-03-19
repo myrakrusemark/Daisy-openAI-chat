@@ -2,6 +2,8 @@ import time
 import threading
 import random
 import os
+from dotenv import load_dotenv
+
 
 class RgbLed:
     description = "Provided LED patterns for visual status"
