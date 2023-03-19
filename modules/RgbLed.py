@@ -7,6 +7,7 @@ class RgbLed:
     description = "Provided LED patterns for visual status"
 
     def __init__(self, red_pin=11, green_pin=15, blue_pin=13):
+        load_dotenv()
         if os.environ["LED"]=="True":
             import RPi.GPIO as GPIO
 
