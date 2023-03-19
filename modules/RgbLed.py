@@ -109,29 +109,22 @@ class RgbLed:
             self._create_thread(lambda: breathe(stop_event), stop_event)
             return stop_event
 
-
     def rainbow(self):
-        if self.led_available():
-            self.turn_all_off()
-            stop_event = threading.Event()
+        stop_event = threading.Event()
 
-            def rainbow_loop(stop_event):
-                self.red_pwm.start(0)
-                self.green_pwm.start(0)
-                self.blue_pwm.start(0)
-                while not stop_event.is_set():
-                    red = random.randint(0, 100)
-                    green = random.randint(0, 100)
-                    blue = random.randint(0, 100)
-                    self.turn_on_color(red, green, blue)
-                    start_time = time.monotonic()
-                    while time.monotonic() - start_time < 0.1:
-                        pass
+        def rainbow_loop(stop_event):
+            self.red_pwm.start(0)
+            self.green_pwm.start(0)
+            self.blue_pwm.start(0)
+            while not stop_event.is_set():
+                red = random.randint(0, 100)
+                green = random.randint(0, 100)
+                blue = random.randint(0, 100)
+                self.turn_on_color(red, green, blue)
+                time.sleep(0.1)
 
-            self._create_thread(lambda: rainbow_loop(stop_event), stop_event)
-            return stop_event
-
-
+        self._create_thread(lambda: rainbow_loop(stop_event), stop_event)
+        return stop_event
 
     def turn_all_off(self):
         if self.led_available():

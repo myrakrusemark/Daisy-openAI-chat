@@ -92,7 +92,7 @@ class Daisy:
                                 self.sounds.play_sound_with_thread('end')
                                 break
 
-                            self.led.rainbow() #Breathe Blue
+                            self.led.rainbow() #Flash random rainbow colors
                             text = self.chat.chat()
                             if self.dm.get_cancel_loop():
                                 self.sounds.play_sound_with_thread('end')
