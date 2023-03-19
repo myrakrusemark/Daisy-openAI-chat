@@ -155,3 +155,4 @@ class RgbLed:
             else:
                 print("Not a valid command format")
 
+instance = RgbLed()
