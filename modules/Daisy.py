@@ -16,7 +16,7 @@ import modules.Porcupine as porcupine
 import modules.DaisyMethods as dm
 
 if os.environ["LED"]=="True":
-    from modules.RgbLed import RgbLed as led
+    import modules.RgbLed as led
 
 class Daisy:
     description = "Provides a user flow for Chat"
