@@ -15,8 +15,7 @@ import modules.Chat as chat
 import modules.Porcupine as porcupine
 import modules.DaisyMethods as dm
 
-if os.environ["LED"]=="True":
-    import modules.RgbLed as led
+import modules.RgbLed as led
 
 class Daisy:
     description = "Provides a user flow for Chat"
@@ -30,8 +29,7 @@ class Daisy:
         self.chat = chat.instance
         self.dm = dm.instance
 
-        if os.environ["LED"]=="True":
-                self.led = led.instance
+        self.led = led.instance
 
         self.internet_warning_logged = False
         
@@ -55,8 +53,7 @@ class Daisy:
                 # Detect a wake word before listening for a prompt
                 awoken=False
 
-                if os.environ["LED"]=="True":
-                    self.led.breathe_color(0,0,100)
+                self.led.turn_on_color(0,100,0) #Solid Green
                 self.sounds.play_sound("beep", 0.5)
 
                 try:
@@ -79,11 +76,10 @@ class Daisy:
 
                     while True:
                         if thread.is_alive():
-                            
+                            self.led.breathe_color(0,0,100) #Breathe Blue
                             stt_text = self.csp.stt()
-                            #get_cancel_loop is already part of stt()
 
-                            
+                                                    
                             #Detect sleep word ("Bye bye, Daisy."), play a sound and give Daisy a chance to respond with a goodbye
                             if self.csp.remove_non_alpha(stt_text) == self.csp.remove_non_alpha(constants.sleep_word):
                                 logging.info("Done with conversation. Returning to wake word waiting.")
@@ -91,25 +87,25 @@ class Daisy:
                                 sleep_word_detected = True
 
                             self.ch.add_message_object('user', stt_text)
+
                             if self.dm.get_cancel_loop():
                                 self.sounds.play_sound_with_thread('end')
                                 break
 
+                            self.led.rainbow() #Breathe Blue
                             text = self.chat.chat()
                             if self.dm.get_cancel_loop():
                                 self.sounds.play_sound_with_thread('end')
                                 break
 
                             self.ch.add_message_object('assistant', text)
-                            if self.dm.get_cancel_loop():
-                                self.sounds.play_sound_with_thread('end')
-                                break
 
                             self.chat.display_messages()
                             if self.dm.get_cancel_loop():
                                 self.sounds.play_sound_with_thread('end')
                                 break
 
+                            self.led.breathe_color(100,100,100) #Breathe White
                             self.csp.tts(text)
                             #get_cancel_loop is already part of play_sound()
 

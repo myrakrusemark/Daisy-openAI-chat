@@ -1,4 +1,6 @@
 import threading
+import signal
+
 
 from flask import Flask, render_template, jsonify
 
@@ -41,12 +43,9 @@ class WebConfig:
             context = ch.instance.messages
             return render_template('chat.html', messages=context)
 
-        def sigint_handler(signum, frame):
-            logging.info("Received SIGINT, shutting down Flask app...")
+        try:
+            app.run(host='0.0.0.0', port=5000)
+        except KeyboardInterrupt:
             stop_event.set()
-
-        signal.signal(signal.SIGINT, sigint_handler)
-
-        app.run(host='0.0.0.0', port=5000)
 
 instance = WebConfig()
