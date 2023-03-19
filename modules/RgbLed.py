@@ -152,4 +152,4 @@ if os.environ["LED"]=="True":
                 else:
                     print("Not a valid command format")
 
-    instance = RgbLed()
+instance = RgbLed()
