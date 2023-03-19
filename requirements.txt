@@ -13,3 +13,4 @@ assemblyai
 websockets
 pvporcupine
 pvrecorder
+python3-pyaudio

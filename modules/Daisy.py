@@ -35,12 +35,17 @@ class Daisy:
 
         self.internet_warning_logged = False
         
-    def main(self):
-        # Access the shared data dictionary and print the value of the "value" key
-        #print("Shared data value in subprocess:", shared_data["value"])
+    def main(self, stop_event):
+
+        print("DAISY")
+        stop_event = threading.Event()  # Create an Event object to signal the loop to stop
+
+        print("DAISY2")
 
         #global internet_warning_logged  # Add this line to access the global variable
-        while True:
+        while not stop_event.is_set():
+            print("DAISY3")
+
             if self.cs.check_internet():
                 # If internet connection is restored, log a message
                 if self.internet_warning_logged:

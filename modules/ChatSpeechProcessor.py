@@ -100,14 +100,10 @@ class ChatSpeechProcessor:
 
     async def stt_send_receive(self):
         """Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
-        
-        #If cancel keyword (Daisy cancel)
-        #if os.environ["CANCEL_LOOP"] == "True":
-        if self.dm.get_cancel_loop():
-            self.result_received = True
-            self.result_str = False
-            return
 
+        self.result_str = ""
+        self.new_result_str = ""
+        self.result_received = False
 
         # Set up PyAudio
         FRAMES_PER_BUFFER = 3200
@@ -136,19 +132,13 @@ class ChatSpeechProcessor:
             logging.info("AAI Listening ...")
 
             async def send():
-                # Clear the audio buffer
-                # This was originally to help Daisy from speaking over itself. Delete if no problem.
-                #if stream.get_read_available() > 0:
-                #    print("cleaning stream")
-                #    stream.read(stream.get_read_available())
-
                 logging.info("TTS Send start")
-                #When a result is received, close the loop, allowing stt_send_receive to finish (Let me diiiiieeeee)
 
-                #Get the beep as CLOSE to the audio recorder as possible
-                self.sounds.play_sound("beep", 0.5)
+                while not self.result_received:
+                    if self.dm.get_cancel_loop():
+                        logging.info("Send(): Cancelled")
+                        break
 
-                while self.result_received == False:
                     try:
                         data = stream.read(FRAMES_PER_BUFFER)
                         data = base64.b64encode(data).decode("utf-8")
@@ -161,57 +151,54 @@ class ChatSpeechProcessor:
                         logging.exception(f"Unexpected error: {e}")
                         break
                     await asyncio.sleep(0.01)
+                
                 logging.info("Send(): STT Send done")
                 return
-            
+                        
             
             async def receive():
+                logging.info("TTS Receive start")
+                
 
-                while True:
-                    logging.info("TTS Receive start")
-                    self.result_str = ""
-                    self.new_result_str = ""
-                    self.result_received = False
 
-                    
-                    while self.result_received == False:
+                while not self.result_received:
+                    if self.dm.get_cancel_loop():
+                        logging.info("Receive(): Cancelled")
+                        self.result_str = False
+                        self.result_received = True
+                        break
+                    try:
+                        self.new_result = await _ws.recv()
+                        self.new_result_str = json.loads(self.new_result)['text']
+                        #if self.result_str:
+                        if len(self.new_result_str) >= len(self.result_str):
+                            self.result_str = self.new_result_str
                         
-                        #if cancel_loop == "True":
-                        if self.dm.get_cancel_loop():
-                            logging.info("STT canceled by sleep word 'Daisy cancel'")
-                            self.result_received = True
-                            self.result_str = False
-                        try:
-                            self.new_result = await _ws.recv()
-                            self.new_result_str = json.loads(self.new_result)['text']
-                            #if self.result_str:
-                            if len(self.new_result_str) >= len(self.result_str):
-                                self.result_str = self.new_result_str
-                            
 
-                                logging.info("You: "+str(self.result_str))
+                            logging.info("You: "+str(self.result_str))
 
 
-                            else:
-                                #DONE
-                                logging.info("Receive(): STT Receive done")
-                                logging.info("Receive(): You said: "+str(self.result_str))
-                            
-                                self.result_received = True
-
-                        except websockets.exceptions.ConnectionClosedError as e:
-                            logging.error(f"Connection closed with error code {e.code}: {e.reason}")
-                            self.result_str = False
-                            self.result_received = True
-                        except Exception as e:
-                            logging.exception(f"Unexpected error: {e}")
-                            self.result_str = False
+                        else:
+                            #DONE
+                            logging.info("Receive(): STT Receive done")
+                            logging.info("Receive(): You said: "+str(self.result_str))
+                        
                             self.result_received = True
 
-                    return
+                    except websockets.exceptions.ConnectionClosedError as e:
+                        logging.error(f"Connection closed with error code {e.code}: {e.reason}")
+                        self.result_str = False
+                        self.result_received = True
+                    except Exception as e:
+                        logging.exception(f"Unexpected error: {e}")
+                        self.result_str = False
+                        self.result_received = True
+
+                return
             
-            
-            send_result, receive_result = await asyncio.gather(send(), receive())
+            self.sounds.play_sound("beep", 0.5)
+            send_result, receive_result = await asyncio.gather(asyncio.shield(send()), asyncio.shield(receive()))
+
 
 
     def stt(self):

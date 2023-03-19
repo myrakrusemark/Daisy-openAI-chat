@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    function updateChat() {
+        fetch('/chat_data')
+            .then(response => response.json())
+            .then(data => {
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML = '';
+
+                data.forEach(message => {
+                    const messageTemplate = `
+                        <div class="collection-item avatar">
+                            <i class="material-icons circle ${message.role === 'user' ? 'blue' : 'green'}">
+                                ${message.role === 'user' ? 'person' : 'chat_bubble'}
+                            </i>
+                            <p>${message.content}</p>
+                        </div>
+                    `;
+
+                    chatContainer.insertAdjacentHTML('beforeend', messageTemplate);
+                });
+            })
+            .catch(error => console.error('Error fetching chat data:', error));
+    }
+
+
+    // Fetch chat data every 5 seconds
+    setInterval(updateChat, 5000);
+
+    // Fetch chat data when the page loads
+    updateChat();
+</script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <title>Chat App</title>
+</head>
+{% include "header.html" %}
+<body>
+  <div class="container">
+    <h3 class="center-align">Chat</h3>
+    <div class="card-panel">
+      <div class="collection" id="chat-container">
+      </div>
+
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>

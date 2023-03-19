@@ -1,9 +1,6 @@
-import multiprocessing as mp
-import subprocess
+import threading
 
-from flask import Flask, render_template
-from flask_bootstrap import Bootstrap
-
+from flask import Flask, render_template, jsonify
 
 class WebConfig:
     """
@@ -13,19 +10,43 @@ class WebConfig:
     description = "A module that serves a web page."
     module_hook = "Main_start"
 
-    def __init__(self):
-        self.app = Flask(__name__)
-        self.app.add_url_rule('/', view_func=self.home)
+    @staticmethod
+    def main(stop_event):
+        print("WEBCONFIG STARTED!")
+        stop_event = threading.Event()  # Create an Event object to signal the loop to stop
 
-        
-    def home(self):
-        return
-    
-    def main(self, shared_data=[]):
-        sd = list(shared_data)
-        print("Shared data value in subprocess:", shared_data["value"])
-        self.app.run()
+        import ModuleLoader as ml
 
-#if __name__ == '__main__':
-#    myapp = WebConfig()
-#    myapp.run()
+        import modules.ContextHandlers as ch
+        print(ml.instance.available_modules_json)
+
+        app = Flask(__name__)
+
+        @app.route('/')
+        def hello():
+            return render_template('index.html')
+
+        @app.route('/modules')
+        def modules():
+            modules_data = ml.instance.available_modules_json
+            return jsonify(modules_data)
+
+        @app.route('/chat_data')
+        def chat_data():
+            context = ch.instance.messages
+            return jsonify(context)
+
+        @app.route('/chat')
+        def chat():
+            context = ch.instance.messages
+            return render_template('chat.html', messages=context)
+
+        def sigint_handler(signum, frame):
+            logging.info("Received SIGINT, shutting down Flask app...")
+            stop_event.set()
+
+        signal.signal(signal.SIGINT, sigint_handler)
+
+        app.run(host='0.0.0.0', port=5000)
+
+instance = WebConfig()

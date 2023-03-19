@@ -102,6 +102,7 @@ wpa_passphrase=halfcrazy
 wpa_key_mgmt=WPA-PSK
 wpa_pairwise=TKIP
 rsn_pairwise=CCMP
+country_code=US
 ```
 
 Replace MyAP with your desired network name and MyPassword with your desired password.
@@ -256,7 +257,7 @@ def index():
                 f.write(f"country=us\nupdate_config=1\nctrl_interface=/var/run/wpa_supplicant\n\nnetwork={{\n scan_ssid=1\n ssid=\"{ssid}\"\n psk=\"{password}\"\n}}")
             subprocess.call("wpa_cli -i wlan0 reconfigure", shell=True)
             app.logger.info('Successfully created wpa_supplicant.conf. Rebooting...')
-            t = threading.Thread(target=reboot)
+            t = threading.Thread('''target=reboot''')
             t.start()
             return "<p><strong>Successfully created wpa_supplicant.conf!</strong></p><p>Connect to the target SSID and connect to http://daisy:8080. Rebooting...</p>"
         except Exception as e:
@@ -410,7 +411,7 @@ client_mode() {
     # Bring up the wlan0 interface
     log "RUNNING: sudo ip link set dev wlan0 up"
     sudo ip link set dev wlan0 up
-    
+
     log "RUNNING: sudo dhclient wlan0"
     sudo dhclient wlan0
 
