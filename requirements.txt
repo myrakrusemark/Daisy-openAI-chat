@@ -7,11 +7,9 @@ colorama
 python-dotenv
 pygame
 google-search-results
-subprocess
-threading
-platform
 mutagen
 pynput
 assemblyai
 websockets
 pvporcupine
+pvrecorder
