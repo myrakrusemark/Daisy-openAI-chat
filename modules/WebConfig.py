@@ -1,8 +1,7 @@
-import threading
-import signal
-
-
 from flask import Flask, render_template, jsonify
+
+import ModuleLoader as ml
+import modules.ContextHandlers as ch
 
 class WebConfig:
     """
@@ -12,16 +11,7 @@ class WebConfig:
     description = "A module that serves a web page."
     module_hook = "Main_start"
 
-    @staticmethod
-    def main(stop_event):
-        print("WEBCONFIG STARTED!")
-        stop_event = threading.Event()  # Create an Event object to signal the loop to stop
-
-        import ModuleLoader as ml
-
-        import modules.ContextHandlers as ch
-        print(ml.instance.available_modules_json)
-
+    def start_app(self):
         app = Flask(__name__)
 
         @app.route('/')
@@ -43,9 +33,14 @@ class WebConfig:
             context = ch.instance.messages
             return render_template('chat.html', messages=context)
 
+        app.run(host='0.0.0.0', port=5000)
+
+    @staticmethod
+    def main(stop_event):
         try:
-            app.run(host='0.0.0.0', port=5000)
-        except KeyboardInterrupt:
-            stop_event.set()
+            instance = WebConfig()
+            instance.start_app()
+        except Exception as e:
+            print(f"Error starting web app: {e}")
 
 instance = WebConfig()

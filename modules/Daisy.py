@@ -1,5 +1,4 @@
 import asyncio
-import signal
 import sys
 import logging
 import platform
@@ -14,6 +13,7 @@ import modules.SoundManager as sm
 import modules.Chat as chat
 import modules.Porcupine as porcupine
 import modules.DaisyMethods as dm
+
 
 import modules.RgbLed as led
 
@@ -32,17 +32,10 @@ class Daisy:
         self.led = led.instance
 
         self.internet_warning_logged = False
-        
+
     def main(self, stop_event):
 
-        print("DAISY")
-        stop_event = threading.Event()  # Create an Event object to signal the loop to stop
-
-        print("DAISY2")
-
-        #global internet_warning_logged  # Add this line to access the global variable
         while not stop_event.is_set():
-            print("DAISY3")
 
             if self.cs.check_internet():
                 # If internet connection is restored, log a message
@@ -51,9 +44,9 @@ class Daisy:
                     self.internet_warning_logged = False
 
                 # Detect a wake word before listening for a prompt
-                awoken=False
+                awoken = False
 
-                self.led.turn_on_color(0,100,0) #Solid Green
+                self.led.turn_on_color(0, 100, 0)  # Solid Green
                 self.sounds.play_sound("beep", 0.5)
 
                 try:
@@ -61,26 +54,23 @@ class Daisy:
                     awoken = self.csp.listen_for_wake_word()
                 except Exception as e:
                     # Catch the exception and handle it
-                    logging.error("Error initializing Porcupine:", e)
+                    logging.error(f"Error initializing Porcupine: {e}")
                     continue
 
                 if awoken:
                     self.sounds.play_sound_with_thread('alert')
                     sleep_word_detected = False
 
-
                     thread = threading.Thread(target=self.dm.daisy_cancel)
                     thread.start()
-
                     self.dm.set_cancel_loop(False)
 
-                    while True:
+                    while not stop_event.is_set():
                         if thread.is_alive():
-                            self.led.breathe_color(0,0,100) #Breathe Blue
+                            self.led.breathe_color(0, 0, 100)  # Breathe Blue
                             stt_text = self.csp.stt()
 
-                                                    
-                            #Detect sleep word ("Bye bye, Daisy."), play a sound and give Daisy a chance to respond with a goodbye
+                            # Detect sleep word ("Bye bye, Daisy."), play a sound and give Daisy a chance to respond with a goodbye
                             if self.csp.remove_non_alpha(stt_text) == self.csp.remove_non_alpha(constants.sleep_word):
                                 logging.info("Done with conversation. Returning to wake word waiting.")
                                 self.sounds.play_sound_with_thread('end')
@@ -92,7 +82,7 @@ class Daisy:
                                 self.sounds.play_sound_with_thread('end')
                                 break
 
-                            self.led.rainbow() #Flash random rainbow colors
+                            self.led.rainbow()  # Flash random rainbow colors
                             text = self.chat.chat()
                             if self.dm.get_cancel_loop():
                                 self.sounds.play_sound_with_thread('end')
@@ -105,26 +95,20 @@ class Daisy:
                                 self.sounds.play_sound_with_thread('end')
                                 break
 
-                            self.led.breathe_color(100,100,100) #Breathe White
+                            self.led.breathe_color(100, 100, 100)  # Breathe White
                             self.csp.tts(text)
-                            #get_cancel_loop is already part of play_sound()
 
-                            #If 'Bye bye, Daisy' end the loop after response
+                            # If 'Bye bye, Daisy' end the loop after response
                             if sleep_word_detected:
                                 self.dm.set_cancel_loop(True)
                                 break
-                            pass
-                            
+
                         else:
                             thread.join()
                             break
 
-                    
-
             else:
-                # Log a warning message if there is no internet connection and the warning hasn't already been logged
+                # Log a warning message if there is no internet connection and the warning hasn't been logged yet
                 if not self.internet_warning_logged:
                     logging.warning('No Internet connection. When a connection is available the script will automatically re-activate.')
                     self.internet_warning_logged = True
-
-instance = Daisy()
