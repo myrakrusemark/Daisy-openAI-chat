@@ -122,7 +122,7 @@ class RgbLed:
                     time.sleep(0.2)
 
             instance._create_thread(lambda: show_colors(stop_event), stop_event)
-            return stop_event
+            return stop_event 
 
     def turn_all_off(self):
         if self.led_available():
