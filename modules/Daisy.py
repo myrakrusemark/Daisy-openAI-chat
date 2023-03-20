@@ -78,13 +78,14 @@ class Daisy:
                                 self.sounds.play_sound_with_thread('end')
                                 sleep_word_detected = True
 
+                            self.led.rainbow()  # Flash random rainbow colors
+
                             self.ch.add_message_object('user', stt_text)
 
                             if self.dm.get_cancel_loop():
                                 self.sounds.play_sound_with_thread('end')
                                 break
 
-                            self.led.rainbow()  # Flash random rainbow colors
                             text = self.chat.chat()
                             if self.dm.get_cancel_loop():
                                 self.sounds.play_sound_with_thread('end')

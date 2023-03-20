@@ -121,6 +121,7 @@ class RgbLed:
                 self.red_pwm.start(0)
                 self.green_pwm.start(0)
                 self.blue_pwm.start(0)
+                print("RAINBOW LOOP")
                 while not stop_event.is_set():
                     red = random.randint(0, 100)
                     green = random.randint(0, 100)
