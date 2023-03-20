@@ -54,6 +54,10 @@ class RgbLed:
             self.red_pwm.start(red)
             self.green_pwm.start(green)
             self.blue_pwm.start(blue)
+            self.red_pwm.ChangeDutyCycle(red)
+            self.green_pwm.ChangeDutyCycle(green)
+            self.blue_pwm.ChangeDutyCycle(blue)
+
 
 
     def blink_color(self, red=0, green=0, blue=0):
