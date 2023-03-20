@@ -127,6 +127,7 @@ class RgbLed:
                     green = random.randint(0, 100)
                     blue = random.randint(0, 100)
                     print(str(red)+" "+str(green)+" "+str(blue))
+                    self.turn_all_off()
                     self.turn_on_color(red, green, blue)
                     time.sleep(0.1)
 
