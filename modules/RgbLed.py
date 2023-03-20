@@ -109,7 +109,7 @@ class RgbLed:
             self._create_thread(lambda: breathe(stop_event), stop_event)
             return stop_event
 
-    def rainbow():
+    def rainbow(self):
         if instance.led_available():
             stop_event = threading.Event()
 
