@@ -54,9 +54,6 @@ class RgbLed:
             self.red_pwm.start(red)
             self.green_pwm.start(green)
             self.blue_pwm.start(blue)
-            self.red_pwm.ChangeDutyCycle(red)
-            self.green_pwm.ChangeDutyCycle(green)
-            self.blue_pwm.ChangeDutyCycle(blue)
 
     def blink_color(self, red=0, green=0, blue=0):
         if self.led_available():
@@ -127,7 +124,6 @@ class RgbLed:
                     green = random.randint(0, 100)
                     blue = random.randint(0, 100)
                     print(str(red)+" "+str(green)+" "+str(blue))
-                    self.turn_all_off()
                     self.turn_on_color(red, green, blue)
                     time.sleep(0.1)
 
