@@ -78,7 +78,7 @@ class Daisy:
                                 self.sounds.play_sound_with_thread('end')
                                 sleep_word_detected = True
 
-                            self.led.rainbow()  # Flash random rainbow colors
+                            self.led.breathe_color(100,0,100)  # Flash random rainbow colors
 
                             self.ch.add_message_object('user', stt_text)
 
