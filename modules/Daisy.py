@@ -33,6 +33,9 @@ class Daisy:
 
         self.internet_warning_logged = False
 
+        self.sounds.play_sound("beep", 0.5)
+
+
     def main(self, stop_event):
 
         while not stop_event.is_set():
@@ -47,7 +50,6 @@ class Daisy:
                 awoken = False
 
                 self.led.turn_on_color(0, 100, 0)  # Solid Green
-                self.sounds.play_sound("beep", 0.5)
 
                 try:
                     # Initialize Porcupine

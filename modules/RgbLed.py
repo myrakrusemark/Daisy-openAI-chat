@@ -125,10 +125,9 @@ class RgbLed:
                     red = random.randint(0, 100)
                     green = random.randint(0, 100)
                     blue = random.randint(0, 100)
+                    print(red+" "+green+" "+blue)
                     self.turn_on_color(red, green, blue)
                     time.sleep(0.1)
-                    if stop_event.is_set():
-                        break
 
             self._create_thread(lambda: rainbow_loop(stop_event), stop_event)
             return stop_event
