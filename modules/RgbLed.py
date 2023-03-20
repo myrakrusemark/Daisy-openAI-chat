@@ -112,7 +112,7 @@ class RgbLed:
             self._create_thread(lambda: breathe(stop_event), stop_event)
             return stop_event
 
-    def rainbow_loop(stop_event):
+    def rainbow(stop_event):
         self.red_pwm.start(0)
         self.green_pwm.start(0)
         self.blue_pwm.start(0)
