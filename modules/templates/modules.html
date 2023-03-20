@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include "header.html" %}
+<body>
+  <div class="container">
+    <h1>Available Modules</h1>
+    <div class="row">
+      <div class="col s12">
+        <form action="/upload" method="post" enctype="multipart/form-data">
+          <div class="file-field input-field">
+            <div class="btn blue">
+              <i class="material-icons left">add</i>
+              <span>Add Module</span>
+              <input type="file" name="file">
+            </div>
+            <div class="file-path-wrapper">
+              <input class="file-path validate" type="text" placeholder="Select a .py file">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col s12 m6 offset-m3">
+              <button class="btn waves-effect waves-light blue" type="submit" name="action">Save
+                <i class="material-icons right">send</i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+
+      {% for module in modules_data %}
+        <div class="col s12">
+          <div class="card white">
+            <div class="card-content">
+              <span class="card-title">{{ module.class_name }}</span>
+              <p class="subtitle">{{ module.description }}</p>
+              <p>Init Params: {{ module.init_params }}</p>
+              <ul>
+                {% for method in module.methods %}
+                  <li>{{ method.method_name }}: {{ method.description }} ({{ method.args }})</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="card-action valign-wrapper">
+              <div class="left-align">
+                <label>
+                  <input type="checkbox" />
+                  <span>Enable</span>
+                </label>
+              </div>
+
+              <div class="valign-wrapper right">
+                <a class="btn-floating red delete-module" data-class-name="{{ module.class_name }}">
+                  <i class="material-icons">delete</i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="delete-module-modal" class="modal">
+  <div class="modal-content">
+    <h4>Delete Module</h4>
+    <p>Are you sure you want to delete <span id="module-name"></span>?</p>
+  </div>
+  <div class="modal-footer">
+    <button class="modal-close waves-effect waves-green btn-flat">Cancel</button>
+    <a href="#!" class="waves-effect waves-red btn-flat" id="delete-module-confirm">Delete</a>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.delete-module');
+    var modal = document.querySelector('#delete-module-modal');
+    var moduleName = document.querySelector('#module-name');
+
+    var instance = M.Modal.init(modal);
+
+    for (var i = 0; i < elems.length; i++) {
+      elems[i].addEventListener('click', function() {
+        var className = this.getAttribute('data-class-name');
+        moduleName.textContent = className;
+        instance.open();
+      });
+    }
+
+    var confirmBtn = document.querySelector('#delete-module-confirm');
+    confirmBtn.addEventListener('click', function() {
+      // TODO: implement delete module functionality
+      instance.close();
+    });
+  });
+</script>
+</body>
+</html>

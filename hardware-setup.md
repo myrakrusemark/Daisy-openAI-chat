@@ -675,14 +675,15 @@ sudo nano /etc/systemd/system/daisy.service
 
 Add the following content to the file, replacing <path_to_python> with the path to your Python executable:
 
-```[Unit]
+```
+[Unit]
 Description=Daisy Service
 After=network.target
 
 [Service]
 User=daisy
 Restart=always
-ExecStart=python3 /home/daisy/Daisy-openAI-chat/daisy.py -hm
+ExecStart=python3 /home/daisy/Daisy-openAI-chat/main.py
 
 [Install]
 WantedBy=multi-user.target

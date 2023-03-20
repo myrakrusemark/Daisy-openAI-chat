@@ -1,9 +1,9 @@
 import logging
 import re
-from modules import constants
+from plugins import constants
 
-import modules.ContextHandlers as ch
-import modules.ChatSpeechProcessor as csp
+import plugins.ContextHandlers as ch
+import plugins.ChatSpeechProcessor as csp
 
 
 class StepByStep:
@@ -12,7 +12,7 @@ class StepByStep:
     Module Hook: The hook in the program where method main() will be passed into.
     """
     description = "Inserts a start prompt for daisy to speak in concise ways, and ask if the user want's more information."
-    #module_hook = "Main_start"
+    module_hook = "Main_start"
     start_prompt = """You are a chatbot who SPEAKS CONCISELY. Whenever you need to give a response that is more than a few sentences, you will first provide a brief summary of the 
 answer, followed by asking if you would like to hear more. If you would like more information, I will then provide a longer and more detailed answer.
 
@@ -52,4 +52,5 @@ Example #2:
         #self.ch.add_message_object('user', self.start_prompt_Search)
 
     def main(self):
+        print("StepByStep here!!")
         return

@@ -108,22 +108,7 @@ class RgbLed:
 
             self._create_thread(lambda: breathe(stop_event), stop_event)
             return stop_event
-
-    def rainbow(self):
-       if instance.led_available():
-            stop_event = threading.Event()
-
-            def show_colors(stop_event):
-                while not stop_event.is_set():
-                    red = random.randint(0, 100)
-                    green = random.randint(0, 100)
-                    blue = random.randint(0, 100)
-                    instance.turn_on_color(red, green, blue)
-                    time.sleep(0.2)
-
-            instance._create_thread(lambda: show_colors(stop_event), stop_event)
-            return stop_event 
-
+            
     def turn_all_off(self):
         if self.led_available():
             for stop_event in self._stop_events:

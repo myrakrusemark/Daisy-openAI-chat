@@ -41,7 +41,6 @@ class Calculator:
         self.csp = csp.instance
 
     def main(self, response_text, request):
-        """Main method that takes in response_text and performs the web search, returning the search results."""
         #Find a search term in the response text (If --internet)
         web_response_text = ""
         logging.info("Calculator: Checking for tool forms")
