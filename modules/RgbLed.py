@@ -138,7 +138,8 @@ class RgbLed:
             for stop_event in self._stop_events:
                 stop_event.set()
             for thread in self._threads:
-                thread.join()
+                if thread != threading.current_thread():
+                    thread.join()
             self._threads = []
             self._stop_events = []
             self.red_pwm.stop()
