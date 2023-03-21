@@ -25,6 +25,9 @@ class ModuleLoader:
         self.Main_start_instances = []
         globals()["Main_start_instances"] = self.Main_start_instances
 
+        self.Tts_instances = []
+        globals()["Tts_instances"] = self.Tts_instances
+
         #Load modules and capabilities prompts and classes
         self.available_modules_json = self.get_available_modules_json()
         self.insert_start_prompts_to_context()

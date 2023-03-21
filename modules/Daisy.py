@@ -37,6 +37,7 @@ class Daisy:
 
 
     def main(self, stop_event):
+        import ModuleLoader as ml
 
         while not stop_event.is_set():
 
@@ -100,7 +101,15 @@ class Daisy:
                                 break
 
                             self.led.breathe_color(100, 100, 100)  # Breathe White
-                            self.csp.tts(text)
+                            #HOOK: Chat_chat_inner
+                            Tts_instances = ml.instance.Tts_instances
+
+                            if Tts_instances:
+                                for instance in Tts_instances:
+                                    logging.info("Running Tts module: "+type(instance).__name__)
+                                    response_text = instance.main(text)
+
+                            #self.csp.tts(text)
 
                             # If 'Bye bye, Daisy' end the loop after response
                             if sleep_word_detected:
