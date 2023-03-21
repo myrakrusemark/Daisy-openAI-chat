@@ -60,7 +60,8 @@ class Daisy:
                     continue
 
                 if awoken:
-                    self.sounds.play_sound_with_thread('alert')
+                    self.led.breathe_color(100, 100, 100)  # Breathe Blue
+
                     sleep_word_detected = False
 
                     thread = threading.Thread(target=self.dm.daisy_cancel)

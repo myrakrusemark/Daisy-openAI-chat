@@ -1,7 +1,6 @@
 import os
 import re
 from dotenv import load_dotenv
-import colorama
 import openai
 import logging
 import os

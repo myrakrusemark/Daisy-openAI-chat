@@ -196,7 +196,7 @@ class ChatSpeechProcessor:
 
                 return
             
-            self.sounds.play_sound("beep", 0.5)
+            self.sounds.play_sound_with_thread('alert')
             send_result, receive_result = await asyncio.gather(asyncio.shield(send()), asyncio.shield(receive()))
 
 
