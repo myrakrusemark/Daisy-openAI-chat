@@ -72,7 +72,7 @@ class Daisy:
                     while not stop_event.is_set():
                         if thread.is_alive():
                             self.led.breathe_color(0, 0, 100)  # Breathe Blue
-                            stt_text = self.csp.stt()
+                            stt_text = self.csp.stt(30) #30s timeout
 
                             # Detect sleep word ("Bye bye, Daisy."), play a sound and give Daisy a chance to respond with a goodbye
                             if self.csp.remove_non_alpha(stt_text) == self.csp.remove_non_alpha(constants.sleep_word):

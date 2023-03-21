@@ -58,7 +58,7 @@ class ChatSpeechProcessor:
         return self.porcupine.run()
 
 
-    async def stt_send_receive(self):
+    async def stt_send_receive(self, timeout_seconds=0):
         """Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
 
         self.result_str = ""
@@ -91,6 +91,27 @@ class ChatSpeechProcessor:
             logging.info(session_begins)
             logging.info("AAI Listening ...")
 
+            async def timeout():
+                start_time = time.time()
+                elapsed_time = 0
+                logging.info("TTS Send start")
+
+                while not self.result_received:
+                    elapsed_time = time.time() - start_time
+                    if self.dm.get_cancel_loop():
+                        logging.info("Timeout()")
+                        break
+                    if timeout_seconds > 0: # If timeout is 0s, then dont timeout
+                        if elapsed_time > timeout_seconds:
+                            logging.info("Timeout reached")
+                            self.dm.set_cancel_loop(True)
+                            return
+                    await asyncio.sleep(0.01)
+
+                logging.info("Timeout cancelled or result received")
+                return
+
+
             async def send():
                 logging.info("TTS Send start")
 
@@ -111,7 +132,8 @@ class ChatSpeechProcessor:
                         logging.exception(f"Unexpected error: {e}")
                         break
                     await asyncio.sleep(0.01)
-                
+                print("SEND RESULT RECEIVED: "+str(self.result_received))
+
                 logging.info("Send(): STT Send done")
                 return
                         
@@ -136,7 +158,7 @@ class ChatSpeechProcessor:
                         
 
                             logging.info("You: "+str(self.result_str))
-                            self.led.turn_on_color_random_brightness(0, 100, 0)  # Solid Green
+                            self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
 
 
                         else:
@@ -156,13 +178,17 @@ class ChatSpeechProcessor:
                         self.result_received = True
 
                 return
+
+
+
             
             self.sounds.play_sound_with_thread('alert')
-            send_result, receive_result = await asyncio.gather(asyncio.shield(send()), asyncio.shield(receive()))
+            send_result, receive_result, timeout_result = await asyncio.gather(
+                asyncio.shield(timeout()), asyncio.shield(send()), asyncio.shield(receive())
+            )
 
 
-
-    def stt(self):
+    def stt(self, timeout_seconds=0):
         """Calls stt_send_receive in a new thread and returns the final transcription."""
         # Create an event object to signal the thread to stop
         stop_event = threading.Event()
@@ -199,7 +225,7 @@ class ChatSpeechProcessor:
         # Set up AssemblyAI stt_send_receive loop
         #This is a thread in a thread. I think it can be reduced.
         def start_stt_send_receive():
-            asyncio.run(self.stt_send_receive())
+            asyncio.run(self.stt_send_receive(timeout_seconds))
 
         # Create and start the stt_send_receive thread
         thread = threading.Thread(target=start_stt_send_receive)
