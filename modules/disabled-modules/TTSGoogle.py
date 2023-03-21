@@ -55,12 +55,6 @@ class TtsGoogle:
         for audio_data in audio_datas:
             self.sounds.play_sound(audio_data, 1)
 
-        # If Google TTS somehow fails, fallback to local TTS
-        #except Exception as e:
-            # Log the error message instead of printing it to stdout
-        #    logging.error(f'Exception: {e}')
-        #    engine.say(text)
-        #    engine.runAndWait()  
 
     def split_text_for_google_tts(self, text):
         """Splits text into smaller chunks suitable for Google TTS."""

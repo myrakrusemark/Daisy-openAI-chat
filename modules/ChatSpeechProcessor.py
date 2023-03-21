@@ -57,6 +57,25 @@ class ChatSpeechProcessor:
         self.porcupine.show_audio_devices()
         return self.porcupine.run()
 
+    def tts(self, text):
+        #HOOK: Tts
+        try:
+            import ModuleLoader as ml
+            Tts_instances = ml.instance.Tts_instances
+            if Tts_instances:
+                for instance in Tts_instances:
+                    logging.info("Running Tts module: "+type(instance).__name__)
+                    response_text = instance.main(text)
+            else:
+                raise Exception("No TTS module found.")
+
+        #If TTS module somehow fails, fallback to local TTS
+        except Exception as e:
+            logging.warning("Tts Hook: "+str(e)+" Using local engine")
+            self.engine.say(text__)
+            self.engine.runAndWait()
+
+
 
     async def stt_send_receive(self, timeout_seconds=0):
         """Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
@@ -94,7 +113,6 @@ class ChatSpeechProcessor:
             async def timeout():
                 start_time = time.time()
                 elapsed_time = 0
-                logging.info("TTS Send start")
 
                 while not self.result_received:
                     elapsed_time = time.time() - start_time
@@ -113,7 +131,7 @@ class ChatSpeechProcessor:
 
 
             async def send():
-                logging.info("TTS Send start")
+                logging.info("STT Send start")
 
                 while not self.result_received:
                     if self.dm.get_cancel_loop():
@@ -139,7 +157,7 @@ class ChatSpeechProcessor:
                         
             
             async def receive():
-                logging.info("TTS Receive start")
+                logging.info("STT Receive start")
                 
 
 

@@ -1,8 +1,9 @@
 from flask import Flask, render_template, jsonify, json, request, flash, redirect, url_for
 from werkzeug.utils import secure_filename
 import os
-import ModuleLoader as ml
 import modules.ContextHandlers as ch
+import logging
+import importlib
 
 class WebConfig:
     """
@@ -75,17 +76,45 @@ class WebConfig:
                     return redirect(request.url)
             return render_template('add_module.html')
 
-        def allowed_file(filename):
-            return '.' in filename and \
-                   filename.rsplit('.', 1)[1].lower() in {'py'}
+    def allowed_file(filename):
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in {'py'}
+
+
+    def load_module_routes(self):
+        print("ADDING ROUTES")
+        #HOOK: WebConfig_add_routes
+        try:
+            import ModuleLoader as ml
+            WebConfig_add_routes_instances = ml.instance.WebConfig_add_routes_instances
+            print(WebConfig_add_routes_instances)
+            if WebConfig_add_routes_instances:
+                for instance in WebConfig_add_routes_instances:
+
+                    module_name = type(instance).__name__
+                    logging.info("Adding routes to WebConfig from "+module_name)
+                    module = importlib.import_module("modules." + module_name, package=None)
+                    my_class = getattr(module, module_name)()
+
+                    for method_name in dir(my_class):
+                        method = getattr(my_class, method_name)
+                        if hasattr(method, 'is_route') and method.is_route:
+                            self.app.route(method.route_path)(method)
+            else:
+                raise logging.info("No WebConfig_add_routes module found.")
+
+        except Exception as e:
+            logging.error(f'Error loading module routes: {e}')
 
     def start_app(self):
+        #self.load_module_routes()
         self.app.run(host='0.0.0.0', port=5000)
 
     @staticmethod
     def main(stop_event):
         try:
-            instance = WebConfig()
+            #instance = WebConfig()
+            instance.load_module_routes()
             instance.start_app()
         except Exception as e:
             print(f"Error starting web app: {e}")

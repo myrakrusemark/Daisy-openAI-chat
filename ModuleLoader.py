@@ -18,7 +18,10 @@ class ModuleLoader:
         self.loaded_classes = []
         self.start_prompts = []
 
-        #Define and register module_hooks here
+
+
+
+        #>>>>>>>>>>>>>>>Define and register module_hooks here<<<<<<<<<<<<<<<
         self.Chat_chat_inner_instances = []
         globals()["Chat_chat_inner_instances"] = self.Chat_chat_inner_instances
 
@@ -27,6 +30,13 @@ class ModuleLoader:
 
         self.Tts_instances = []
         globals()["Tts_instances"] = self.Tts_instances
+
+        self.WebConfig_add_routes_instances = []
+        globals()["WebConfig_add_routes_instances"] = self.WebConfig_add_routes_instances
+        #>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
 
         #Load modules and capabilities prompts and classes
         self.available_modules_json = self.get_available_modules_json()

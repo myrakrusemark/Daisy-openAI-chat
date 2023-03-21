@@ -98,6 +98,11 @@ class Chat:
 	        constants.stop_sound = True
 	        self.csp.tts("API Error. Sorry, I can't talk right now.")
 	        return False
+	    except openai.error.RateLimitError as e:
+	        logging.error(f"API Error: {e}")
+	        constants.stop_sound = True
+	        self.csp.tts("Rate Limit Error. Sorry, I can't talk right now.")
+	        return False
 	    except ValueError as e:
 	        logging.error(f"Value Error: {e}")
 	        constants.stop_sound = True
@@ -108,6 +113,7 @@ class Chat:
 	        constants.stop_sound = True
 	        self.csp.tts("Type Error. Sorry, I can't talk right now.")
 	        return False 
+
 
 
 	def display_messages(self):
