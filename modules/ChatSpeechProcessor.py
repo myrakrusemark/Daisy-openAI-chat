@@ -23,6 +23,8 @@ import pvporcupine
 import modules.SoundManager as sm
 import modules.Porcupine as porcupine
 import modules.DaisyMethods as dm
+import modules.RgbLed as led
+
 
 class ChatSpeechProcessor:
     description = "A class that handles speech recognition and text-to-speech processing for a chatbot."
@@ -48,6 +50,8 @@ class ChatSpeechProcessor:
         self.engine = pyttsx3.init()
         self.engine.getProperty('voices')
         self.engine.setProperty('voice', "english-us")
+        self.led = led.instance
+
 
     def listen_for_wake_word(self):
         self.porcupine.show_audio_devices()
@@ -132,6 +136,7 @@ class ChatSpeechProcessor:
                         
 
                             logging.info("You: "+str(self.result_str))
+                            self.led.turn_on_color_random_brightness(0, 100, 0)  # Solid Green
 
 
                         else:

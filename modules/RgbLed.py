@@ -55,6 +55,14 @@ class RgbLed:
             self.green_pwm.start(green)
             self.blue_pwm.start(blue)
 
+    def turn_on_color_random_brightness(self, red=0, green=0, blue=0):
+        if self.led_available():
+            rand = random.random()
+            self.turn_all_off()
+            self.red_pwm.start(red*rand)
+            self.green_pwm.start(green*rand)
+            self.blue_pwm.start(blue*rand)
+
     def blink_color(self, red=0, green=0, blue=0):
         if self.led_available():
             self.turn_all_off()
