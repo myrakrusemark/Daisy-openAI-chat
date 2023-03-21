@@ -1,5 +1,8 @@
 import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+from modules.Logging import Logging
+
+logger = Logging('daisy.log')
+logger.set_up_logging()
 
 import os
 import sys
@@ -8,7 +11,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import ModuleLoader
 import modules.ChatSpeechProcessor
-import modules.Logging as l
 from modules.SignalHandlers import SignalHandlers
 from modules.ConnectionStatus import ConnectionStatus
 

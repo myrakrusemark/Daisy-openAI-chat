@@ -33,6 +33,19 @@ class WebConfig:
             context = self.ch.messages
             return render_template('chat.html', messages=context)
 
+        @self.app.route('/send_message', methods=['POST'])
+        def send_message():
+            try:
+                message = request.json
+                print("Add MESSAGE TO CONTEXT")
+                print(message)
+                self.ch.add_message_object(message['role'], message['content'])
+                return jsonify({'status': 'success', 'message': message})
+            except Exception as e:
+                print(e)
+                return jsonify({'status': 'error', 'message': str(e)})
+
+
         @self.app.route('/modules')
         def modules():
             modules_data_json = ml.instance.available_modules_json

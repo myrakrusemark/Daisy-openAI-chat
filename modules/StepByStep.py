@@ -1,9 +1,9 @@
 import logging
 import re
-from plugins import constants
+from modules import constants
 
-import plugins.ContextHandlers as ch
-import plugins.ChatSpeechProcessor as csp
+import modules.ContextHandlers as ch
+import modules.ChatSpeechProcessor as csp
 
 
 class StepByStep:

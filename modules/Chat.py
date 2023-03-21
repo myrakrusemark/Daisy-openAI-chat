@@ -65,7 +65,7 @@ class Chat:
 
 			# Send request to OpenAI model
 			response = openai.ChatCompletion.create(
-				model="gpt-3.5-turbo",
+				model="gpt-4",
 				messages=self.messages if context else new_message
 			)
 
