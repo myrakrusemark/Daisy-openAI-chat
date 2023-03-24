@@ -16,7 +16,12 @@ class GoogleScraper():
 	"""
 	description = "A class for scraping Google search results based on a given search query."
 	module_hook = "Chat_chat_inner"
-	start_prompt = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always ask me if I would like you to search the web. If I say yes, respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. You will NEVER immediately search the web as each time that trigger is activated it costs me money--always ask me first.
+
+
+	def __init__(self):
+		self.api_key = os.environ["SERPAPI_KEY"]
+		self.ch = ContextHandlers(constants.messages)
+		self.start_prompt = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always ask me if I would like you to search the web. If I say yes, respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. You will NEVER immediately search the web as each time that trigger is activated it costs me money--always ask me first.
 	Example #1:
 
 	User: What is the weather today in st louis?
@@ -37,9 +42,8 @@ class GoogleScraper():
 
 	Daisy: [search: airplanes in the sky right now]"""
 
-	def __init__(self):
-		self.api_key = os.environ["SERPAPI_KEY"]
-		self.ch = ContextHandlers(constants.messages)
+		logging.info("GoogleScraper: Adding start prompt")
+		self.ch.add_message_object('user', self.start_prompt)
 
 
 	def main(self, response_text, request):

@@ -12,7 +12,14 @@ class Calculator:
     """
     description = "A module for evaluating mathematical expressions."
     module_hook = "Chat_chat_inner"
-    start_prompt = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5]. For example:
+
+
+    def __init__(self):
+
+        self.ch = ch.instance
+        self.csp = csp.instance
+
+        self.start_prompt = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5]. For example:
     User: What is 53 percent of 1,203?
 
     Daisy: [calculator: 1203*.53]
@@ -34,11 +41,9 @@ class Calculator:
     Daisy: You have 375 ducklings left.
 
     """
+        logging.info("Calculator: Adding start prompt")
+        self.ch.add_message_object('user', self.start_prompt)
 
-    def __init__(self):
-
-        self.ch = ch.instance
-        self.csp = csp.instance
 
     def main(self, response_text, request):
         #Find a search term in the response text (If --internet)

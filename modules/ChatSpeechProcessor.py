@@ -57,11 +57,15 @@ class ChatSpeechProcessor:
         self.porcupine.show_audio_devices()
         return self.porcupine.run()
 
+
     def tts(self, text):
         #HOOK: Tts
         try:
             import ModuleLoader as ml
-            Tts_instances = ml.instance.Tts_instances
+            hook_instances = ml.instance.hook_instances
+            if hook_instances["Tts"]:
+                Tts_instances = hook_instances["Tts"]
+                
             if Tts_instances:
                 for instance in Tts_instances:
                     logging.info("Running Tts module: "+type(instance).__name__)

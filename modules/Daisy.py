@@ -33,10 +33,10 @@ class Daisy:
 
         self.internet_warning_logged = False
 
-        self.sounds.play_sound("beep", 0.5)
 
 
     def main(self, stop_event):
+        self.sounds.play_sound("beep", 0.5)
 
         while not stop_event.is_set():
 
@@ -67,7 +67,10 @@ class Daisy:
                     #HOOK: Daisy_wake
                     try:
                         import ModuleLoader as ml
-                        Daisy_wake_instances = ml.instance.Daisy_wake_instances
+                        hook_instances = ml.instance.hook_instances
+                        if hook_instances["Daisy_wake"]:
+                            Daisy_wake_instances = hook_instances["Daisy_wake"]
+
                         if Daisy_wake_instances:
                             for instance in Daisy_wake_instances:
                                 logging.info("Running Daisy_start module: "+type(instance).__name__)

@@ -94,12 +94,14 @@ class WebConfig:
 
 
     def load_module_routes(self):
-        print("ADDING ROUTES")
         # HOOK: WebConfig_add_routes
+        logging.info("Loading module routes...")
         try:
             import ModuleLoader as ml
-            WebConfig_add_routes_instances = ml.instance.WebConfig_add_routes_instances
-            print(WebConfig_add_routes_instances)
+            hook_instances = ml.instance.hook_instances
+            if hook_instances["WebConfig_add_routes"]:
+                WebConfig_add_routes_instances = hook_instances["WebConfig_add_routes"]
+
             if WebConfig_add_routes_instances:
                 for instance in WebConfig_add_routes_instances:
                     module_name = type(instance).__name__
@@ -113,7 +115,6 @@ class WebConfig:
 
                     # Import the module dynamically
                     for module in modules:
-                        print(module+" "+module_name)
                         if module.endswith(module_name):
                             my_class = getattr(importlib.import_module(module), module_name)()
 
