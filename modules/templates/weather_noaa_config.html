@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WeatherNoaaConfig</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+</head>
+{% include "header.html" %}
+<body>
+    <div class="container">
+        <form method="GET" class="card" action="set_weather_noaa_config">
+            <div class="card-content">
+                <span class="card-title">WeatherNoaa Configuration</span>
+                <div class="input-field">
+                    <input id="latlon" type="text" name="latlon" value="{{ latlon }}" placeholder="e.g. 37.7749,-122.4194" required>
+                    <label for="latlon">Enter your lat/lon:</label>
+                </div>
+            </div>
+            <div class="card-action">
+                <button class="btn waves-effect waves-light" type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.AutoInit();
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const latlonInput = document.querySelector('input[name="latlon"]');
+                latlonInput.value = `${position.coords.latitude},${position.coords.longitude}`;
+            });
+        });
+    </script>
+</body>
+</html>

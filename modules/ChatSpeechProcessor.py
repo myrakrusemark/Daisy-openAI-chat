@@ -21,7 +21,7 @@ import pygame
 import pvporcupine
 
 import modules.SoundManager as sm
-import modules.Porcupine as porcupine
+import modules.Porcupine.Porcupine as porcupine
 import modules.DaisyMethods as dm
 import modules.RgbLed as led
 
@@ -72,7 +72,12 @@ class ChatSpeechProcessor:
         #If TTS module somehow fails, fallback to local TTS
         except Exception as e:
             logging.warning("Tts Hook: "+str(e)+" Using local engine")
-            self.engine.say(text__)
+            try:
+                self.engine.say(text)
+            except NameError as e:
+                print("An error occurred:", e)
+                # Handle the error here, for example:
+                self.engine.say("Sorry, there was an error processing your request.")
             self.engine.runAndWait()
 
 
@@ -150,7 +155,6 @@ class ChatSpeechProcessor:
                         logging.exception(f"Unexpected error: {e}")
                         break
                     await asyncio.sleep(0.01)
-                print("SEND RESULT RECEIVED: "+str(self.result_received))
 
                 logging.info("Send(): STT Send done")
                 return

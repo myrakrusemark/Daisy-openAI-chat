@@ -64,6 +64,20 @@ class Daisy:
 
                     sleep_word_detected = False
 
+                    #HOOK: Daisy_wake
+                    try:
+                        import ModuleLoader as ml
+                        Daisy_wake_instances = ml.instance.Daisy_wake_instances
+                        if Daisy_wake_instances:
+                            for instance in Daisy_wake_instances:
+                                logging.info("Running Daisy_start module: "+type(instance).__name__)
+                                response_text = instance.main()
+                        else:
+                            raise Exception("No Daisy_wake module found.")
+
+                    except Exception as e:
+                        logging.warning("Daisy_wake Hook error: "+str(e))
+
                     thread = threading.Thread(target=self.dm.daisy_cancel)
                     thread.start()
                     self.dm.set_cancel_loop(False)

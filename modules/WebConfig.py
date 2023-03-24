@@ -4,6 +4,7 @@ import os
 import modules.ContextHandlers as ch
 import logging
 import importlib
+import pkgutil
 
 class WebConfig:
     """
@@ -21,11 +22,11 @@ class WebConfig:
         self.app.secret_key = 'secret'
 
         @self.app.route('/')
-        def hello():
+        def home():
             return render_template('index.html')
 
         @self.app.route('/chat_data')
-        def chat_data():
+        def _chat_data():
             context = self.ch.messages
             return jsonify(context)
 
@@ -35,7 +36,7 @@ class WebConfig:
             return render_template('chat.html', messages=context)
 
         @self.app.route('/send_message', methods=['POST'])
-        def send_message():
+        def _send_message():
             try:
                 message = request.json
                 print("Add MESSAGE TO CONTEXT")
@@ -53,8 +54,19 @@ class WebConfig:
             modules_data = json.loads(modules_data_json)
             return render_template('modules.html', modules_data=modules_data)
 
+        @self.app.route('/routes')
+        def _routes():
+            routes = []
+            for rule in self.app.url_map.iter_rules():
+                # Skip static files and other non-GET routes
+                if not str(rule).startswith('/static') and 'GET' in rule.methods:
+                    # Exclude routes with names starting with an underscore
+                    if not rule.endpoint.startswith('_'):
+                        routes.append({ 'path': str(rule), 'name': str(rule.endpoint) })
+            return jsonify(routes)
+
         @self.app.route('/upload', methods=['GET', 'POST'])
-        def upload_file():
+        def _upload_file():
             if request.method == 'POST':
                 # check if the post request has the file part
                 if 'file' not in request.files:
@@ -83,23 +95,33 @@ class WebConfig:
 
     def load_module_routes(self):
         print("ADDING ROUTES")
-        #HOOK: WebConfig_add_routes
+        # HOOK: WebConfig_add_routes
         try:
             import ModuleLoader as ml
             WebConfig_add_routes_instances = ml.instance.WebConfig_add_routes_instances
             print(WebConfig_add_routes_instances)
             if WebConfig_add_routes_instances:
                 for instance in WebConfig_add_routes_instances:
-
                     module_name = type(instance).__name__
-                    logging.info("Adding routes to WebConfig from "+module_name)
-                    module = importlib.import_module("modules." + module_name, package=None)
-                    my_class = getattr(module, module_name)()
+                    logging.info("Adding routes to WebConfig from " + module_name)
 
-                    for method_name in dir(my_class):
-                        method = getattr(my_class, method_name)
-                        if hasattr(method, 'is_route') and method.is_route:
-                            self.app.route(method.route_path)(method)
+                    # Discover modules within the 'modules' package and its subpackages
+                    modules = []
+                    for loader, name, is_pkg in pkgutil.walk_packages(['modules'], prefix='modules.'):
+                        if not is_pkg:
+                            modules.append(name)
+
+                    # Import the module dynamically
+                    for module in modules:
+                        print(module+" "+module_name)
+                        if module.endswith(module_name):
+                            my_class = getattr(importlib.import_module(module), module_name)()
+
+                            for method_name in dir(my_class):
+                                method = getattr(my_class, method_name)
+                                if hasattr(method, 'is_route') and method.is_route:
+                                    logging.info("Adding " + method.route_path)
+                                    self.app.route(method.route_path)(method)
             else:
                 raise logging.info("No WebConfig_add_routes module found.")
 

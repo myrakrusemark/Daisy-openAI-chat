@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,31 +7,47 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <!-- Initialize side navigation drawer -->
+  <script>
+    $(document).ready(function(){
+        $('.sidenav').sidenav();
+
+        // Fetch routes from Flask endpoint
+        $.ajax({
+          url: '/routes',
+          type: 'GET',
+          success: function(data) {
+            // Loop through routes and add them to the side navigation drawer
+            var $sidenav = $('#slide-out');
+            data.forEach(function(route){
+              $sidenav.append('<li><a href="' + route.path + '">' + route.name + '</a></li>');
+            });
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            console.log('Error fetching routes: ' + errorThrown);
+          }
+        });
+    });
+  </script>
   <title>Daisy</title>
 </head>
 <body>
+  <!-- Header -->
   <header>
     <nav>
       <div class="nav-wrapper">
-        <a href="#" class="brand-logo">Daisy</a>
-        <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+        <a href="#" data-target="slide-out" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+        <a href="#" class="brand-logo center"><i class="material-icons">local_florist</i>Daisy</a>
         <ul class="right hide-on-med-and-down">
-          <li><a href="/">Home</a></li>
-          <li><a href="/chat">Chat</a></li>
-          <li><a href="/modules">Modules</a></li>
+          <!-- Add your right-aligned links here -->
         </ul>
       </div>
     </nav>
   </header>
-  <ul class="sidenav" id="mobile-demo">
-    <li><a href="/">Home</a></li>
-    <li><a href="/chat">Chat</a></li>
-    <li><a href="/modules">Modules</a></li>
+
+  <!-- Side Navigation Drawer -->
+  <ul id="slide-out" class="sidenav">
   </ul>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var elems = document.querySelectorAll('.sidenav');
-      var instances = M.Sidenav.init(elems);
-    });
-  </script>
-  <main>
+</body>
+</html>

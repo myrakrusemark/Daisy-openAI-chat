@@ -1,4 +1,4 @@
-class Api:
+class HowdyWorld_route:
     """
     Description: A description of this class and its capabilities.
     Module Hook: The hook in the program where method main() will be passed into.

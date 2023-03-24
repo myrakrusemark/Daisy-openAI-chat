@@ -48,8 +48,8 @@ Example #2:
         self.ch = ch.instance
         self.csp = csp.instance
 
-        #logging.info("Adding 'Calculator' start prompt to context")
-        #self.ch.add_message_object('user', self.start_prompt_Search)
+        logging.info("Adding 'Calculator' start prompt to context")
+        self.ch.add_message_object('user', self.start_prompt_Search)
 
     def main(self):
         print("StepByStep here!!")

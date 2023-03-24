@@ -23,7 +23,6 @@ if os.environ.get("LED") == "True":
 # HOOK: Main_start
 Main_start_hooks = {"Main_start_instances": ModuleLoader.Main_start_instances}
 Main_start_instances = Main_start_hooks.get("Main_start_instances", [])
-logging.info("Main_start_instances: %s", Main_start_instances)
 
 def start_threads():
     with ThreadPoolExecutor() as executor:
