@@ -7,7 +7,10 @@ class ContextHandlers:
 	def __init__(self, messages):
 		self.messages = messages
 
-	
+	def get_context(self):
+		"""Method for retrieving the messages object"""
+		return self.messages
+		
 	def create_context(self):
 		"""Method for creating a context with initial prompt"""
 		self.messages = messages
@@ -28,13 +31,34 @@ class ContextHandlers:
 		"""Method for removing the last message object from the messages list"""
 		self.messages.pop()
 
+	def get_last_message_object(self, user_type=None):
+		"""Method for retrieving the last message object with the given role, or the last message object if no role is specified"""
+		if user_type:
+			for message in reversed(self.messages):
+				if message['role'] == user_type:
+					return message
+		else:
+			if self.messages:
+				return self.messages[-1]
+		return False
+
+	def replace_last_message_object(self, message, user_type=None):
+		"""Method for replacing the last message object with the given role"""
+		if user_type:
+			for i in reversed(range(len(self.messages))):
+				if self.messages[i]['role'] == user_type:
+					self.messages[i]['content'] = message
+					return
+		elif message and self.messages:
+			self.messages[-1]['content'] = message
+
 	"""
 	get_messages(self)
-    get_last_message(self)
-    get_message_count(self)
-    add_message_objects(self, messages)
-    remove_message_object(self, index)
-    set_message_object(self, index, role, message)
-    """
+	get_last_message(self)
+	get_message_count(self)
+	add_message_objects(self, messages)
+	remove_message_object(self, index)
+	set_message_object(self, index, role, message)
+	"""
 
 instance = ContextHandlers(constants.messages)

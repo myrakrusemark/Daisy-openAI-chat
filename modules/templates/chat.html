@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    function updateChat() {
+        fetch('/chat_data')
+            .then(response => response.json())
+            .then(data => {
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML = '';
+
+                data.forEach(message => {
+                    const messageTemplate = `
+                        <div class="collection-item avatar">
+                            <i class="material-icons circle ${message.role === 'user' ? 'blue' : 'green'}">
+                                ${message.role === 'user' ? 'person' : 'chat_bubble'}
+                            </i>
+                            <p>${message.content.replace(/\n/g, '<br>')}</p>
+                        </div>
+                    `;
+
+
+                    chatContainer.insertAdjacentHTML('beforeend', messageTemplate);
+                });
+            })
+            .catch(error => console.error('Error fetching chat data:', error));
+    }
+
+
+    // Fetch chat data every 5 seconds
+    setInterval(updateChat, 5000);
+
+    // Fetch chat data when the page loads
+    updateChat();
+
+    // SEND MESSAGE
+    document.addEventListener('DOMContentLoaded', () => {
+      const selectElems = document.querySelectorAll('select');
+      M.FormSelect.init(selectElems);
+    });
+
+    const chatForm = document.getElementById('chat-form');
+
+    const sendButton = document.getElementById('send-button');
+
+    function submitMessage(){
+      console.log("Send button clicked")
+      const roleSelect = document.getElementById('role-select');
+      const messageInput = document.getElementById('message-input');
+
+      const role = roleSelect.value;
+      const content = messageInput.value.trim();
+
+      if (role && content) {
+        const message = { role, content };
+        console.log(message)
+
+        fetch('/send_message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(message)
+        })
+        .then(response => response.json())
+        .then(data => {
+          messageInput.value = '';
+          roleSelect.selectedIndex = 0;
+          updateChat();
+        })
+        .catch(error => console.error('Error sending message:', error));
+      }
+    }
+
+
+</script>
+{% include "header.html" %}
+
+<body>
+  <style>
+    .container {
+        padding-bottom:200px;
+        margin:0;
+        width:100%;
+    }
+
+    #chat-container {
+      margin: 0;
+      padding: 0;
+    }
+
+    .message-form {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #fff;
+      padding: 1rem;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .message-form .row {
+      margin-bottom: 0;
+    }
+    .message-form .input-field {
+      margin: 0;
+    }
+  </style>
+    <div class="container">
+      <div class="collection" id="chat-container"></div>
+    </div>
+    <div class="message-form">
+      <form id="chat-form">
+        <div class="row">
+          <div class="col s12 m3">
+            <select id="role-select" name="role">
+              <option value="user" selected>User</option>
+              <option value="assistant">Assistant</option>
+              <option value="system">System</option>
+            </select>
+    
+            <label>Role</label>
+          </div>
+          <div class="col s12 m9">
+            <div class="row">
+
+                <div class="input-field col s6">
+                  <input id="message-input" type="text" name="message" placeholder="Type your message...">
+                  <label for="message-input">Message</label>
+                </div>
+                <button type="button" class="btn green right col s6" onclick="submitMessage()">
+                  <i class="material-icons">send</i>
+                </button>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>

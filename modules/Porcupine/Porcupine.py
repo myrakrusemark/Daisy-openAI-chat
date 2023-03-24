@@ -156,9 +156,9 @@ class Porcupine():
 #Instantiate DEFAULT ("daisy daisy") wake word
 keyword_paths = None
 if platform.system() == "Windows":
-    keyword_paths = ["modules/porcupine_models/daisy-daisy_en_windows_v2_1_0.ppn", "modules/porcupine_models/hey-daisy_en_windows_v2_1_0.ppn"]
+    keyword_paths = ["modules/Porcupine/porcupine_models/daisy-daisy_en_windows_v2_1_0.ppn", "modules/Porcupine/porcupine_models/hey-daisy_en_windows_v2_1_0.ppn"]
 elif platform.system() == "Linux":
-    keyword_paths = ["modules/porcupine_models/daisy-daisy_en_raspberry-pi_v2_1_0.ppn", "modules/porcupine_models/hey-daisy_en_raspberry-pi_v2_1_0.ppn"]
+    keyword_paths = ["modules/Porcupine/porcupine_models/daisy-daisy_en_raspberry-pi_v2_1_0.ppn", "modules/Porcupine/porcupine_models/hey-daisy_en_raspberry-pi_v2_1_0.ppn"]
 else:
     logging.error("Unknown operating system, can't load wake word model.")
 instance = Porcupine(

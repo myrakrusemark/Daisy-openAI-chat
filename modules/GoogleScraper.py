@@ -16,11 +16,25 @@ class GoogleScraper():
 	"""
 	description = "A class for scraping Google search results based on a given search query."
 	module_hook = "Chat_chat_inner"
-	start_prompt = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. For example:
+	start_prompt = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always ask me if I would like you to search the web. If I say yes, respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. You will NEVER immediately search the web as each time that trigger is activated it costs me money--always ask me first.
+	Example #1:
+
 	User: What is the weather today in st louis?
+
+	Daisy: I don't have the answer with me right now. Would you like me to search the web?
+
+	User: Yes, please.
+
 	Daisy: [search: weather st louis]
 
+	Example #2:
+
 	User: How many airplanes are in the sky right now?
+
+	Daisy: Im not quite sure of that answer without doing a web search. Would you like me to search the web?
+
+	User: Yes.
+
 	Daisy: [search: airplanes in the sky right now]"""
 
 	def __init__(self):

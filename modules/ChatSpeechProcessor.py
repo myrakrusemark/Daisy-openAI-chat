@@ -15,15 +15,16 @@ import string
 from dotenv import load_dotenv
 import pyttsx3
 import requests
-import io
 import tempfile
 import logging
 import pygame
 import pvporcupine
 
 import modules.SoundManager as sm
-import modules.Porcupine as porcupine
+import modules.Porcupine.Porcupine as porcupine
 import modules.DaisyMethods as dm
+import modules.RgbLed as led
+
 
 class ChatSpeechProcessor:
     description = "A class that handles speech recognition and text-to-speech processing for a chatbot."
@@ -49,65 +50,44 @@ class ChatSpeechProcessor:
         self.engine = pyttsx3.init()
         self.engine.getProperty('voices')
         self.engine.setProperty('voice', "english-us")
+        self.led = led.instance
+
 
     def listen_for_wake_word(self):
         self.porcupine.show_audio_devices()
         return self.porcupine.run()
 
-
     def tts(self, text):
-        """Converts text to speech using Google TTS or a fallback TTS engine."""
-        text_parts = self.split_text_for_google_tts(text)
-        #file_paths = []
-        audio_datas = []
+        #HOOK: Tts
+        try:
+            import ModuleLoader as ml
+            Tts_instances = ml.instance.Tts_instances
+            if Tts_instances:
+                for instance in Tts_instances:
+                    logging.info("Running Tts module: "+type(instance).__name__)
+                    response_text = instance.main(text)
+            else:
+                raise Exception("No TTS module found.")
 
-        # Request multiple text parts and save to multiple temp files
-        for text in text_parts:
-            url = "http://translate.google.com/translate_tts"
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
-            params = {"q": self.remove_non_alphanumeric(text),
-                        "ie": "UTF-8",
-                        "client": "tw-ob",
-                        "tl": "en"}
-
+        #If TTS module somehow fails, fallback to local TTS
+        except Exception as e:
+            logging.warning("Tts Hook: "+str(e)+" Using local engine")
             try:
-                response = requests.get(url, params=params, headers=headers)
-                response.raise_for_status()  # Raise an exception for non-2xx response codes
-
-                # Read the audio data from the response object
-                audio_data = io.BytesIO(response.content)
-                # Create a file-like object from the BytesIO object
-                audio_data.seek(0)
-            except requests.exceptions.RequestException as error:
-                # Log the error message instead of printing it to stdout
-                logging.error(f'RequestException: {error}')
-                break
+                self.engine.say(text)
+            except NameError as e:
+                print("An error occurred:", e)
+                # Handle the error here, for example:
+                self.engine.say("Sorry, there was an error processing your request.")
+            self.engine.runAndWait()
 
 
-            # Save the contents of the BytesIO object to a temporary file
-            audio_datas.append(audio_data)
 
-        # Play each file in sequence
-        for audio_data in audio_datas:
-            self.sounds.play_sound(audio_data, 1)
-
-        # If Google TTS somehow fails, fallback to local TTS
-        #except Exception as e:
-            # Log the error message instead of printing it to stdout
-        #    logging.error(f'Exception: {e}')
-        #    engine.say(text)
-        #    engine.runAndWait()  
-
-    async def stt_send_receive(self):
+    async def stt_send_receive(self, timeout_seconds=0):
         """Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
-        
-        #If cancel keyword (Daisy cancel)
-        #if os.environ["CANCEL_LOOP"] == "True":
-        if self.dm.get_cancel_loop():
-            self.result_received = True
-            self.result_str = False
-            return
 
+        self.result_str = ""
+        self.new_result_str = ""
+        self.result_received = False
 
         # Set up PyAudio
         FRAMES_PER_BUFFER = 3200
@@ -135,20 +115,34 @@ class ChatSpeechProcessor:
             logging.info(session_begins)
             logging.info("AAI Listening ...")
 
+            async def timeout():
+                start_time = time.time()
+                elapsed_time = 0
+
+                while not self.result_received:
+                    elapsed_time = time.time() - start_time
+                    if self.dm.get_cancel_loop():
+                        logging.info("Timeout()")
+                        break
+                    if timeout_seconds > 0: # If timeout is 0s, then dont timeout
+                        if elapsed_time > timeout_seconds:
+                            logging.info("Timeout reached")
+                            self.dm.set_cancel_loop(True)
+                            return
+                    await asyncio.sleep(0.01)
+
+                logging.info("Timeout cancelled or result received")
+                return
+
+
             async def send():
-                # Clear the audio buffer
-                # This was originally to help Daisy from speaking over itself. Delete if no problem.
-                #if stream.get_read_available() > 0:
-                #    print("cleaning stream")
-                #    stream.read(stream.get_read_available())
+                logging.info("STT Send start")
 
-                logging.info("TTS Send start")
-                #When a result is received, close the loop, allowing stt_send_receive to finish (Let me diiiiieeeee)
+                while not self.result_received:
+                    if self.dm.get_cancel_loop():
+                        logging.info("Send(): Cancelled")
+                        break
 
-                #Get the beep as CLOSE to the audio recorder as possible
-                self.sounds.play_sound("beep", 0.5)
-
-                while self.result_received == False:
                     try:
                         data = stream.read(FRAMES_PER_BUFFER)
                         data = base64.b64encode(data).decode("utf-8")
@@ -161,60 +155,62 @@ class ChatSpeechProcessor:
                         logging.exception(f"Unexpected error: {e}")
                         break
                     await asyncio.sleep(0.01)
+
                 logging.info("Send(): STT Send done")
                 return
-            
+                        
             
             async def receive():
+                logging.info("STT Receive start")
+                
 
-                while True:
-                    logging.info("TTS Receive start")
-                    self.result_str = ""
-                    self.new_result_str = ""
-                    self.result_received = False
 
-                    
-                    while self.result_received == False:
+                while not self.result_received:
+                    if self.dm.get_cancel_loop():
+                        logging.info("Receive(): Cancelled")
+                        self.result_str = False
+                        self.result_received = True
+                        break
+                    try:
+                        self.new_result = await _ws.recv()
+                        self.new_result_str = json.loads(self.new_result)['text']
+                        #if self.result_str:
+                        if len(self.new_result_str) >= len(self.result_str):
+                            self.result_str = self.new_result_str
                         
-                        #if cancel_loop == "True":
-                        if self.dm.get_cancel_loop():
-                            logging.info("STT canceled by sleep word 'Daisy cancel'")
-                            self.result_received = True
-                            self.result_str = False
-                        try:
-                            self.new_result = await _ws.recv()
-                            self.new_result_str = json.loads(self.new_result)['text']
-                            #if self.result_str:
-                            if len(self.new_result_str) >= len(self.result_str):
-                                self.result_str = self.new_result_str
-                            
 
-                                logging.info("You: "+str(self.result_str))
+                            logging.info("You: "+str(self.result_str))
+                            self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
 
 
-                            else:
-                                #DONE
-                                logging.info("Receive(): STT Receive done")
-                                logging.info("Receive(): You said: "+str(self.result_str))
-                            
-                                self.result_received = True
-
-                        except websockets.exceptions.ConnectionClosedError as e:
-                            logging.error(f"Connection closed with error code {e.code}: {e.reason}")
-                            self.result_str = False
-                            self.result_received = True
-                        except Exception as e:
-                            logging.exception(f"Unexpected error: {e}")
-                            self.result_str = False
+                        else:
+                            #DONE
+                            logging.info("Receive(): STT Receive done")
+                            logging.info("Receive(): You said: "+str(self.result_str))
+                        
                             self.result_received = True
 
-                    return
+                    except websockets.exceptions.ConnectionClosedError as e:
+                        logging.error(f"Connection closed with error code {e.code}: {e.reason}")
+                        self.result_str = False
+                        self.result_received = True
+                    except Exception as e:
+                        logging.exception(f"Unexpected error: {e}")
+                        self.result_str = False
+                        self.result_received = True
+
+                return
+
+
+
             
-            
-            send_result, receive_result = await asyncio.gather(send(), receive())
+            self.sounds.play_sound_with_thread('alert')
+            send_result, receive_result, timeout_result = await asyncio.gather(
+                asyncio.shield(timeout()), asyncio.shield(send()), asyncio.shield(receive())
+            )
 
 
-    def stt(self):
+    def stt(self, timeout_seconds=0):
         """Calls stt_send_receive in a new thread and returns the final transcription."""
         # Create an event object to signal the thread to stop
         stop_event = threading.Event()
@@ -251,7 +247,7 @@ class ChatSpeechProcessor:
         # Set up AssemblyAI stt_send_receive loop
         #This is a thread in a thread. I think it can be reduced.
         def start_stt_send_receive():
-            asyncio.run(self.stt_send_receive())
+            asyncio.run(self.stt_send_receive(timeout_seconds))
 
         # Create and start the stt_send_receive thread
         thread = threading.Thread(target=start_stt_send_receive)
@@ -261,37 +257,6 @@ class ChatSpeechProcessor:
         result_str = watch_results()
 
         return result_str
-
-    def split_text_for_google_tts(self, text):
-        """Splits text into smaller chunks suitable for Google TTS."""
-        logging.debug(f'Splitting text: {text}')
-
-        # Split the text into individual words
-        words = text.split()
-
-        # Initialize an empty list to hold the split strings
-        split_strings = []
-
-        # Initialize a string variable to hold the current split string
-        current_string = ''
-
-        # Loop over each word in the text
-        for word in words:
-            # If adding the current word to the current split string would make it too long, add the current split string to the list and start a new one
-            if len(current_string + ' ' + word) > 200:
-                split_strings.append(current_string.strip())
-                current_string = ''
-
-            # Add the current word to the current split string
-            current_string += ' ' + word
-
-        # Add the last split string to the list
-        if current_string.strip():
-            split_strings.append(current_string.strip())
-
-        logging.debug(f'Split text into {len(split_strings)} parts')
-        logging.debug(split_strings)
-        return split_strings
 
     def remove_non_alphanumeric(self, text):
         """Removes all characters that are not alphanumeric or punctuation."""
