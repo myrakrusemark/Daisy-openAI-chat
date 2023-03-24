@@ -68,10 +68,8 @@ class Daisy:
                     try:
                         import ModuleLoader as ml
                         hook_instances = ml.instance.hook_instances
-                        if hook_instances["Daisy_wake"]:
+                        if "Daisy_wake" in hook_instances:
                             Daisy_wake_instances = hook_instances["Daisy_wake"]
-
-                        if Daisy_wake_instances:
                             for instance in Daisy_wake_instances:
                                 logging.info("Running Daisy_start module: "+type(instance).__name__)
                                 response_text = instance.main()

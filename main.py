@@ -22,7 +22,7 @@ if os.environ.get("LED") == "True":
 
 # HOOK: Main_start
 hook_instances = ml.instance.hook_instances
-if hook_instances["Main_start"]:
+if "Main_start" in hook_instances:
 	Main_start_instances = hook_instances["Main_start"]
 
 def start_threads():

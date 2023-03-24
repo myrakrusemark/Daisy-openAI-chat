@@ -63,10 +63,8 @@ class ChatSpeechProcessor:
         try:
             import ModuleLoader as ml
             hook_instances = ml.instance.hook_instances
-            if hook_instances["Tts"]:
+            if "Tts" in hook_instances:
                 Tts_instances = hook_instances["Tts"]
-                
-            if Tts_instances:
                 for instance in Tts_instances:
                     logging.info("Running Tts module: "+type(instance).__name__)
                     response_text = instance.main(text)

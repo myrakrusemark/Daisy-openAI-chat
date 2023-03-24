@@ -48,10 +48,8 @@ class Chat:
 					#HOOK: Chat_chat_inner
 					hook_instances = ml.instance.hook_instances
 					print(hook_instances)
-					if hook_instances["Chat_chat_inner"]:
+					if "Chat_chat_inner" in hook_instances:
 						Chat_chat_inner_instances = hook_instances["Chat_chat_inner"]
-
-					if Chat_chat_inner_instances:
 						for instance in Chat_chat_inner_instances:
 							logging.info("Running Chat_chat_inner module: "+type(instance).__name__)
 							response_text = instance.main(response_text, self.request)

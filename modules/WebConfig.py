@@ -99,10 +99,8 @@ class WebConfig:
         try:
             import ModuleLoader as ml
             hook_instances = ml.instance.hook_instances
-            if hook_instances["WebConfig_add_routes"]:
+            if "WebConfig_add_routes" in hook_instances:
                 WebConfig_add_routes_instances = hook_instances["WebConfig_add_routes"]
-
-            if WebConfig_add_routes_instances:
                 for instance in WebConfig_add_routes_instances:
                     module_name = type(instance).__name__
                     logging.info("Adding routes to WebConfig from " + module_name)
