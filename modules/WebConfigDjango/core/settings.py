@@ -19,6 +19,9 @@ load_dotenv()  # take environment variables from .env.
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+#Same as main.py
+MODULES_DIR = Path(__file__).resolve().parent.parent.parent
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -52,6 +55,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "modules.WebConfigDjango.home",
+    #"modules",
 ]
 
 MIDDLEWARE = [
@@ -67,12 +71,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "modules.WebConfigDjango.core.urls"
 
-HOME_TEMPLATES = os.path.join(BASE_DIR, 'home', 'templates')
+HOME_TEMPLATES = os.path.join(BASE_DIR, "home", "templates")
+MODULES_TEMPLATES = MODULES_DIR
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [HOME_TEMPLATES],
+        "DIRS": [HOME_TEMPLATES, MODULES_TEMPLATES],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -113,7 +118,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'db.sqlite3',
+            'NAME': 'modules/WebConfigDjango/db.sqlite3',
         }
     }
 

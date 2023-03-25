@@ -133,3 +133,5 @@ class Daisy:
                     self.led.turn_on_color(100, 0, 0)  # Solid Red
                     logging.warning('No Internet connection. When a connection is available the script will automatically re-activate.')
                     self.internet_warning_logged = True
+
+#instance = Daisy()

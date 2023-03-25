@@ -28,7 +28,7 @@ class Chat:
 		self.cs = cs.instance
 		self.sounds = sm.instance
 		self.ch = ch.instance
-		self.messages = self.ch.messages
+		self.messages = self.ch.get_context_without_timestamp()
 		self.dm = dm.instance
 
 		

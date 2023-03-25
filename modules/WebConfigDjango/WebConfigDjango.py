@@ -16,15 +16,11 @@ class WebConfigDjango:
     def __init__(self, settings_module="modules.WebConfigDjango.core.settings"):
         self.settings_module = settings_module
 
-    def main(self, set_event):
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", self.settings_module)
-        execute_from_command_line(sys.argv)
+    def main(self, stop_event):        
+        self.execute_command("runserver")
 
     def execute_command(self, command):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", self.settings_module)
-        argv = [sys.argv[0], command] + sys.argv[2:]
+        argv = ['modules/WebConfigDjango/manage.py', 'runserver', '--noreload']
         execute_from_command_line(argv)
 
-
-instance = WebConfigDjango()
-instance.execute_command("runserver")
