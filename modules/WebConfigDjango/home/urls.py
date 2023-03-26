@@ -70,4 +70,4 @@ def load_module_routes():
 
 
 # Load additional routes from modules
-#load_module_routes()
+load_module_routes()
