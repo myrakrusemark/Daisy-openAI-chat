@@ -3,11 +3,17 @@
 
 {% block content %}
     <style>
+      .btn{
+        margin-bottom:0
+      }
       .card-message .dropdown-toggle::after {
         display: none;
       }
       .card-message-assistant{
         background-color: #e8e8e8;
+      }
+      .card-message-system{
+        background-color: #bcf0bf;
       }
     </style>
     <div class="container-fluid">
@@ -110,10 +116,10 @@
 
 
                   {% for message in messages %}
-                  <div class="row {% if message.role == 'user' %}d-flex justify-content-end{% endif %} mb-4">
-                    <div class="card card-message card-message-{% if message.role == 'assistant' %}assistant{% else %}user{% endif %} col-lg-8">
+                  <div class="row {% if message.role == 'user' %}d-flex justify-content-end{% elif message.role == 'system' %}system{% endif %} mb-4">
+                    <div class="card card-message card-message-{{ message.role }} {% if message.role == 'system' %}col-lg-12{% else %}col-lg-8{% endif %}">
                       <div class="card-body">
-                        <p class="card-text">{{ message.timestamp|date:"g:i a \o\\n F j, Y" }}: {{ message.content|linebreaksbr }}</p>
+                        <p class="card-text">{{ message.timestamp }} : {{ message.content|linebreaksbr }}</p>
                         <div class="d-flex justify-content-end dropdown">
                           <button class="btn btn-sm bg-gradient-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                             Options
@@ -127,7 +133,29 @@
                     </div>           
                   </div>
                   {% endfor %}     
-
+                  <div class="row position-fixed bottom-0 start-0 col-12" style="margin:auto">
+                    <div class="col-12">
+                      <div class="card">
+                        <div class="card-body p-5">
+                          <form id="chat-form" action="{% url 'dashboard' %}" method="post">
+                            {% csrf_token %}
+                            <div class="input-group">
+                              <textarea name="message" class="form-control" aria-label="With textarea"></textarea>
+                              <button type="submit" id="send-as-button" name="sender" value="user" class="btn btn-outline-secondary">Send as User</button>
+                              <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                              </button>
+                              <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" data-value="user" onclick="updateButton(event)">User</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="assistant" onclick="updateButton(event)">Assistant</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="system" onclick="updateButton(event)">System</a></li>
+                              </ul>
+                            </div>
+                          </form>                          
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
 
                 </div>
@@ -175,5 +203,39 @@
       </footer>
     </div>
   </div>
+  <script>
+    //Update the submit button when an option is chosen from the dropdown
+    const button = document.querySelector('#send-as-button');
+
+    function updateButton(event) {
+      console.log("clicked")
+      const option = event.target.dataset.value;
+      button.textContent = `Send as ${option.charAt(0).toUpperCase() + option.slice(1)}`;
+      button.value = option;
+    }
+  </script>
+  <script>
+    //Submit the form
+    const form = document.querySelector('#chat-form');
+  
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const csrfmiddlewaretoken = event.target.csrfmiddlewaretoken.value
+      const message = event.target.elements.message.value;
+      const sender = event.target.elements.sender.value;
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', event.target.action);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+          // Request successful, do something here
+          console.log(xhr.responseText);
+        }
+      };
+      console.log(csrfmiddlewaretoken)
+      xhr.send(`csrfmiddlewaretoken=${encodeURIComponent(csrfmiddlewaretoken)}&message=${encodeURIComponent(message)}&sender=${encodeURIComponent(sender)}`);
+    });
+  </script>
+  
 
 {% endblock content %}
