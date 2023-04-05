@@ -1,0 +1,15 @@
+enabled_modules:
+- modules.Chat
+- modules.ChatSpeechProcessing
+- modules.ConnectionStatus
+- modules.ContextHandlers
+- modules.Logging
+- modules.SignalHandlers
+- modules.SoundManager
+- modules.Porcupine.Porcupine
+- modules.ExampleApp
+- modules.WebConfigDjango.WebConfigDjango
+- modules.RgbLed
+- modules.DaisyMethods
+- Daisy
+- modules.TtsElevenLabs

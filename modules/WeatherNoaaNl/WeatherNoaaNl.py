@@ -43,12 +43,10 @@ class WeatherNoaaNl:
             self.forecast_prompt += forecast["properties"]["periods"][0]["detailedForecast"]
             print(self.forecast_prompt)
             message = self.ch.get_last_message_object("user")
-            print("HEY")
             if message and "[WeatherNoaaNl]" in message["content"]:
                 print("TAG IN MESSAGE")
                 self.ch.replace_last_message_object("user", self.forecast_prompt)
             else:
-                print("TAG NOT IN MESSAGE")
                 logging.info("Adding 'WeatherNoaaNl' start prompt to context")
                 self.ch.add_message_object('user', self.forecast_prompt)
             time.sleep(600) # pause for 10 minutes between forecast retrievals

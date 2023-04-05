@@ -6,6 +6,9 @@
       .btn{
         margin-bottom:0
       }
+      .tab-pane#chat .card {
+        border: 1px solid;
+      }
       .card-message .dropdown-toggle::after {
         display: none;
       }
@@ -14,6 +17,20 @@
       }
       .card-message-system{
         background-color: #bcf0bf;
+      }
+      #chat-tab {
+        position: relative; /* make the #chat element the containing block for the #chat-form element */
+        height: 400px; /* set a height for the #chat element to enable scrolling */
+      }
+      
+      #chat-form {
+        position: sticky;
+        bottom: 0;
+        margin-top: auto; /* push the #chat-form element to the bottom of the #chat element */
+        z-index: 1; /* set a z-index to ensure the #chat-form element remains on top */
+      }
+      .btn-group-vertical button {
+        border-radius: 0;
       }
     </style>
     <div class="container-fluid">
@@ -114,52 +131,41 @@
               <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="chat" role="tabpanel" aria-labelledby="chat-tab">
 
-
-                  {% for message in messages %}
-                  <div class="row {% if message.role == 'user' %}d-flex justify-content-end{% elif message.role == 'system' %}system{% endif %} mb-4">
-                    <div class="card card-message card-message-{{ message.role }} {% if message.role == 'system' %}col-lg-12{% else %}col-lg-8{% endif %}">
-                      <div class="card-body">
-                        <p class="card-text">{{ message.timestamp }} : {{ message.content|linebreaksbr }}</p>
-                        <div class="d-flex justify-content-end dropdown">
-                          <button class="btn btn-sm bg-gradient-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                            Options
-                          </button>
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <li><a class="dropdown-item" href="javascript:;">Delete</a></li>
-                            <li><a class="dropdown-item" href="javascript:;">Edit</a></li>
-                          </ul>
-                        </div>              
-                      </div>
-                    </div>           
+                  <div id="messages-section">
+                    {% include 'ExampleApp/templates/includes/chat-messages.html' %}
                   </div>
-                  {% endfor %}     
-                  <div class="row position-fixed bottom-0 start-0 col-12" style="margin:auto">
-                    <div class="col-12">
-                      <div class="card">
-                        <div class="card-body p-5">
-                          <form id="chat-form" action="{% url 'dashboard' %}" method="post">
-                            {% csrf_token %}
-                            <div class="input-group">
-                              <textarea name="message" class="form-control" aria-label="With textarea"></textarea>
-                              <button type="submit" id="send-as-button" name="sender" value="user" class="btn btn-outline-secondary">Send as User</button>
-                              <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="visually-hidden">Toggle Dropdown</span>
-                              </button>
-                              <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="#" data-value="user" onclick="updateButton(event)">User</a></li>
-                                <li><a class="dropdown-item" href="#" data-value="assistant" onclick="updateButton(event)">Assistant</a></li>
-                                <li><a class="dropdown-item" href="#" data-value="system" onclick="updateButton(event)">System</a></li>
-                              </ul>
+                  <div class="row bottom-2" id="chat-form">   
+                    <div class="card border-light bg-light">
+                      <div class="card-body p-5">
+                        <form action="{% url 'dashboard' %}" method="post">
+                          {% csrf_token %}
+                          <div class="input-group">
+                            <textarea name="message" class="form-control" aria-label="With textarea"></textarea>
+                            <div class="btn-group-vertical">
+                            <button type="submit" id="send-as-button" name="send" value="user" class="btn bg-gradient-primary">Send as User</button>
+                            <button type="submit" id="append-as-button" name="append" value="user" class="btn btn-outline-secondary">Append as User</button>
                             </div>
-                          </form>                          
-                        </div>
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                              <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                              <li><a class="dropdown-item" href="#" data-value="user" onclick="updateButton(event)">User</a></li>
+                              <li><a class="dropdown-item" href="#" data-value="assistant" onclick="updateButton(event)">Assistant</a></li>
+                              <li><a class="dropdown-item" href="#" data-value="system" onclick="updateButton(event)">System</a></li>
+                            </ul>
+                          </div>
+                        </form>                          
                       </div>
                     </div>
                   </div>
 
 
                 </div>
-                <div class="tab-pane fade" id="plugins" role="tabpanel" aria-labelledby="plugins-tab">Plugins</div>
+                <div class="tab-pane fade" id="plugins" role="tabpanel" aria-labelledby="plugins-tab">
+                  <div class="plugins-section">
+                    {% include 'ExampleApp/templates/includes/plugins.html' %}
+                  </div>
+                </div>
                 <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">Settings</div>
               </div>
        
@@ -204,38 +210,80 @@
     </div>
   </div>
   <script>
-    //Update the submit button when an option is chosen from the dropdown
-    const button = document.querySelector('#send-as-button');
+    function sendRequest(action, message, index, role) {
+      const csrfmiddlewaretoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${window.location.pathname}`);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.onload = function() {
+          if (xhr.status === 200) {
+              const messagesSection = document.querySelector('#messages-section');
+              messagesSection.innerHTML = xhr.responseText;
+    
+              // Re-attach event listeners to the new messages
+              attachEventListeners();
+          }
+      };
+      xhr.send(`csrfmiddlewaretoken=${encodeURIComponent(csrfmiddlewaretoken)}&action=${encodeURIComponent(action)}&message=${encodeURIComponent(message)}&index=${encodeURIComponent(index)}&role=${encodeURIComponent(role)}`);
+    }
+    
+
+    // Update the submit button when an option is chosen from the dropdown
+    const sendButton = document.querySelector('#send-as-button');
+    const appendButton = document.querySelector('#append-as-button');
 
     function updateButton(event) {
-      console.log("clicked")
+      // Get the option value from the event target
       const option = event.target.dataset.value;
-      button.textContent = `Send as ${option.charAt(0).toUpperCase() + option.slice(1)}`;
-      button.value = option;
+
+      // Update the send button text and value
+      sendButton.textContent = `Send as ${option.charAt(0).toUpperCase() + option.slice(1)}`;
+      sendButton.value = option;
+
+      // Update the append button text and value
+      appendButton.textContent = `Append as ${option.charAt(0).toUpperCase() + option.slice(1)}`;
+      appendButton.value = option;
     }
-  </script>
-  <script>
-    //Submit the form
+
+    function attachEventListeners() {
+      // Handle delete action
+      document.querySelectorAll('.delete-message').forEach((button) => {
+        button.addEventListener('click', (event) => {
+          const index = event.target.closest('.card-message').dataset.messageIndex;
+          sendRequest('delete', null, index, null);
+        });
+      });
+    
+      // Handle plugin toggle action
+      document.querySelectorAll('.module-button').forEach((button) => {
+        button.addEventListener('click', (event) => {
+          const message = event.target.value;                 
+          sendRequest('module_update', message, null, null);
+        });
+      });
+
+
+    }
+
+    // Call attachEventListeners initially to attach listeners to the existing messages
+    attachEventListeners();
+
+    // Submit the form
     const form = document.querySelector('#chat-form');
-  
+
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      const csrfmiddlewaretoken = event.target.csrfmiddlewaretoken.value
       const message = event.target.elements.message.value;
-      const sender = event.target.elements.sender.value;
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', event.target.action);
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-          // Request successful, do something here
-          console.log(xhr.responseText);
-        }
-      };
-      console.log(csrfmiddlewaretoken)
-      xhr.send(`csrfmiddlewaretoken=${encodeURIComponent(csrfmiddlewaretoken)}&message=${encodeURIComponent(message)}&sender=${encodeURIComponent(sender)}`);
+      const action = event.submitter.name;
+      const type = event.submitter.value;
+      sendRequest(action, message, null, type);
     });
+
+      
   </script>
+
+  
   
 
 {% endblock content %}

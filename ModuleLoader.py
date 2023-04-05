@@ -4,6 +4,7 @@ import json
 import inspect
 import logging
 import json
+import yaml
 
 from modules import constants
 from modules.ContextHandlers import ContextHandlers
@@ -21,19 +22,25 @@ class ModuleLoader:
 			self.loaded = False
 
 			# Load modules
-			self.available_modules_json = self.get_available_modules_json()
+			self.available_modules = []
+			self.get_available_modules()
 
 			ModuleLoader.initialized = True
 
 	def get_hook_instances(self):
 		return self.hook_instances
 		
-	def get_available_modules_json(self):
+	def get_available_modules(self):
+		# Load enabled modules from config file
+		with open('configs.yaml', 'r') as f:
+			config = yaml.safe_load(f)
+
+		enabled_modules = config['enabled_modules']
 		# If the module has not been loaded yet, set the 'loaded' flag to True and create a JSON of available modules.
 		if not self.loaded:
 			self.loaded = True
 			logging.info("Creating classes JSON")
-			available_modules = []
+			self.available_modules = []
 
 			# Walk through the given directory and its subdirectories, and find Python files.
 			for root, dirs, files in os.walk(self.directory):
@@ -45,6 +52,10 @@ class ModuleLoader:
 
 						# Convert the relative path to a Python module name.
 						module_name = "modules." + rel_path[:-3].replace(os.sep, ".")
+
+						# Check if the module is enabled
+
+						enabled = True if module_name in enabled_modules else False
 
 						# Attempt to import the module, and handle exceptions.
 						try:
@@ -62,48 +73,65 @@ class ModuleLoader:
 									init_params = []
 									module_hook = getattr(obj, "module_hook", "")
 
-									# If the class has a module_hook attribute, add its methods and initialization parameters
-									# to the available modules JSON.
 									if module_hook:
-										for method_name in dir(obj):
-											method = getattr(obj, method_name)
-											if callable(method) and not method_name.startswith("__"):
-												method_description = method.__doc__ or "No description."
-												try:
-													sig = inspect.signature(method)
-												except ValueError:
-													logging.info("Invalid method, " + method_name)
-													break
-												method_args = [param.name for param in sig.parameters.values() if
-															param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD]
-												class_methods.append({"method_name": method_name, "description": method_description, "args": method_args})
-
-										if hasattr(obj, '__init__'):
-											init_sig = inspect.signature(obj.__init__)
-											init_params = [param.name for param in init_sig.parameters.values() if
-														param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
-														param.name != 'self']
-
 										class_description = getattr(obj, "description", "No description.")
-										available_modules.append({"class_name": obj.__name__, "description": class_description, "init_params": init_params, "methods": class_methods})
+										module_dict = {"class_name": module_name, "description": class_description}
+
+										# Add module_hook and enabled attributes to module dictionary
+										module_dict["module_hook"] = module_hook
+										module_dict["enabled"] = str(enabled)
+
+										self.available_modules.append(module_dict)
 
 										# If the class has a module_hook attribute, create an instance of it and add it to
 										# the list of hook instances.
-										if module_hook:
+										if enabled and module_hook:
 											if module_hook not in self.hook_instances:
-												self.hook_instances[module_hook] = []
+													self.hook_instances[module_hook] = []
 											if isinstance(obj, type) and obj.__module__ == module.__name__:
 												instance = obj()
 												self.hook_instances[module_hook].append(instance)
 												logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
 											else:
 												logging.debug(module_name + " failed to load.")
+										elif not enabled:
+											logging.debug("MODULE DISABLED: " + module_name)
 										else:
 											logging.debug("Class " + module_name + " has no module_hook value. Skipped.")
+		
+		return self.available_modules
 
-        	# Convert the list of available modules to a JSON string and return it.
-			return_val = json.dumps(available_modules)
-			return return_val
+		
+	def enable_module(self, module_name):
+		logging.info("Enabling module: " + module_name)
+		with open('configs.yaml', 'r') as f:
+			config = yaml.safe_load(f)
+
+		if module_name not in config['enabled_modules']:
+			config['enabled_modules'].append(module_name)
+			with open('configs.yaml', 'w') as f:
+				yaml.safe_dump(config, f)
+
+			self.loaded = False
+			return self.get_available_modules_json()
+		else:
+			logging.warning(module_name + " is already enabled.")
+
+	def disable_module(self, module_name):
+		logging.info("Disabling module: " + module_name)
+		with open('configs.yaml', 'r') as f:
+			config = yaml.safe_load(f)
+
+		if module_name in config['enabled_modules']:
+			config['enabled_modules'].remove(module_name)
+			with open('configs.yaml', 'w') as f:
+				yaml.safe_dump(config, f)
+
+			self.loaded = False
+			self.available_modules_json = self.get_available_modules_json()
+		else:
+			logging.warning(module_name + " is not enabled.")
+
 
 
 instance = ModuleLoader("modules")

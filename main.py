@@ -28,10 +28,11 @@ if "Main_start" in hook_instances:
 def start_threads():
 	with ThreadPoolExecutor() as executor:
 		futures = []
-		for instance in Main_start_instances:
-			logging.info("Running Main_start_instances module: %s", type(instance).__name__)
-			future = executor.submit(instance.main, stop_event)
-			futures.append(future)
+		if "Main_start" in hook_instances:
+			for instance in Main_start_instances:
+				logging.info("Running Main_start_instances module: %s", type(instance).__name__)
+				future = executor.submit(instance.main, stop_event)
+				futures.append(future)
 
 		# Wait for all tasks to complete
 		for i, future in enumerate(futures):

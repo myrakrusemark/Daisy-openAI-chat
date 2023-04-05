@@ -1,0 +1,18 @@
+{% for message in messages %}
+<div class="row {% if message.role == 'user' %}d-flex justify-content-end{% elif message.role == 'system' %}system{% endif %} mb-4">
+    <div class="card card-message {{ message.role }}{% if message.role == 'system' %} col-lg-12 border-success {% elif message.role == 'user' %} col-lg-8 {% elif message.role == 'assistant' %} border-info {% endif %}" data-message-index="{{ forloop.counter0 }}">
+        <div class="card-body">
+            <p class="card-text">{{ message.timestamp }} : {{ message.content|linebreaksbr }}</p>
+            <div class="d-flex justify-content-end dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                Options
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <li><a class="dropdown-item delete-message" href="javascript:;">Delete</a></li>
+                <li><a class="dropdown-item update-message" href="javascript:;">Edit</a></li>
+            </ul>
+            </div>              
+        </div>
+    </div>           
+</div>
+{% endfor %}

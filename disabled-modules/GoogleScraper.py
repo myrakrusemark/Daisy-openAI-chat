@@ -7,6 +7,7 @@ from modules import constants
 import re
 
 from modules.ContextHandlers import ContextHandlers
+import modules.Chat as chat
 import modules.ChatSpeechProcessor as csp
 
 class GoogleScraper():
@@ -21,6 +22,7 @@ class GoogleScraper():
 	def __init__(self):
 		self.api_key = os.environ["SERPAPI_KEY"]
 		self.ch = ContextHandlers(constants.messages)
+		self.chat = chat.instance
 		self.start_prompt = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always ask me if I would like you to search the web. If I say yes, respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. You will NEVER immediately search the web as each time that trigger is activated it costs me money--always ask me first.
 	Example #1:
 
@@ -46,7 +48,7 @@ class GoogleScraper():
 		self.ch.add_message_object('user', self.start_prompt)
 
 
-	def main(self, response_text, request):
+	def main(self, response_text):
 		"""Main method that takes in response_text and performs the web search, returning the search results."""
 		#Find a search term in the response text (If --internet)
 		web_response_text = ""
@@ -80,7 +82,7 @@ class GoogleScraper():
 					self.ch.add_message_object('user', new_prompt)
 
 					#Get the web answer
-					web_response_text = request()
+					web_response_text = self.chat.request(self.ch.get_context_without_timestamp())
 				else:
 					web_response_text = "Sorry, either there was an error or there are no results."
 

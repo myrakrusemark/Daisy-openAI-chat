@@ -1,0 +1,23 @@
+{% for module in available_modules|dictsort:"class_name" %}
+<div class="row mb-4">
+    <div class="card" id="card{{ forloop.counter0 }}">
+        <div class="card-body">
+            <div class="mb-4">
+                {{ module.enabled }}
+                {% if module.enabled == "True" %}
+                <button type="button" value="{{ module.class_name }}-enabled" class="btn bg-gradient-primary module-button me-4" data-toggle="button" aria-pressed="true" autocomplete="off">
+                    Enabled
+                </button>
+                {% else %}
+                <button type="button" value="{{ module.class_name }}-disabled" class="btn btn-outline-secondary module-button me-4" data-toggle="button" aria-pressed="false" autocomplete="off">
+                    Disabled
+                </button>
+                {% endif %}
+                <label class="form-check-label h3" for="module-{{ module.class_name }}">{{ module.class_name }}</label>
+            </div>
+            <p>Module hook: {{ module.module_hook }}</p>
+            <p>{{ module.description }}</p>
+        </div>
+    </div>           
+</div>
+{% endfor %}

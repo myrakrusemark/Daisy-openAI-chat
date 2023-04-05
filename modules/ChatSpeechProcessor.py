@@ -28,7 +28,6 @@ import modules.RgbLed as led
 
 class ChatSpeechProcessor:
     description = "A class that handles speech recognition and text-to-speech processing for a chatbot."
-    module_hook = "ai_available"
 
     def __init__(self):
         # Set up AssemblyAI API key and websocket endpoint

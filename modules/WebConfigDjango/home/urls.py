@@ -31,10 +31,8 @@ def load_module_routes():
                 continue
 
             if hasattr(urls_module, "urlpatterns"):
-                print("HEY")
                 new_urlpatterns = getattr(urls_module, "urlpatterns")
             else:
-                print("NOPE")
                 new_urlpatterns = []
 
 

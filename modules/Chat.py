@@ -28,57 +28,46 @@ class Chat:
 		self.cs = cs.instance
 		self.sounds = sm.instance
 		self.ch = ch.instance
-		self.messages = self.ch.get_context_without_timestamp()
 		self.dm = dm.instance
 
 		
-	def chat(self):
+	def chat(self, context):
 		"""Engages in conversation with the user by sending and receiving messages from an OpenAI model."""
-		while True:
-			if self.cs.check_internet():
-
-				print(f"'{constants.sleep_word}' to end")
-
-				web_response_text = ""
-					
-				logging.info("Sending openAI request")
-				response_text = self.request()
+		if self.cs.check_internet():
 				
-				if response_text:
-					#HOOK: Chat_chat_inner
-					hook_instances = ml.instance.hook_instances
-					print(hook_instances)
-					if "Chat_chat_inner" in hook_instances:
-						Chat_chat_inner_instances = hook_instances["Chat_chat_inner"]
-						for instance in Chat_chat_inner_instances:
-							logging.info("Running Chat_chat_inner module: "+type(instance).__name__)
-							response_text = instance.main(response_text, self.request)
+			logging.info("Sending openAI request")
 
-					return response_text
-	   
-			continue
+			#Someday this should be a hook to switch out LLMs
+			response_text = self.request(context)
+			
+			if response_text:
+				#HOOK: Chat_chat_inner
+				hook_instances = ml.instance.hook_instances
+				print(hook_instances)
+				if "Chat_chat_inner" in hook_instances:
+					Chat_chat_inner_instances = hook_instances["Chat_chat_inner"]
+					for instance in Chat_chat_inner_instances:
+						logging.info("Running Chat_chat_inner module: "+type(instance).__name__)
+						response_text = instance.main(response_text)
 
-	def request(self, context=True, new_message={}):
+				return response_text
+	
+
+	def request(self, context):
 		"""Sends a request to the OpenAI model and returns the response text."""
 		openai.api_key = self.api_key
 
 		try:
-			# If audio is enabled, play a sound to indicate waiting for response
-			self.sounds.play_sound_with_thread('waiting', 0.2)
-
 			# Introduce a loop that checks for the cancel flag
 			while not self.dm.get_cancel_loop():
 				# Send request to OpenAI model
 				response = openai.ChatCompletion.create(
 					model="gpt-4",
-					messages=self.messages if context else new_message
+					messages=context
 				)
 
 				# Get response text from OpenAI model
 				response_text=response["choices"][0]["message"]["content"]
-
-				# If audio is enabled, stop the waiting sound
-				self.sounds.stop_playing()
 
 				# Return response text
 				logging.debug("Response text: "+response_text)

@@ -1,6 +1,8 @@
 from modules import constants
 import logging
-import datetime
+import datetime as dt
+from datetime import datetime
+
 
 class ContextHandlers:
 	description = "A class for handling and managing messages in the chatGPT context object"
@@ -26,6 +28,9 @@ class ContextHandlers:
 		"""Method for creating a context with initial prompt"""
 		self.messages = messages
 
+	def single_message_context(self, role, message):
+		return {'role': role, 'timestamp': timestamp, 'content': str(message)}
+
 	def clear_context(self):
 		"""Method for clearing the messages list"""
 		self.messages = []
@@ -33,7 +38,7 @@ class ContextHandlers:
 	def add_message_object(self, role, message):
 		"""Method for adding a message object to the messages list with the given role and message"""
 		logging.debug("Adding "+role+" message to context")
-		now = datetime.datetime.now() # get current datetime
+		now = dt.datetime.now() # get current datetime
 		timestamp = now.strftime("%Y-%m-%d %H:%M:%S") # format datetime string
 		new_message = {'role': role, 'timestamp': timestamp, 'content': str(message)}
 		self.messages.append(new_message)
@@ -64,6 +69,37 @@ class ContextHandlers:
 					return
 		elif message and self.messages:
 			self.messages[-1]['content'] = message
+
+	def send_as_type(self, message, type):
+		"""Method for adding a message to the context with the specified type"""
+		self.messages.append({
+			'content': message,
+			'role': type,
+			'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+		})
+
+	def delete_message_at_index(self, index):
+		"""Method for deleting a message at the specified index"""
+		try:
+			index = int(index)
+			if index < len(self.messages) and index >= 0:
+				self.messages.pop(index)
+				return True
+		except ValueError:
+			pass
+		return False
+
+	def update_message_at_index(self, message, index):
+		"""Method for updating a message at the specified index"""
+		try:
+			index = int(index)
+			if index < len(self.messages) and index >= 0:
+				self.messages[index]['content'] = message
+				self.messages[index]['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+				return True
+		except ValueError:
+			pass
+		return False
 
 	"""
 	get_messages(self)
