@@ -113,7 +113,7 @@ class ModuleLoader:
 				yaml.safe_dump(config, f)
 
 			self.loaded = False
-			return self.get_available_modules_json()
+			return self.get_available_modules()
 		else:
 			logging.warning(module_name + " is already enabled.")
 
@@ -128,7 +128,7 @@ class ModuleLoader:
 				yaml.safe_dump(config, f)
 
 			self.loaded = False
-			self.available_modules_json = self.get_available_modules_json()
+			self.available_modules_json = self.get_available_modules()
 		else:
 			logging.warning(module_name + " is not enabled.")
 

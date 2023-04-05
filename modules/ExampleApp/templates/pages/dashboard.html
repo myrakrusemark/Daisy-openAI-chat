@@ -6,7 +6,7 @@
       .btn{
         margin-bottom:0
       }
-      .tab-pane#chat .card {
+      .tab-pane#chat-tab .card {
         border: 1px solid;
       }
       .card-message .dropdown-toggle::after {
@@ -17,10 +17,6 @@
       }
       .card-message-system{
         background-color: #bcf0bf;
-      }
-      #chat-tab {
-        position: relative; /* make the #chat element the containing block for the #chat-form element */
-        height: 400px; /* set a height for the #chat element to enable scrolling */
       }
       
       #chat-form {
@@ -34,23 +30,18 @@
       }
     </style>
     <div class="container-fluid">
-      <div class="page-header min-height-300 border-radius-xl mt-4" style="background-image: url('{% static 'img/curved-images/curved0.jpg' %}'); background-position-y: 50%;">
+      <div class="page-header min-height-200 border-radius-xl mt-4" style="background-image: url('{% static 'img/curved-images/curved0.jpg' %}'); background-position-y: 50%;">
         <span class="mask bg-gradient-primary opacity-6"></span>
       </div>
       <div class="card card-body blur shadow-blur mx-4 mt-n6 overflow-hidden">
         <div class="row gx-4">
-          <div class="col-auto">
-            <div class="avatar avatar-xl position-relative">
-              <img src="{% static 'img/bruce-mars.jpg' %}" alt="profile_image" class="w-100 border-radius-lg shadow-sm">
-            </div>
-          </div>
           <div class="col-auto my-auto">
             <div class="h-100">
               <h5 class="mb-1">
-                Alec Thompson
+                Daisy
               </h5>
               <p class="mb-0 font-weight-bold text-sm">
-                CEO / Co-Founder
+                LLM Platform
               </p>
             </div>
           </div>
@@ -58,7 +49,7 @@
             <div class="nav-wrapper position-relative end-0">
               <ul class="nav nav-pills nav-fill p-1 bg-transparent" role="tablist">
                 <li class="nav-item" role="presentation">
-                  <a class="nav-link mb-0 px-0 py-1 active " data-bs-toggle="tab" data-bs-target="#chat" href="javascript:;" role="tab" aria-selected="true">
+                  <a class="nav-link mb-0 px-0 py-1 active " data-bs-toggle="tab" data-bs-target="#chat-tab" href="javascript:;" role="tab" aria-selected="true">
                     <svg class="text-dark" width="16px" height="16px" viewBox="0 0 42 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                       <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                         <g transform="translate(-2319.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
@@ -77,7 +68,7 @@
                   </a>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" data-bs-target="#plugins" href="javascript:;" role="tab" aria-selected="false">
+                  <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" data-bs-target="#plugins-tab" href="javascript:;" role="tab" aria-selected="false">
                     <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 44" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                       <title>document</title>
                       <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -96,7 +87,7 @@
                   </a>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" data-bs-target="#settings" href="javascript:;" role="tab" aria-selected="false">
+                  <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" data-bs-target="#settings-tab" href="javascript:;" role="tab" aria-selected="false">
                     <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                       <title>settings</title>
                       <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -129,7 +120,7 @@
           <div class="card">
             <div class="card-body p-5">
               <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="chat" role="tabpanel" aria-labelledby="chat-tab">
+                <div class="tab-pane fade show active" id="chat-tab" role="tabpanel" aria-labelledby="chat-tab">
 
                   <div id="messages-section">
                     {% include 'ExampleApp/templates/includes/chat-messages.html' %}
@@ -161,12 +152,12 @@
 
 
                 </div>
-                <div class="tab-pane fade" id="plugins" role="tabpanel" aria-labelledby="plugins-tab">
+                <div class="tab-pane fade" id="plugins-tab" role="tabpanel" aria-labelledby="plugins-tab">
                   <div class="plugins-section">
                     {% include 'ExampleApp/templates/includes/plugins.html' %}
                   </div>
                 </div>
-                <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">Settings</div>
+                <div class="tab-pane fade" id="settings-tab" role="tabpanel" aria-labelledby="settings-tab">Settings is a WIP</div>
               </div>
        
 
@@ -210,6 +201,7 @@
     </div>
   </div>
   <script>
+    
     function sendRequest(action, message, index, role) {
       const csrfmiddlewaretoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
     
@@ -247,14 +239,23 @@
     }
 
     function attachEventListeners() {
-      // Handle delete action
+      // Handle message delete action
       document.querySelectorAll('.delete-message').forEach((button) => {
         button.addEventListener('click', (event) => {
           const index = event.target.closest('.card-message').dataset.messageIndex;
           sendRequest('delete', null, index, null);
         });
       });
-    
+
+      // Handle message edit action
+      document.querySelectorAll('.edit-message').forEach((button) => {
+        button.addEventListener('click', (event) => {
+          const index = event.target.closest('.card-message').dataset.messageIndex;
+          const message = prompt('Edit message', event.target.closest('.card-message').querySelector('.card-text').textContent);
+          sendRequest('edit', message, index, null);
+        });
+      });
+
       // Handle plugin toggle action
       document.querySelectorAll('.module-button').forEach((button) => {
         button.addEventListener('click', (event) => {
@@ -269,7 +270,7 @@
     // Call attachEventListeners initially to attach listeners to the existing messages
     attachEventListeners();
 
-    // Submit the form
+    // Handle chat submit
     const form = document.querySelector('#chat-form');
 
     form.addEventListener('submit', (event) => {

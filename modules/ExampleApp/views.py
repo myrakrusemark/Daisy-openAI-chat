@@ -9,7 +9,7 @@ import modules.Chat as chat
 import ModuleLoader as ml
 
 class ChatView(TemplateView):
-	template_name = 'ExampleApp/templates/pages/chat.html'
+	template_name = 'ExampleApp/templates/pages/dashboard.html'
 	route_path = 'chat/'
 
 	def __init__(self):
@@ -37,7 +37,7 @@ class ChatView(TemplateView):
 
 		if action == 'delete':
 			self.ch.delete_message_at_index(index)
-		elif action == 'update':
+		elif action == 'edit':
 			self.ch.update_message_at_index(message, index)
 		elif action == 'send':
 			self.ch.add_message_object(role, message)

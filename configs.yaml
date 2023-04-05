@@ -12,4 +12,4 @@ enabled_modules:
 - modules.RgbLed
 - modules.DaisyMethods
 - Daisy
-- modules.TtsElevenLabs
+- modules.Daisy
