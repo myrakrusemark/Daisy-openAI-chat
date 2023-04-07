@@ -44,34 +44,18 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
 
 		hook_instances = ml.instance.get_hook_instances()
 		# Check if any new hook instances have been added or removed
-		if "Main_start" in hook_instances and set(hook_instances["Main_start"]) != set(list(running_threads.keys())):
-			# Get the new instances
-			new_instances = list(set(hook_instances["Main_start"]) - set(list(running_threads.keys())))
-			# Start a new thread for each new instance
-			for instance in new_instances:
-				future = executor.submit(start_instance, instance)
-				running_threads[instance] = future
+		if "Main_start" in hook_instances:
+			for instance in hook_instances["Main_start"]:
+				for module in ml.instance.get_available_modules():
+					if module['class_name'] == instance.__module__ and instance not in running_threads:
+						if module['enabled']:
+							future = executor.submit(start_instance, instance)
+							running_threads[instance] = future
+						else:
+							future = running_threads[instance]
+							future.cancel()
+							del running_threads[instance]
 
-			# Get the instances that have been removed
-			removed_instances = list(set(running_threads.keys()) - set(hook_instances["Main_start"]))
-			# Stop the threads for each removed instance
-			for instance in removed_instances:
-				if instance in running_threads:
-					future = running_threads[instance]
-					future.cancel()
-					del running_threads[instance]
 
 		# Wait for some time before checking for updates again
 		time.sleep(1)
-
-'''
-if __name__ == "__main__":
-	stop_event = threading.Event()
-	try:
-		pass  # No threads need to be started here as they are started by the loop
-	except KeyboardInterrupt:
-		logging.info("Received Ctrl+C signal, terminating threads...")
-		stop_event.set()
-		logging.info("All threads terminated.")
-		sys.exit(0)
-'''

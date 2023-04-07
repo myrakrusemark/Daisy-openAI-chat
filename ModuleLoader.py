@@ -1,9 +1,7 @@
 import os
 import importlib.util
-import json
 import inspect
 import logging
-import json
 import yaml
 import time
 import threading
@@ -38,10 +36,10 @@ class ModuleLoader:
 			config = yaml.safe_load(f)
 
 		enabled_modules = config['enabled_modules']
-		# If the module has not been loaded yet, set the 'loaded' flag to True and create a JSON of available modules.
+		# If the module has not been loaded yet, set the 'loaded' flag to True and create available modules.
 		if not self.loaded:
 			self.loaded = True
-			logging.info("Creating classes JSON")
+			logging.info("Creating classes for available modules...")
 			#self.available_modules = []
 
 			# Walk through the given directory and its subdirectories, and find Python files.
@@ -54,7 +52,8 @@ class ModuleLoader:
 
 						# Convert the relative path to a Python module name.
 						module_name = "modules." + rel_path[:-3].replace(os.sep, ".")
-						# Check if the module is enabled
+
+						# Check if the module is enabled in configs.yaml
 						enabled = True if module_name in enabled_modules else False
 
 						# Check if the module is already in available modules
@@ -62,17 +61,17 @@ class ModuleLoader:
 						for module in self.available_modules:
 							if module['class_name'] == module_name:
 								module_in_available = True
+								if module_in_available:
+									module["enabled"] = enabled
 								break
 
-						#print(module_name, self.available_modules)
-						# Remove the module if it's not enabled but already in available modules
+						#Remove the module from available_modules if it's not enabled
 						if not enabled and module_in_available:
-							self.available_modules = [module for module in self.available_modules if module['class_name'] != module_name]
+							#self.available_modules = [module for module in self.available_modules if module['class_name'] != module_name]
 							self.rebuild_hook_instances()
 
-						# Add the module if it's enabled but not in available modules
-						if enabled and not module_in_available:
-							print("ADDING MODULE", module_name)
+						# Add the module if it's NOT in available modules
+						elif not module_in_available:
 							# Attempt to import the module, and handle exceptions.
 							try:
 								module = importlib.import_module(module_name, package=None)
@@ -95,7 +94,7 @@ class ModuleLoader:
 
 											# Add module_hook and enabled attributes to module dictionary
 											module_dict["module_hook"] = module_hook
-											module_dict["enabled"] = str(enabled)
+											module_dict["enabled"] = enabled
 
 											self.available_modules.append(module_dict)
 
@@ -114,15 +113,14 @@ class ModuleLoader:
 												logging.debug("MODULE DISABLED: " + module_name)
 											else:
 												logging.debug("Class " + module_name + " has no module_hook value. Skipped.")
-
-			return self.available_modules
+		return self.available_modules
 		
 	def rebuild_hook_instances(self):
 		# Create a new dictionary to keep track of updated hook instances
 		updated_hook_instances = {}
 
 		for module in self.available_modules:
-			if module['enabled'] == 'True':
+			if module['enabled'] == True:
 				module_hook = module['module_hook']
 				module_name = module['class_name']
 				try:
@@ -175,7 +173,7 @@ class ModuleLoader:
 			current_modified_time = os.path.getmtime("configs.yaml")
 			if current_modified_time > last_modified_time:
 				self.loaded = False
-				self.available_modules_json = self.get_available_modules()
+				self.get_available_modules()
 				last_modified_time = current_modified_time
 
 			time.sleep(1)
@@ -191,9 +189,10 @@ class ModuleLoader:
 				yaml.safe_dump(config, f)
 
 			self.loaded = False
-			return self.get_available_modules()
 		else:
 			logging.warning(module_name + " is already enabled.")
+		time.sleep(0.5)
+		return self.get_available_modules()
 
 	def disable_module(self, module_name):
 		logging.info("Disabling module: " + module_name)
@@ -206,9 +205,11 @@ class ModuleLoader:
 				yaml.safe_dump(config, f)
 
 			self.loaded = False
-			self.available_modules_json = self.get_available_modules()
 		else:
-			logging.warning(module_name + " is not enabled.")
+			logging.warning(module_name + " is already disabled.")
+		time.sleep(0.5)
+		return self.get_available_modules()
+
 
 
 instance = ModuleLoader("modules")

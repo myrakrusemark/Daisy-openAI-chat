@@ -1,9 +1,9 @@
-{% for module in available_modules|dictsort:"class_name" %}
+{% for module in available_modules %}
 <div class="row mb-4">
     <div class="card" id="card{{ forloop.counter0 }}">
         <div class="card-body">
             <div class="mb-4">
-                {% if module.enabled == "True" %}
+                {% if module.enabled == True %}
                 <button type="button" value="{{ module.class_name }}-enabled" class="btn bg-gradient-primary module-button me-4" data-toggle="button" aria-pressed="true" autocomplete="off">
                     Enabled
                 </button>

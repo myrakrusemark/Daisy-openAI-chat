@@ -1,10 +1,7 @@
-#NOTE: Updating Main_start modules require a restart. 
-#Since these are front ends that run in their own thread, 
-#I am still trying to figure out how to start and stop these gracefully.
 enabled_modules:
-- modules.TtsElevenLabs
-- modules.Calculator
-- modules.GoogleScraper
-- modules.WeatherNoaaNl.WeatherNoaaNl
 - modules.WebConfigDjango.WebConfigDjango
+- modules.GoogleScraper
+- modules.TtsElevenLabs
+- modules.WeatherNoaaNl.WeatherNoaaNl
 - modules.Daisy
+- modules.Calculator

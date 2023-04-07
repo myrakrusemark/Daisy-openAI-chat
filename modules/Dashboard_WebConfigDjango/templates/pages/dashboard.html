@@ -68,7 +68,7 @@
                   </a>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" data-bs-target="#plugins-tab" href="javascript:;" role="tab" aria-selected="false">
+                  <a class="nav-link mb-0 px-0 py-1 " data-bs-toggle="tab" data-bs-target="#modules-tab" href="javascript:;" role="tab" aria-selected="false">
                     <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 44" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                       <title>document</title>
                       <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -83,7 +83,7 @@
                         </g>
                       </g>
                     </svg>
-                    <span class="ms-1">Plugins</span>
+                    <span class="ms-1">Modules</span>
                   </a>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -123,7 +123,7 @@
                 <div class="tab-pane fade show active" id="chat-tab" role="tabpanel" aria-labelledby="chat-tab">
 
                   <div id="messages-section">
-                    {% include 'ExampleApp/templates/includes/chat-messages.html' %}
+                    {% include 'Dashboard_WebConfigDjango/templates/includes/chat-messages.html' %}
                   </div>
                   <div class="row bottom-2" id="chat-form">   
                     <div class="card border-light bg-light">
@@ -152,9 +152,9 @@
 
 
                 </div>
-                <div class="tab-pane fade" id="plugins-tab" role="tabpanel" aria-labelledby="plugins-tab">
-                  <div class="plugins-section">
-                    {% include 'ExampleApp/templates/includes/plugins.html' %}
+                <div class="tab-pane fade" id="modules-tab" role="tabpanel" aria-labelledby="modules-tab">
+                  <div id="modules-section">
+                    {% include 'Dashboard_WebConfigDjango/templates/includes/modules.html' %}
                   </div>
                 </div>
                 <div class="tab-pane fade" id="settings-tab" role="tabpanel" aria-labelledby="settings-tab">Settings is a WIP</div>
@@ -212,6 +212,9 @@
           if (xhr.status === 200) {
               const messagesSection = document.querySelector('#messages-section');
               messagesSection.innerHTML = xhr.responseText;
+              
+              const modulesSection = document.querySelector('#modules-section');
+              modulesSection.innerHTML = xhr.responseText;
     
               // Re-attach event listeners to the new messages
               attachEventListeners();
@@ -220,6 +223,10 @@
       xhr.send(`csrfmiddlewaretoken=${encodeURIComponent(csrfmiddlewaretoken)}&action=${encodeURIComponent(action)}&message=${encodeURIComponent(message)}&index=${encodeURIComponent(index)}&role=${encodeURIComponent(role)}`);
     }
     
+    //Update modules section every second
+    setInterval(function() {
+      //sendRequest("module_update", "module-update", null, null);
+    }, 1000);
 
     // Update the submit button when an option is chosen from the dropdown
     const sendButton = document.querySelector('#send-as-button');
