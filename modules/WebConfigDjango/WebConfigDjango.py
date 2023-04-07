@@ -10,6 +10,8 @@ class WebConfigDjango:
     Description: A description of this class and its capabilities.
     Module Hook: The hook in the program where method main() will be passed into.
     """
+    #NOTE: This module cannot currently gracefully shutdown. Daisy must be restarted to stop the server.
+    
     description = "A module that serves a web page."
     module_hook = "Main_start"
 

@@ -5,3 +5,6 @@ enabled_modules:
 - modules.TtsElevenLabs
 - modules.Calculator
 - modules.GoogleScraper
+- modules.WeatherNoaaNl.WeatherNoaaNl
+- modules.WebConfigDjango.WebConfigDjango
+- modules.Daisy

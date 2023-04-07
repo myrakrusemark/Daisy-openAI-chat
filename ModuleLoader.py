@@ -156,7 +156,9 @@ class ModuleLoader:
 			for instance in self.hook_instances[hook]:
 				if hook not in updated_hook_instances or instance not in updated_hook_instances[hook]:
 					logging.info("Removing instance of " + instance.__class__.__name__ + " from " + hook + ".")
-					instance.close()
+					if hasattr(instance, 'close') and callable(getattr(instance, 'close')):
+						instance.close()
+
 
 		# Add updated instances to self.hook_instances
 		for hook in updated_hook_instances:
