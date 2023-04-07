@@ -22,6 +22,8 @@ class Daisy:
 	module_hook = "Main_start"
 
 	def __init__(self):
+		self.stop_event = threading.Event()
+
 		self.csp = csp.instance
 		self.cs = cs.instance
 		self.ch = ch.instance
@@ -33,12 +35,13 @@ class Daisy:
 
 		self.internet_warning_logged = False
 
+	def close(self):
+		self.stop_event.set()
 
-
-	def main(self, stop_event):
+	def main(self):
 		self.sounds.play_sound("beep", 0.5)
 
-		while not stop_event.is_set():
+		while not self.stop_event.is_set():
 
 			if self.cs.check_internet():
 				# If internet connection is restored, log a message
@@ -53,7 +56,7 @@ class Daisy:
 
 				try:
 					# Initialize Porcupine
-					awoken = self.csp.listen_for_wake_word()
+					awoken = self.csp.listen_for_wake_word(self.stop_event)
 				except Exception as e:
 					# Catch the exception and handle it
 					logging.error(f"Error initializing Porcupine: {e}")
@@ -79,14 +82,14 @@ class Daisy:
 					except Exception as e:
 						logging.warning("Daisy_wake Hook error: "+str(e))
 
-					thread = threading.Thread(target=self.dm.daisy_cancel)
+					thread = threading.Thread(target=self.dm.daisy_cancel, args=(self.stop_event,))
 					thread.start()
 					self.dm.set_cancel_loop(False)
 
-					while not stop_event.is_set():
+					while not self.stop_event.is_set():
 						if thread.is_alive():
 							self.led.breathe_color(0, 0, 100)  # Breathe Blue
-							stt_text = self.csp.stt(30) #30s timeout
+							stt_text = self.csp.stt(self.stop_event, 30) #30s timeout
 
 							self.led.breathe_color(100,0,100)  # Breathe Blue
 
@@ -125,5 +128,3 @@ class Daisy:
 					self.led.turn_on_color(100, 0, 0)  # Solid Red
 					logging.warning('No Internet connection. When a connection is available the script will automatically re-activate.')
 					self.internet_warning_logged = True
-
-#instance = Daisy()

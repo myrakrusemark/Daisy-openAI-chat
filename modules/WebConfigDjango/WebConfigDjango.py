@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-"""Django's command-line utility for administrative tasks."""
 import os
 import sys
 from django.core.management import execute_from_command_line
+import threading
+from wsgiref.simple_server import WSGIRequestHandler
 
 
 class WebConfigDjango:
@@ -15,12 +15,16 @@ class WebConfigDjango:
 
     def __init__(self, settings_module="modules.WebConfigDjango.core.settings"):
         self.settings_module = settings_module
+        self.server = None
+        self.stop_event = threading.Event()
 
-    def main(self, stop_event):        
-        self.execute_command("runserver")
+    def close(self):
+        self.stop_event.set()
+        if self.server:
+            self.server.shutdown()
 
-    def execute_command(self, command):
+    def main(self):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", self.settings_module)
         argv = ['modules/WebConfigDjango/manage.py', 'runserver', '--noreload']
-        execute_from_command_line(argv)
-
+        handler = WSGIRequestHandler
+        self.server = execute_from_command_line(argv)

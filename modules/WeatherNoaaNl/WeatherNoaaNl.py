@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import modules.ContextHandlers as ch
 import logging
+import threading
 
 class WeatherNoaaNl:
     """
@@ -14,6 +15,7 @@ class WeatherNoaaNl:
     module_hook = "Main_start"
 
     def __init__(self):
+        self.stop_event = threading.Event()
         self.latlon = os.environ.get('LATLON', '38.627,-90.1994')
         self.grid_url = None
 
@@ -37,8 +39,11 @@ class WeatherNoaaNl:
         self.grid_url = data["properties"]["forecastGridData"]
         print(self.grid_url)
 
-    def main(self, stop_event):
-        while not stop_event.is_set():
+    def close(self):
+        self.stop_event.set()
+
+    def main(self):
+        while not self.stop_event.is_set():
             forecast = self.get_forecast()
             self.forecast_prompt += forecast["properties"]["periods"][0]["detailedForecast"]
             print(self.forecast_prompt)

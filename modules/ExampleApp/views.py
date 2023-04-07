@@ -11,6 +11,8 @@ import ModuleLoader as ml
 class ChatView(TemplateView):
 	template_name = 'ExampleApp/templates/pages/dashboard.html'
 	route_path = 'chat/'
+	#route_path = '/'
+
 
 	def __init__(self):
 		self.ch = ch.instance
@@ -37,14 +39,18 @@ class ChatView(TemplateView):
 
 		if action == 'delete':
 			self.ch.delete_message_at_index(index)
+			update_messages_section(request)
 		elif action == 'edit':
 			self.ch.update_message_at_index(message, index)
+			update_messages_section(request)
 		elif action == 'send':
 			self.ch.add_message_object(role, message)
 			response_text = self.chat.chat(self.ch.get_context_without_timestamp())
 			self.ch.add_message_object("assistant", response_text)
+			update_messages_section(request)
 		elif action == 'append':
 			self.ch.add_message_object(role, message)
+			update_messages_section(request)
 		elif action == 'module_update':
 			module_name, new_state = message.split('-')
 			if new_state == 'disabled':
@@ -52,6 +58,7 @@ class ChatView(TemplateView):
 			elif new_state == 'enabled':
 				print(self.ml.disable_module(module_name))
 
+	def update_messages_section(self, request):
 		# Render the messages template with the updated context
 		messages = self.ch.get_context()
 		context = {'messages': messages}

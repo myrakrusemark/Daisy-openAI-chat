@@ -28,9 +28,9 @@ class DaisyMethods:
 
 
 
-	def daisy_cancel(self):
+	def daisy_cancel(self, stop_event):
 		# os.environ["CANCEL_LOOP"] = str(self.porcupine_daisy_cancel.run())
-		cancel_loop = str(self.porcupine_daisy_cancel.run())
+		cancel_loop = str(self.porcupine_daisy_cancel.run(stop_event))
 		logging.info("<------DAISY CANCEL------>")
 		self.set_cancel_loop(cancel_loop)
 

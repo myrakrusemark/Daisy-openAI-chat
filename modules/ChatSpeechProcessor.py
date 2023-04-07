@@ -52,9 +52,9 @@ class ChatSpeechProcessor:
         self.led = led.instance
 
 
-    def listen_for_wake_word(self):
+    def listen_for_wake_word(self, stop_event):
         self.porcupine.show_audio_devices()
-        return self.porcupine.run()
+        return self.porcupine.run(stop_event)
 
 
     def tts(self, text):
@@ -83,7 +83,7 @@ class ChatSpeechProcessor:
 
 
 
-    async def stt_send_receive(self, timeout_seconds=0):
+    async def stt_send_receive(self, stop_event, timeout_seconds=0):
         """Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
 
         self.result_str = ""
@@ -120,7 +120,7 @@ class ChatSpeechProcessor:
                 start_time = time.time()
                 elapsed_time = 0
 
-                while not self.result_received:
+                while not self.result_received and not stop_event.is_set():
                     elapsed_time = time.time() - start_time
                     if self.dm.get_cancel_loop():
                         logging.info("Timeout()")
@@ -139,7 +139,7 @@ class ChatSpeechProcessor:
             async def send():
                 logging.info("STT Send start")
 
-                while not self.result_received:
+                while not self.result_received and not stop_event.is_set():
                     if self.dm.get_cancel_loop():
                         logging.info("Send(): Cancelled")
                         break
@@ -166,7 +166,7 @@ class ChatSpeechProcessor:
                 
 
 
-                while not self.result_received:
+                while not self.result_received and not stop_event.is_set():
                     if self.dm.get_cancel_loop():
                         logging.info("Receive(): Cancelled")
                         self.result_str = False
@@ -211,21 +211,21 @@ class ChatSpeechProcessor:
             )
 
 
-    def stt(self, timeout_seconds=0):
+    def stt(self, stop_event, timeout_seconds=0):
         """Calls stt_send_receive in a new thread and returns the final transcription."""
         # Create an event object to signal the thread to stop
-        stop_event = threading.Event()
+        stt_stop_event = threading.Event()
 
         def watch_results():
             #global result_received
             #global result_str
-            while not stop_event.is_set():
+            while not stt_stop_event.is_set() and not stop_event.is_set():
                 if self.result_received:
                     logging.info("Result received: %s", self.result_str)
                     self.result_received = False
 
                     # Set the event to signal the thread to stop
-                    stop_event.set()
+                    stt_stop_event.set()
 
                 time.sleep(0.1)
 
@@ -248,7 +248,7 @@ class ChatSpeechProcessor:
         # Set up AssemblyAI stt_send_receive loop
         #This is a thread in a thread. I think it can be reduced.
         def start_stt_send_receive():
-            asyncio.run(self.stt_send_receive(timeout_seconds))
+            asyncio.run(self.stt_send_receive(stop_event, timeout_seconds))
 
         # Create and start the stt_send_receive thread
         thread = threading.Thread(target=start_stt_send_receive)
