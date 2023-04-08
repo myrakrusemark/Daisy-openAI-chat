@@ -1,6 +1,5 @@
 import logging
 import re
-from modules import constants
 
 import modules.ContextHandlers as ch
 import modules.ChatSpeechProcessor as csp
