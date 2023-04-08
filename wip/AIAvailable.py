@@ -1,8 +1,10 @@
 import logging
-from modules import constants
 
 from modules.ContextHandlers import ContextHandlers
+start_prompt_Daisy = "You are Daisy, a voice assistant based on chatGPT, a large language model trained by OpenAI. You speak in confident but concise responses, about two sentences long. You are having a real-world vocal conversation. Current date: " + datetime.now().strftime("%Y-%m-%d")
 
+#Build start prompt     
+messages=[{"role": "user", "timestamp":"", "content": start_prompt_Daisy}]
 
 class AIAvailable:
     """
@@ -14,7 +16,7 @@ class AIAvailable:
 
     def __init__(self):
 
-        self.ch = ContextHandlers(constants.messages)
+        self.ch = ContextHandlers(messages)
         self.csp = ChatSpeechProcessor.instance
 
         self.start_prompt_AIAvailable = """As a chatbot running in a python environment, you now have access to various methods that are typically used elsewhere in the program! You can run any available method using this "tool form". If I ask you any question that might be best answered using one of the available methods or capabilies, always respond using a "tool form" in the following format:
