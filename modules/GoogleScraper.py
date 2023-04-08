@@ -3,13 +3,13 @@ import openai
 from serpapi import GoogleSearch
 import logging
 import os
-from modules import constants
 import re
 
 from modules.ContextHandlers import ContextHandlers
 import modules.Chat as chat
 import modules.ChatSpeechProcessor as csp
-
+start_prompt_Daisy = "You are Daisy, a voice assistant based on chatGPT, a large language model trained by OpenAI. You speak in confident but concise responses, about two sentences long. You are having a real-world vocal conversation. Current date: " + datetime.now().strftime("%Y-%m-%d")
+messages=[{"role": "user", "timestamp":"", "content": start_prompt_Daisy}]
 class GoogleScraper():
 	"""
 	Description: A description of this class and its capabilities.
@@ -21,7 +21,7 @@ class GoogleScraper():
 
 	def __init__(self):
 		self.api_key = os.environ["SERPAPI_KEY"]
-		self.ch = ContextHandlers(constants.messages)
+		self.ch = ContextHandlers(messages)
 		self.chat = chat.instance
 		self.start_prompt = """You are an internet connected chatbot and you have access to real-time information and updates from Google. If I ask you any question that may require internet access, always ask me if I would like you to search the web. If I say yes, respond with a search term as the FULL body of your response using a "tool form" in the following format: [search: news headlines]. You will NEVER immediately search the web as each time that trigger is activated it costs me money--always ask me first.
 	Example #1:
