@@ -5,7 +5,6 @@ import platform
 import pvporcupine
 import threading
 import os
-from modules import constants
 import modules.ChatSpeechProcessor as csp
 import modules.ConnectionStatus as cs
 import modules.ContextHandlers as ch
