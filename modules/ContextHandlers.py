@@ -1,8 +1,9 @@
-from modules import constants
+
 import logging
 import datetime as dt
 from datetime import datetime
-
+start_prompt_Daisy = "You are Daisy, a voice assistant based on chatGPT, a large language model trained by OpenAI. You speak in confident but concise responses, about two sentences long. You are having a real-world vocal conversation. Current date: " + datetime.now().strftime("%Y-%m-%d")
+messages=[{"role": "user", "timestamp":"", "content": start_prompt_Daisy}]
 
 class ContextHandlers:
 	description = "A class for handling and managing messages in the chatGPT context object"
