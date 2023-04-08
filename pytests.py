@@ -4,7 +4,6 @@ from modules.ContextHandlers import ContextHandlers
 from modules.SoundManager import SoundManager
 from ModuleLoader import ModuleLoader
 from modules.Chat import Chat
-from modules import constants
 import os
 
 test_messages=[{"role": "system", "content": "Daisy"}]
