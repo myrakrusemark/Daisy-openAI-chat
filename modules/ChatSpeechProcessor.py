@@ -31,7 +31,6 @@ class ChatSpeechProcessor:
 
     def __init__(self):
         # Set up AssemblyAI API key and websocket endpoint
-        self.auth_key = "f7754f3d71ac422caf4cfc54bace4306"
         self.uri = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
         load_dotenv()
@@ -147,7 +146,11 @@ class ChatSpeechProcessor:
                     try:
                         data = stream.read(FRAMES_PER_BUFFER)
                         data = base64.b64encode(data).decode("utf-8")
-                        json_data = json.dumps({"audio_data":str(data)})
+                        json_data = json.dumps({
+                            "audio_data":str(data), 
+                            "punctuate": False, 
+                            "format_text": False
+                            })
                         await _ws.send(json_data)
                     except websockets.exceptions.ConnectionClosedError as e:
                         logging.error(f"Connection closed with error code {e.code}: {e.reason}")
@@ -174,21 +177,19 @@ class ChatSpeechProcessor:
                         break
                     try:
                         self.new_result = await _ws.recv()
-                        self.new_result_str = json.loads(self.new_result)['text']
-                        #if self.result_str:
-                        if len(self.new_result_str) >= len(self.result_str):
-                            self.result_str = self.new_result_str
-                        
-
-                            logging.info("You: "+str(self.result_str))
-                            self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
+                        self.result_str_obj = json.loads(self.new_result)
 
 
-                        else:
+                        logging.info("You: "+str(self.result_str_obj['text']))
+                        print(self.new_result)
+                        self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
+
+                        if(self.result_str_obj['message_type'] == "FinalTranscript"):
                             #DONE
                             logging.info("Receive(): STT Receive done")
-                            logging.info("Receive(): You said: "+str(self.result_str))
-                        
+                            logging.info("Receive(): You said: "+str(self.result_str_obj['text']))
+
+                            self.result_str = self.result_str_obj['text']
                             self.result_received = True
 
                     except websockets.exceptions.ConnectionClosedError as e:

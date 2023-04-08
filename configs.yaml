@@ -1,7 +1,2 @@
 enabled_modules:
-- modules.WebConfigDjango.WebConfigDjango
-- modules.GoogleScraper
-- modules.TtsElevenLabs
-- modules.WeatherNoaaNl.WeatherNoaaNl
 - modules.Daisy
-- modules.Calculator

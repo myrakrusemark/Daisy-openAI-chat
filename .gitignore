@@ -5,3 +5,4 @@ geckodriver.log
 __pycache__/
 *.pyc
 daisy.log
+configs.yaml
