@@ -6,7 +6,8 @@ import yaml
 import time
 import threading
 
-from modules import constants
+start_prompt_Daisy = "You are Daisy, a voice assistant based on chatGPT, a large language model trained by OpenAI. You speak in confident but concise responses, about two sentences long. You are having a real-world vocal conversation. Current date: " + datetime.now().strftime("%Y-%m-%d")   
+messages=[{"role": "user", "timestamp":"", "content": start_prompt_Daisy}]
 from modules.ContextHandlers import ContextHandlers
 ch = ContextHandlers(constants.messages)
 
