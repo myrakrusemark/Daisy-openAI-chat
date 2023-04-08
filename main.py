@@ -15,7 +15,6 @@ import modules.ChatSpeechProcessor
 from modules.Logging import Logging
 from modules.SignalHandlers import SignalHandlers
 from modules.ConnectionStatus import ConnectionStatus
-from modules import constants
 from modules.Chat import Chat
 
 if os.environ.get("LED") == "True":
