@@ -111,4 +111,4 @@ class ContextHandlers:
 	set_message_object(self, index, role, message)
 	"""
 
-instance = ContextHandlers(constants.messages)
+instance = ContextHandlers(messages)
