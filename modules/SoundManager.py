@@ -1,5 +1,4 @@
 import os
-from modules import constants
 import pygame
 import threading
 #from pynput import keyboard
