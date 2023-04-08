@@ -5,7 +5,6 @@ import openai
 import logging
 import os
 import importlib
-from modules import constants
 
 import modules.ConnectionStatus as cs
 import modules.ChatSpeechProcessor as csp
