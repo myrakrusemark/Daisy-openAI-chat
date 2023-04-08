@@ -7,7 +7,6 @@ import base64
 import json
 import threading
 import time
-from modules import constants
 import sys
 import os
 import re
