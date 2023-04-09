@@ -1,2 +1,3 @@
 enabled_modules:
 - modules.Daisy
+- modules.TtsElevenLabs
