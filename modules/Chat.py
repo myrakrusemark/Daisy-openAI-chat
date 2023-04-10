@@ -184,8 +184,6 @@ class Chat:
 					queue_sentences_complete[0] = True
 					return
 				
-			queue_sentences_complete[0] = True
-			return
 
 	def play_tts_queue(self, tts_queue, response_canceled, chunkerize_complete, queue_sentences_complete, stop_event, stop_sound=None):
 		tts_length = 0
