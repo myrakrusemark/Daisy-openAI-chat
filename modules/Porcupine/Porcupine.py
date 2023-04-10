@@ -9,6 +9,7 @@ from datetime import datetime
 import threading
 import pvporcupine
 from pvrecorder import PvRecorder
+import yaml
 
 
 
@@ -25,28 +26,19 @@ class Porcupine():
 			self,
 			keyword_paths,
 			sensitivities,
-			input_device_index=int(os.environ["INPUT_DEVICE"]),
 			):
-
-		"""
-		Constructor.
-
-		:param keyword_paths: Absolute paths to keyword model files.
-		:param sensitivities: Sensitivities for detecting keywords. Each value should be a number within [0, 1]. A
-		higher sensitivity results in fewer misses at the cost of increasing the false alarm rate. If not set 0.5 will
-		be used.
-		:param input_device_index: Optional argument. If provided, audio is recorded from this input device. Otherwise,
-		the default audio input device is used.
-		"""
 
 		super(Porcupine, self).__init__()
 
-		self._access_key = os.environ["PORCUPINE_KEY"]
+		with open("configs.yaml", "r") as f:
+			configs = yaml.safe_load(f)
+		self._access_key = configs["keys"]["porcupine"]
+		self._input_device_index = configs["hardware"]["input_device_index"]
+
 		#self._library_path = None #library_path
 		#self._model_path = model_path
 		self._keyword_paths = keyword_paths
 		self._sensitivities = sensitivities
-		self._input_device_index = input_device_index
 		#self._output_path = output_path
 
 	def run(self, stop_event):

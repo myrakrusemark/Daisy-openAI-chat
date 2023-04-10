@@ -19,6 +19,7 @@ import tempfile
 import logging
 import pygame
 import pvporcupine
+import yaml
 
 import modules.SoundManager as sm
 import modules.Porcupine.Porcupine as porcupine
@@ -31,16 +32,18 @@ class ChatSpeechProcessor:
 
     def __init__(self):
         # Set up AssemblyAI API key and websocket endpoint
-        self.auth_key = "f7754f3d71ac422caf4cfc54bace4306"
         self.uri = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
         load_dotenv()
 
         # Define global variables
+        with open("configs.yaml", "r") as f:
+	        configs = yaml.safe_load(f)
+        self.assembly_ai_api_key = configs["keys"]["assembly_ai"]
+
         self.result_str = ""
         self.new_result_str = ""
         self.result_received = False
-        self.api_key = os.environ["AAI_KEY"]
         #self.r = sr.Recognizer()
 
         self.sounds = sm.instance
@@ -76,7 +79,7 @@ class ChatSpeechProcessor:
             try:
                 self.engine.say(text)
             except NameError as e:
-                print("An error occurred:", e)
+                logging.error("An error occurred:", e)
                 # Handle the error here, for example:
                 self.engine.say("Sorry, there was an error processing your request.")
             self.engine.runAndWait()
@@ -106,7 +109,7 @@ class ChatSpeechProcessor:
 
         async with websockets.connect(
             self.uri,
-            extra_headers=(("Authorization", self.api_key),),
+            extra_headers=(("Authorization", self.assembly_ai_api_key),),
             ping_interval=5,
             ping_timeout=20
         ) as _ws:
@@ -147,7 +150,11 @@ class ChatSpeechProcessor:
                     try:
                         data = stream.read(FRAMES_PER_BUFFER)
                         data = base64.b64encode(data).decode("utf-8")
-                        json_data = json.dumps({"audio_data":str(data)})
+                        json_data = json.dumps({
+                            "audio_data":str(data), 
+                            "punctuate": False, 
+                            "format_text": False
+                            })
                         await _ws.send(json_data)
                     except websockets.exceptions.ConnectionClosedError as e:
                         logging.error(f"Connection closed with error code {e.code}: {e.reason}")
@@ -174,21 +181,18 @@ class ChatSpeechProcessor:
                         break
                     try:
                         self.new_result = await _ws.recv()
-                        self.new_result_str = json.loads(self.new_result)['text']
-                        #if self.result_str:
-                        if len(self.new_result_str) >= len(self.result_str):
-                            self.result_str = self.new_result_str
-                        
-
-                            logging.info("You: "+str(self.result_str))
-                            self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
+                        self.result_str_obj = json.loads(self.new_result)
 
 
-                        else:
+                        logging.info("You: "+str(self.result_str_obj['text']))
+                        self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
+
+                        if self.result_str_obj['message_type'] == "FinalTranscript" and self.result_str_obj['text'] != "":
                             #DONE
                             logging.info("Receive(): STT Receive done")
-                            logging.info("Receive(): You said: "+str(self.result_str))
-                        
+                            logging.info("Receive(): You said: "+str(self.result_str_obj['text']))
+
+                            self.result_str = self.result_str_obj['text']
                             self.result_received = True
 
                     except websockets.exceptions.ConnectionClosedError as e:

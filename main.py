@@ -40,7 +40,8 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
 			future_object = list(running_threads.values())[0]  # get the Future object from the dictionary
 			if future_object.exception() is not None:  # check if the Future object has a raised exception
 				runtime_error = future_object.exception()  # get the raised exception from the Future object
-				logging.error(runtime_error)  # print the raised exception
+				logging.error("An error occurred: %s", str(future_object.exception()))
+
 
 		hook_instances = ml.instance.get_hook_instances()
 		# Check if any new hook instances have been added or removed
