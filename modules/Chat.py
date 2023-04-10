@@ -61,15 +61,18 @@ class Chat:
 				stream=True
 			)
 
+			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
 			t = threading.Thread(target=self.openai_stream_chunkerize, args=(response, sentences_queue, response_canceled, chunkerize_complete, return_text, stop_event, stop_sound))
 			t.start()
 			threads.append(t)
 
 			if tts:
+				#Handle sentences. Optionally convert to tts sounds for tts_queue, if needed.
 				t = threading.Thread(target=self.queue_sentences, args=(sentences_queue, response_canceled, queue_sentences_complete, tts_queue, stop_event, tts), daemon=True)
 				t.start()
 				threads.append(t)
 
+				#Play tts sounds from tts_queue
 				t = threading.Thread(target=self.play_tts_queue, args=(tts_queue, response_canceled, chunkerize_complete, queue_sentences_complete, stop_event, stop_sound), daemon=True)
 				t.start()
 				threads.append(t)
