@@ -96,17 +96,18 @@ class Daisy:
 							self.ch.add_message_object('user', stt_text)
 
 							if self.dm.get_cancel_loop():
-								self.sounds.play_sound_with_thread('end')
+								self.sounds.play_sound_with_thread('end', 1.0)
 								break
 
-							self.sounds.play_sound_with_thread('waiting', 0.2)
-							text = self.chat.request(self.ch.get_context_without_timestamp(), self.stop_event, self.sounds.stop_playing, True)
+							sound_stop_event = threading.Event()
+							self.sounds.play_sound_with_thread('waiting', 0.2, self.stop_event, sound_stop_event)
+							text = self.chat.request(self.ch.get_context_without_timestamp(), self.stop_event, sound_stop_event, True)
 							
 							self.ch.add_message_object('assistant', text)
 
 							self.chat.display_messages()
 							if self.dm.get_cancel_loop():
-								self.sounds.play_sound_with_thread('end')
+								self.sounds.play_sound_with_thread('end', 1.0)
 								break
 
 							self.led.breathe_color(100, 100, 100)  # Breathe White

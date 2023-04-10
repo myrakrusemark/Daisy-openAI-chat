@@ -1,25 +1,25 @@
 import os
-from modules import constants
-import pygame
-import threading
-#from pynput import keyboard
-import time
-import logging
-import numpy as np
 from io import BytesIO
-
-import modules.DaisyMethods as dm 
-
+import logging
+import threading
+import time
+import pydub
+from pydub.utils import mediainfo
+from modules import constants
+import modules.DaisyMethods as dm
+from pydub import AudioSegment
+import simpleaudio
+import numpy as np
 
 class SoundManager:
     description = "A class for managing sound files in a directory, playing sounds, and stopping playback."
+    
     def __init__(self, directory):
         self.directory = directory
         self.sounds = {}
         self.current_sound = None
         self.dm = dm.instance
-
-        pygame.init()
+        self.playback = None
 
         # Load all sound files in the directory
         for filename in os.listdir(directory):
@@ -30,73 +30,77 @@ class SoundManager:
                 # Load sound file and store in dictionary
                 path = os.path.join(directory, filename)
                 try:
-                    sound = pygame.mixer.Sound(path)
+                    sound = pydub.AudioSegment.from_file(path)
                     self.sounds[name] = sound
-                except pygame.error:
+                except pydub.exceptions.CouldntDecodeError:
                     logging.warning(f"Failed to load sound file '{filename}'")
 
-    # Function to play sound files (MP3 or WAV)
-    def play_sound(self, name_or_bytes, volume=1, stop_event=None):
-        """Function to play sound files and define function to stop playback when escape key is pressed or stop_event is set."""
-        sound = ""
-        if isinstance(name_or_bytes, BytesIO):
-            logging.debug(f"Playing BytesIO with volume {volume}")
-
-            sound = pygame.mixer.music.load(name_or_bytes)
-            pygame.mixer.init(44100, -16, 1, 1024)
-            pygame.mixer.music.play()
-
-            # Wait for the music to finish playing
-            while pygame.mixer.music.get_busy():
-                #If cancel keyword (Daisy cancel)
-                #if os.environ["CANCEL_LOOP"] == "True":
-                if self.dm.get_cancel_loop():
-                    pygame.mixer.music.stop()
-                    break
-                pygame.time.wait(100)  # Wait for 100 milliseconds before checking again
-        else:
-            logging.debug(f"Playing sound {name_or_bytes} with volume {volume}")
-
-            # Load sound from dictionary
+    def play_sound(self, name_or_bytes, volume=1.0, stop_event=None, sound_stop_event=None):
+        logging.debug("play_sound")
+        if isinstance(name_or_bytes, bytes):
+            sound = AudioSegment.from_file(BytesIO(name_or_bytes))
+        elif isinstance(name_or_bytes, str):
             sound = self.sounds.get(name_or_bytes)
-            sound.set_volume(volume)
-            sound.play()
+            if sound is None:
+                raise ValueError(f"No sound named {name_or_bytes}")
+        else:
+            raise TypeError(f"Unsupported argument type {type(name_or_bytes)}")
 
-            # Define function to stop playback when stop_event is set
-            event = threading.Event()
+        self.current_sound = sound
 
-            # Set the currently playing sound
-            self.current_sound = sound
+        if stop_event is None:
+            stop_event = threading.Event()
 
-            # Wait for the sound to finish playing
-            sound_length = sound.get_length()
-            while not event.is_set() and sound_length > 0:
+        # create a new thread to play the sound
+        thread = threading.Thread(target=self._play_sound_thread, args=(sound, volume, stop_event, sound_stop_event))
+        thread.start()
 
-                #If cancel keyword (Daisy cancel)
-                    #Not putting this here right now because setting cancel_loop to True immediately cancels playback of the "end" sound
+        thread.join()
+        self.current_sound = None
 
-                event.wait(min(sound_length, 0.1))  # Wait for the event to be set or the timeout to expire
-                sound_length -= 0.1  # Subtract the time waited from the remaining sound length
+    def _play_sound_thread(self, sound, volume=1.0, stop_event=None, sound_stop_event=None):
+        logging.debug("play_sound_thread")
+        # Adjust volume
+        scaled_volume = volume * 32767
+        sound_array = sound.get_array_of_samples()
+        scaled_array = np.round(scaled_volume * np.array(sound_array) / 32767).astype(np.int16)
+        sound = sound._spawn(scaled_array)
 
-        logging.debug(f"Playback of sound {name_or_bytes} completed")
+        # Convert audio segment to raw audio data
+        raw_data = sound.raw_data
 
-        return sound
+        # Set audio parameters
+        num_channels = sound.channels
+        bytes_per_sample = sound.sample_width
+        sample_rate = sound.frame_rate
 
-    # Function to play audio files with a thread
-    def play_sound_with_thread(self, name, volume=1.0):
-        """Function to play audio files with a thread and return a stop event and thread object."""
-        stop_event = threading.Event()
-        play_sound_thread = threading.Thread(target=self.play_sound, args=(name, volume, stop_event))
+        # Play audio using simpleaudio
+        self.playback = simpleaudio.play_buffer(raw_data, num_channels=num_channels, bytes_per_sample=bytes_per_sample, sample_rate=sample_rate)
 
-        # Start the sound playback thread
-        logging.debug(f"Starting threaded playback of file {name}.wav")
-        play_sound_thread.start()
+        # Loop until either stop_event or sound_stop_event is set
+        while True:
+            if stop_event:
+                if stop_event.is_set():
+                    # Stop the playback if the stop_event is set
+                    self.playback.stop()
+                    return False
+            if sound_stop_event:
+                if sound_stop_event.is_set():
+                    # Stop the playback if the sound_stop_event is set
+                    self.playback.stop()
+                    return True
 
-        return stop_event, play_sound_thread
+            # Check if the playback has finished
+            if not self.playback.is_playing():
+                return True
 
-    def stop_playing(self):
-        """Function to stop the current sound playback."""
-        if self.current_sound:
-            self.current_sound.stop()
+        self.playback = None
+
+
+
+    def play_sound_with_thread(self, name_or_bytes, volume=1.0, stop_event=None, sound_stop_event=None):
+        logging.debug("play_sound_with_thread")
+        thread = threading.Thread(target=self.play_sound, args=(name_or_bytes, volume, stop_event, sound_stop_event))
+        thread.start()
 
 instance = SoundManager('sounds/')

@@ -1,10 +1,5 @@
-import os
-import re
 import openai
 import logging
-import os
-import importlib
-from modules import constants
 import queue
 import nltk.data
 import threading
@@ -23,6 +18,7 @@ import modules.ChatSpeechProcessor as csp
 import modules.SoundManager as sm
 import modules.ContextHandlers as ch
 import modules.DaisyMethods as dm
+import modules.TTSElevenLabs as tts
 import ModuleLoader as ml
 
 
@@ -36,6 +32,7 @@ class Chat:
 		self.sounds = sm.instance
 		self.ch = ch.instance
 		self.dm = dm.instance
+		self.tts = tts.TtsElevenLabs()
 
 		self.hook_instances = ml.instance.hook_instances
 
@@ -43,12 +40,18 @@ class Chat:
 			self.configs = yaml.safe_load(f)
 		openai.api_key = self.configs["keys"]["openai"]
 
-	def request(self, messages, stop_event, stop_sound, tts=False):
+	def request(self, messages, stop_event, sound_stop_event=None, tts=False):
+		#Handle LLM request. Optionally convert to sentences and queue for tts, if needed.
+
+		#Queues for handling chunks, sentences, and tts sounds
 		sentences_queue = queue.Queue()  # create a queue to hold the sentences
-		tts_queue = queue.Queue()  # create a queue to hold the tts_sounds
-		response_canceled = [False]  # use a list to make response_canceled mutable
-		chunkerize_complete = [False]	# use a list to make response_complete mutable
-		queue_sentences_complete = [False]	# use a list to make response_complete mutable
+		#tts_queue = queue.Queue()  # create a queue to hold the tts_sounds
+
+		#Flags for handling chunks, sentences, and tts sounds
+		sentence_queue_canceled = [False]  # use a list to make response_canceled mutable
+		sentence_queue_complete = [False]	# use a list to make response_complete mutable
+		#tts_queue_complete = [False]	# use a list to make response_complete mutable
+
 		threads = []  # keep track of all threads created
 		return_text = [""]
 
@@ -62,20 +65,12 @@ class Chat:
 			)
 
 			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
-			t = threading.Thread(target=self.openai_stream_chunkerize, args=(response, sentences_queue, response_canceled, chunkerize_complete, return_text, stop_event, stop_sound))
+			t = threading.Thread(target=self.openai_stream_queue_sentences, args=(response, sentences_queue, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event))
 			t.start()
 			threads.append(t)
 
 			if tts:
-				#Handle sentences. Optionally convert to tts sounds for tts_queue, if needed.
-				t = threading.Thread(target=self.queue_sentences, args=(sentences_queue, response_canceled, queue_sentences_complete, tts_queue, stop_event, tts), daemon=True)
-				t.start()
-				threads.append(t)
-
-				#Play tts sounds from tts_queue
-				t = threading.Thread(target=self.play_tts_queue, args=(tts_queue, response_canceled, chunkerize_complete, queue_sentences_complete, stop_event, stop_sound), daemon=True)
-				t.start()
-				threads.append(t)
+				self.csp.queue_and_tts_sentences(sentences_queue, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event)
 
 			while not return_text[0]:
 				time.sleep(0.1)  # wait a bit before checking again
@@ -85,7 +80,7 @@ class Chat:
 				thread.join()
 			return return_text[0]
 		
-			# Handle different types of errors that may occur when sending request to OpenAI model
+		# Handle different types of errors that may occur when sending request to OpenAI model
 		except openai.error.InvalidRequestError as e:
 			logging.error(f"Invalid Request Error: {e}")
 			self.csp.tts("Invalid Request Error. Sorry, I can't talk right now.")
@@ -107,7 +102,7 @@ class Chat:
 			self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False  
 
-	def openai_stream_chunkerize(self, response, sentences_queue, response_canceled, chunkerize_complete, return_text, stop_event, stop_sound):
+	def openai_stream_queue_sentences(self, response, sentences_queue, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
 		collected_chunks = []
 		collected_messages = []
 		text = ""
@@ -121,9 +116,7 @@ class Chat:
 				chunk_message = chunk['choices'][0]['delta']
 				collected_messages.append(chunk_message)
 				text = ''.join([m.get('content', '') for m in collected_messages])
-
 				if text:
-
 					#HOOK: Chat_request_inner
 					#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
 					#I may update this soon to allow for inline responses (For example: "5+5 is [Calculator: 5+5]")
@@ -132,7 +125,7 @@ class Chat:
 						Chat_chat_inner_instances = self.hook_instances["Chat_request_inner"]
 						for instance in Chat_chat_inner_instances:
 							logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
-							hook_text = instance.main(text, stop_event, stop_sound)
+							hook_text = instance.main(text, stop_event, sound_stop_event)
 							if hook_text != False:
 								break
 						#Empty out text and queues, and return
@@ -140,79 +133,20 @@ class Chat:
 							while not sentences_queue.empty():
 								sentences_queue.get()
 							sentences_queue.put(["END OF STREAM"])
-							response_canceled[0] = True
+							sentence_queue_canceled[0] = True
 							return_text[0] = hook_text
 							return
-			
-				temp_sentences = tokenizer.tokenize(text)
+						
+				#Tokenize the text into sentences
+				temp_sentences = self.csp.nltk_sentence_tokenize(text)
+
 				sentences_queue.put(temp_sentences)  # put the sentences into the queue
 		temp_sentences.append("END OF STREAM")
 		sentences_queue.put(temp_sentences)  # put the sentences into the queue
 		time.sleep(0.01)
-		chunkerize_complete[0] = True
+		sentence_queue_complete[0] = True
 		return_text[0] = text
 		return
-
-	def queue_sentences(self, sentences_queue, response_canceled, queue_sentences_complete, tts_queue, stop_event, tts=False):
-		sentences_length = 0
-		sentences = []
-		while not stop_event.is_set():
-			try:
-				sentences = sentences_queue.get(block=True, timeout=0.01)  # get sentences from the queue
-			except queue.Empty:
-				continue
-
-			if len(sentences) > sentences_length and len(sentences) >= 1:
-				sentences_length = len(sentences)
-				if len(sentences) >= 2:
-					print("Queued sentence: ", sentences[-2])  # print the second-to-last sentence in sentences
-
-					if tts: #Generate bytes data and send to queue_tts
-
-						user = ElevenLabsUser(self.configs["keys"]["elevenlabs"]) #fill in your api key as a string
-
-						try:
-							voice = user.get_voices_by_name("Daisy")[0]  #fill in the name of the voice you want to use. ex: "Rachel"
-							sound = voice.generate_audio_bytes(sentences[-2])
-							tts_queue.put(sound)
-						except requests.exceptions.HTTPError as e:
-							self.csp.tts("HTTP Error. Sorry, I can't talk right now. Please check your ElevenLabs account.")
-							print(f"HTTP Error: {e}")
-
-			if sentences:
-				if sentences[-1] == "END OF STREAM" or response_canceled[0]:
-					queue_sentences_complete[0] = True
-					return
-				
-
-	def play_tts_queue(self, tts_queue, response_canceled, chunkerize_complete, queue_sentences_complete, stop_event, stop_sound=None):
-		tts_length = 0
-		tts = []
-
-		# Wait for tts to be generated
-		while not tts_queue.qsize() and not response_canceled[0]:
-			time.sleep(0.01)
-
-		# Play tts
-		while not stop_event.is_set() and not response_canceled[0]:
-			try:
-				tts = tts_queue.get(block=True, timeout=0.01)  # get tts from the queue
-				sound = pydub.AudioSegment.from_file_using_temporary_files(io.BytesIO(tts))
-
-				if stop_sound:
-					stop_sound()
-
-				if pydub.playback.play(sound):
-					# If tts() returns True, the sentence has finished playing
-					pass
-			except queue.Empty:
-				if not queue_sentences_complete[0]:
-					continue
-				elif chunkerize_complete[0] and queue_sentences_complete[0]:
-					print("chunkerize_complete[0] and queue_sentences_complete[0]. Exiting play_tts_queue()")
-					return
-				
-				return
 
 
 	def display_messages(self):

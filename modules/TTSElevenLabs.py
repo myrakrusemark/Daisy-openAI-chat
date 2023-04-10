@@ -15,23 +15,40 @@ class TtsElevenLabs:
 	"""
 	description = "A TTS model using Eleven Lab's TTS service"
 	module_hook = "Tts"
-
+	
 	def __init__(self):
 
 		with open("configs.yaml", "r") as f:
 			configs = yaml.safe_load(f)
 			self.api_key = configs["keys"]["elevenlabs"]
-	
+
+		self.user = ElevenLabsUser(self.api_key)
+		self.voice = self.user.get_voices_by_name("Daisy")[0]
 
 
 
-	def main(self, text):
-		user = ElevenLabsUser(self.api_key) #fill in your api key as a string
-		voice = user.get_voices_by_name("Daisy")[0]  #fill in the name of the voice you want to use. ex: "Rachel"
-		self.play(voice.generate_audio_bytes(text)) #fill in what you want the ai to say as a string
 
-	def play(self, bytesData):
+	def main(self, text, as_thread=False): 
+
+		if as_thread:
+			t = threading.Thread(target=self.tts, args=(text,))
+			t.start()
+			t.join()
+		else:
+			self.tts(text)
+
+	def tts(self, text):
+		self.create_tts_audio(text)
+		self.play_tts(self.voice.create_bytes(text)) 
+
+	def create_tts_audio(self, text):
+		logging.debug("Creating TTS")
+		return self.voice.generate_audio_bytes(text)
+
+	def play_tts(self, bytesData):
+		logging.debug("Playing TTS")
 		sound = pydub.AudioSegment.from_file_using_temporary_files(io.BytesIO(bytesData))
 		pydub.playback.play(sound)
 		return
 		  
+
