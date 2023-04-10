@@ -87,9 +87,7 @@ class Daisy:
 					self.dm.set_cancel_loop(False)
 
 					while not self.stop_event.is_set():
-						print("START LOOP")
 						if thread.is_alive():
-							print("THREAD ALIVE")
 							self.led.breathe_color(0, 0, 100)  # Breathe Blue
 							stt_text = self.csp.stt(self.stop_event, 30) #30s timeout
 
@@ -102,13 +100,8 @@ class Daisy:
 								break
 
 							self.sounds.play_sound_with_thread('waiting', 0.2)
-							text = self.chat.chat(self.ch.get_context_without_timestamp(), self.stop_event)
-							self.sounds.stop_playing()
-
-							if self.dm.get_cancel_loop():
-								self.sounds.play_sound_with_thread('end')
-								break
-
+							text = self.chat.request(self.ch.get_context_without_timestamp(), self.stop_event, self.sounds.stop_playing, True)
+							
 							self.ch.add_message_object('assistant', text)
 
 							self.chat.display_messages()
@@ -118,13 +111,9 @@ class Daisy:
 
 							self.led.breathe_color(100, 100, 100)  # Breathe White
 
-							self.csp.tts(text)
-							print("END LOOP")
-
 						else:
 							thread.join()
 							break
-
 			else:
 				# Log a warning message if there is no internet connection and the warning hasn't been logged yet
 				if not self.internet_warning_logged:
