@@ -46,7 +46,9 @@ class Chat:
 	def request(self, messages, stop_event, stop_sound, tts=False):
 		sentences_queue = queue.Queue()  # create a queue to hold the sentences
 		tts_queue = queue.Queue()  # create a queue to hold the tts_sounds
-		response_canceled = [False]  # use a list to make response_complete mutable
+		response_canceled = [False]  # use a list to make response_canceled mutable
+		chunkerize_complete = [False]	# use a list to make response_complete mutable
+		queue_sentences_complete = [False]	# use a list to make response_complete mutable
 		threads = []  # keep track of all threads created
 		return_text = [""]
 
@@ -59,16 +61,16 @@ class Chat:
 				stream=True
 			)
 
-			t = threading.Thread(target=self.openai_stream_chunkerize, args=(response, sentences_queue, response_canceled, return_text, stop_event, stop_sound))
+			t = threading.Thread(target=self.openai_stream_chunkerize, args=(response, sentences_queue, response_canceled, chunkerize_complete, return_text, stop_event, stop_sound))
 			t.start()
 			threads.append(t)
 
 			if tts:
-				t = threading.Thread(target=self.queue_sentences, args=(sentences_queue, response_canceled, tts_queue, stop_event, tts), daemon=True)
+				t = threading.Thread(target=self.queue_sentences, args=(sentences_queue, response_canceled, queue_sentences_complete, tts_queue, stop_event, tts), daemon=True)
 				t.start()
 				threads.append(t)
 
-				t = threading.Thread(target=self.play_tts_queue, args=(tts_queue, response_canceled, stop_event, stop_sound), daemon=True)
+				t = threading.Thread(target=self.play_tts_queue, args=(tts_queue, response_canceled, chunkerize_complete, queue_sentences_complete, stop_event, stop_sound), daemon=True)
 				t.start()
 				threads.append(t)
 
@@ -102,7 +104,7 @@ class Chat:
 			self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False  
 
-	def openai_stream_chunkerize(self, response, sentences_queue, response_canceled, return_text, stop_event, stop_sound):
+	def openai_stream_chunkerize(self, response, sentences_queue, response_canceled, chunkerize_complete, return_text, stop_event, stop_sound):
 		collected_chunks = []
 		collected_messages = []
 		text = ""
@@ -144,10 +146,11 @@ class Chat:
 		temp_sentences.append("END OF STREAM")
 		sentences_queue.put(temp_sentences)  # put the sentences into the queue
 		time.sleep(0.01)
+		chunkerize_complete[0] = True
 		return_text[0] = text
 		return
 
-	def queue_sentences(self, sentences_queue, response_canceled, tts_queue, stop_event, tts=False):
+	def queue_sentences(self, sentences_queue, response_canceled, queue_sentences_complete, tts_queue, stop_event, tts=False):
 		sentences_length = 0
 		sentences = []
 		while not stop_event.is_set():
@@ -175,15 +178,21 @@ class Chat:
 
 			if sentences:
 				if sentences[-1] == "END OF STREAM" or response_canceled[0]:
+					queue_sentences_complete[0] = True
 					return
+				
+			queue_sentences_complete[0] = True
+			return
 
-	def play_tts_queue(self, tts_queue, response_canceled, stop_event, stop_sound=None):
+	def play_tts_queue(self, tts_queue, response_canceled, chunkerize_complete, queue_sentences_complete, stop_event, stop_sound=None):
 		tts_length = 0
 		tts = []
 
+		# Wait for tts to be generated
 		while not tts_queue.qsize() and not response_canceled[0]:
 			time.sleep(0.01)
 
+		# Play tts
 		while not stop_event.is_set() and not response_canceled[0]:
 			try:
 				tts = tts_queue.get(block=True, timeout=0.01)  # get tts from the queue
@@ -196,7 +205,14 @@ class Chat:
 					# If tts() returns True, the sentence has finished playing
 					pass
 			except queue.Empty:
+				if not queue_sentences_complete[0]:
+					continue
+				elif chunkerize_complete[0] and queue_sentences_complete[0]:
+					print("chunkerize_complete[0] and queue_sentences_complete[0]. Exiting play_tts_queue()")
+					return
+				
 				return
+
 
 	def display_messages(self):
 		"""Displays the messages stored in the messages attribute of ContectHandlers."""
