@@ -90,7 +90,7 @@ class Chat:
 			self.csp.tts("API Error. Sorry, I can't talk right now.")
 			return False
 		except openai.error.RateLimitError as e:
-			logging.error(f"API Error: {e}")
+			logging.error(f"RateLimitError: {e}")
 			self.csp.tts("Rate Limit Error. Sorry, I can't talk right now.")
 			return False
 		except ValueError as e:

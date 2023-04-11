@@ -23,22 +23,10 @@ class Calculator:
 		self.chat = chat.instance
 
 
-		self.start_prompt = """You are a chatbot with a CALCULATOR. Any math expression you receive can be solved by sending it to the tool form, "Calculator". If I ask you any question that may require calculations, always respond using a "tool form" in the following format: [calculator: 5+5].
-	Example #1:
-	User: What is 53 percent of 1,203?
-	Daisy: [calculator: 1203*.53]
-	User: This is an automatic response to your tool form. Please respond to the user's last message using the information below.
-		637.59
-	Daisy: 53 percent of 1,203 is 637.59.
+		self.start_prompt = """You are a calculatorbot. If I ask you a question that requires calculation, respond using a "tool form" in the following format:
+		
+		[calculator: 5+5]."""
 
-	Example #2:
-	User: If I have 1500 ducklings and a wolf takes three quarters of them, how many do I have left?
-	Daisy: [calculator: 1500*0.25]
-	User: This is an automatic response to your tool form. Please respond to the user's last message using the information below.
-		375
-	Daisy: You have 375 ducklings left.
-
-	"""
 		logging.info("Calculator: Adding start prompt")
 		self.ch.add_message_object('system', self.start_prompt)
 
@@ -58,13 +46,12 @@ class Calculator:
 
 				answer = self.evaluate_expression(expression)
 				answer = str(answer)
-				new_prompt="This is an automatic response to your tool form. Please respond to the user's last message using the information below.\n"
-				new_prompt += answer+"\n"
+				new_prompt="Respond using the answer below.\n"
+				new_prompt += "Answer: "+answer+"\n"
 
-				self.ch.add_message_object('user', new_prompt)
+				self.ch.add_message_object('system', new_prompt)
 
 				response_text = self.chat.request(self.ch.get_context_without_timestamp(), stop_event, stop_sound, True)
-				print("RETURNING: "+response_text)
 				return response_text
 			
 			else:

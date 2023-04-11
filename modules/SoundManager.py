@@ -52,14 +52,13 @@ class SoundManager:
             stop_event = threading.Event()
 
         # create a new thread to play the sound
-        thread = threading.Thread(target=self._play_sound_thread, args=(sound, volume, stop_event, sound_stop_event))
-        thread.start()
+        self._play_sound_method(sound, volume, stop_event, sound_stop_event)
 
-        thread.join()
         self.current_sound = None
+        return True
 
-    def _play_sound_thread(self, sound, volume=1.0, stop_event=None, sound_stop_event=None):
-        logging.debug("play_sound_thread")
+    def _play_sound_method(self, sound, volume=1.0, stop_event=None, sound_stop_event=None):
+        logging.debug("_play_sound_method")
         # Adjust volume
         scaled_volume = volume * 32767
         sound_array = sound.get_array_of_samples()
@@ -93,8 +92,6 @@ class SoundManager:
             # Check if the playback has finished
             if not self.playback.is_playing():
                 return True
-
-        self.playback = None
 
 
 

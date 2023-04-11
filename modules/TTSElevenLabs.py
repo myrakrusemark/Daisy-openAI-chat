@@ -4,6 +4,7 @@ import pydub
 import pydub.playback
 import io
 import yaml
+import threading
 
 import modules.ChatSpeechProcessor as csp
 import modules.SoundManager as sm

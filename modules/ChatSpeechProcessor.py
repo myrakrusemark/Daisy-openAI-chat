@@ -2,23 +2,18 @@
 import pyaudio
 import websockets
 import asyncio
-import concurrent.futures
 import base64
 import json
 import threading
 import time
 from modules import constants
 import sys
-import os
 import re
 import string
 from dotenv import load_dotenv
 import pyttsx3
 import requests
-import tempfile
 import logging
-import pygame
-import pvporcupine
 import yaml
 import nltk.data
 import queue
@@ -27,7 +22,6 @@ import time
 import queue
 import requests
 from concurrent.futures import ThreadPoolExecutor
-import io
 
 
 import modules.SoundManager as sm
@@ -136,6 +130,7 @@ class ChatSpeechProcessor:
 			if sentences:
 				if sentences[-1] == "END OF STREAM" or sentence_queue_canceled[0]:
 					tts_queue_complete[0] = True
+					print("TTS queue complete")
 					return
 				
 
@@ -154,18 +149,21 @@ class ChatSpeechProcessor:
 				#Stop voice assistant "waiting" sound
 				if sound_stop_event:
 					sound_stop_event.set()
-				if self.sounds.play_sound(tts, 1.0):
-					print("TTS finished playing")
-					# If tts() returns True, the sentence has finished playing
-					pass
+
+				if sentence_queue_canceled[0]:
+					return
+				
+				self.sounds.play_sound(tts, 1.0)
+
+
 
 			except queue.Empty:
 				if not tts_queue_complete[0]:
 					continue
-				elif sentence_queue_complete[0] and tts_queue_complete[0]:
+				elif not sentence_queue_complete[0]:
+					continue
+				else:
 					return
-				
-				return
 			
 
 

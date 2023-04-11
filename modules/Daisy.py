@@ -102,7 +102,10 @@ class Daisy:
 							sound_stop_event = threading.Event()
 							self.sounds.play_sound_with_thread('waiting', 0.2, self.stop_event, sound_stop_event)
 							text = self.chat.request(self.ch.get_context_without_timestamp(), self.stop_event, sound_stop_event, True)
-							
+
+							if not text:
+								break
+
 							self.ch.add_message_object('assistant', text)
 
 							self.chat.display_messages()
