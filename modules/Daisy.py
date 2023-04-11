@@ -22,7 +22,8 @@ class Daisy:
 	module_hook = "Main_start"
 
 	def __init__(self):
-		self.stop_event = threading.Event()
+		self.daisy_stop_event = threading.Event()
+		self.awake_stop_event = threading.Event()
 
 		self.csp = csp.instance
 		self.cs = cs.instance
@@ -35,14 +36,17 @@ class Daisy:
 
 		self.internet_warning_logged = False
 
+
 	def close(self):
-		self.stop_event.set()
+		self.daisy_stop_event.set()
+
 
 	def main(self):
 		self.sounds.play_sound("beep", 0.5)
 
-		while not self.stop_event.is_set():
-
+		while not self.daisy_stop_event.is_set():
+			self.awake_stop_event.clear()
+			
 			if self.cs.check_internet():
 				# If internet connection is restored, log a message
 				if self.internet_warning_logged:
@@ -55,8 +59,8 @@ class Daisy:
 				self.led.turn_on_color(0, 100, 0)  # Solid Green
 
 				try:
-					# Initialize Porcupine
-					awoken = self.csp.listen_for_wake_word(self.stop_event)
+					# Listen for Porcupine wake word
+					awoken = self.csp.listen_for_wake_word(self.daisy_stop_event)
 				except Exception as e:
 					# Catch the exception and handle it
 					logging.error(f"Error initializing Porcupine: {e}")
@@ -82,41 +86,41 @@ class Daisy:
 					except Exception as e:
 						logging.warning("Daisy_wake Hook error: "+str(e))
 
-					thread = threading.Thread(target=self.dm.daisy_cancel, args=(self.stop_event,))
-					thread.start()
-					self.dm.set_cancel_loop(False)
+					daisy_cancel_thread = threading.Thread(target=self.dm.daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
+					daisy_cancel_thread.start()
+					#self.dm.set_cancel_loop(False)
 
-					while not self.stop_event.is_set():
-						if thread.is_alive():
-							self.led.breathe_color(0, 0, 100)  # Breathe Blue
-							stt_text = self.csp.stt(self.stop_event, 30) #30s timeout
+					while not self.daisy_stop_event.is_set():
+						if not self.awake_stop_event.is_set():
+								self.led.breathe_color(0, 0, 100)  # Breathe Blue
+								stt_text = self.csp.stt(self.awake_stop_event, 30) #30s timeout
 
-							self.led.breathe_color(100,0,100)  # Breathe Blue
+								self.led.breathe_color(100,0,100)  # Breathe Blue #NEEDS CANCEL LOOP
 
-							self.ch.add_message_object('user', stt_text)
+								self.ch.add_message_object('user', stt_text)
 
-							if self.dm.get_cancel_loop():
-								self.sounds.play_sound_with_thread('end', 1.0)
-								break
+								if self.awake_stop_event.is_set():
+									self.sounds.play_sound_with_thread('end', 1.0)
+									break
 
-							sound_stop_event = threading.Event()
-							self.sounds.play_sound_with_thread('waiting', 0.2, self.stop_event, sound_stop_event)
-							text = self.chat.request(self.ch.get_context_without_timestamp(), self.stop_event, sound_stop_event, True)
+								sound_stop_event = threading.Event()
+								self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
+								text = self.chat.request(self.ch.get_context_without_timestamp(), self.awake_stop_event, sound_stop_event, True)
 
-							if not text:
-								break
+								if not text:
+									break
 
-							self.ch.add_message_object('assistant', text)
+								self.ch.add_message_object('assistant', text)
 
-							self.chat.display_messages()
-							if self.dm.get_cancel_loop():
-								self.sounds.play_sound_with_thread('end', 1.0)
-								break
+								self.chat.display_messages()
+								if self.awake_stop_event.is_set():
+									self.sounds.play_sound_with_thread('end', 1.0)
+									break
 
-							self.led.breathe_color(100, 100, 100)  # Breathe White
+								self.led.breathe_color(100, 100, 100)  # Breathe White
 
 						else:
-							thread.join()
+							daisy_cancel_thread.join()
 							break
 			else:
 				# Log a warning message if there is no internet connection and the warning hasn't been logged yet

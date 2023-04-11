@@ -95,9 +95,9 @@ class SoundManager:
 
 
 
-    def play_sound_with_thread(self, name_or_bytes, volume=1.0, stop_event=None, sound_stop_event=None):
+    def play_sound_with_thread(self, name_or_bytes, volume=1.0, awake_stop_event=None, sound_stop_event=None):
         logging.debug("play_sound_with_thread")
-        thread = threading.Thread(target=self.play_sound, args=(name_or_bytes, volume, stop_event, sound_stop_event))
+        thread = threading.Thread(target=self.play_sound, args=(name_or_bytes, volume, awake_stop_event, sound_stop_event))
         thread.start()
 
 instance = SoundManager('sounds/')

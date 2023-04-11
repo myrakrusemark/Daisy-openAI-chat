@@ -146,6 +146,7 @@ class Chat:
 		time.sleep(0.01)
 		sentence_queue_complete[0] = True
 		return_text[0] = text
+		print("Sentence queue complete")
 		return
 
 

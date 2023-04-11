@@ -66,6 +66,7 @@ class ChatSpeechProcessor:
 		self.tts_queue_complete = [False]	# use a list to make response_complete mutable
 
 		self.threads = []  # keep track of all threads created
+		
 
 
 	def listen_for_wake_word(self, stop_event):
@@ -128,9 +129,15 @@ class ChatSpeechProcessor:
 						print(f"HTTP Error: {e}")
 
 			if sentences:
-				if sentences[-1] == "END OF STREAM" or sentence_queue_canceled[0]:
+				if sentences[-1] == "END OF STREAM":
 					tts_queue_complete[0] = True
-					print("TTS queue complete")
+					print("TTS queue complete (END OF STREAM)")
+					return
+				if sentence_queue_canceled[0] or stop_event.is_set():
+					tts_queue_complete[0] = True
+					while not tts_queue.empty(): #Empty out the TTS queue so no sounds linger
+						tts_queue.get()
+					print("TTS queue complete (sentence_queue_canceled)")
 					return
 				
 
@@ -149,20 +156,18 @@ class ChatSpeechProcessor:
 				#Stop voice assistant "waiting" sound
 				if sound_stop_event:
 					sound_stop_event.set()
-
-				if sentence_queue_canceled[0]:
-					return
 				
 				self.sounds.play_sound(tts, 1.0)
-
-
 
 			except queue.Empty:
 				if not tts_queue_complete[0]:
 					continue
 				elif not sentence_queue_complete[0]:
 					continue
-				else:
+				elif sentence_queue_complete[0]:
+					while not tts_queue.empty(): #Empty out the TTS queue so no sounds linger
+						tts_queue.get()
+					print("Play TTS queue complete")
 					return
 			
 
@@ -206,13 +211,13 @@ class ChatSpeechProcessor:
 
 				while not self.result_received and not stop_event.is_set():
 					elapsed_time = time.time() - start_time
-					if self.dm.get_cancel_loop():
+					if stop_event.is_set():
 						logging.info("Timeout()")
 						break
 					if timeout_seconds > 0: # If timeout is 0s, then dont timeout
 						if elapsed_time > timeout_seconds:
 							logging.info("Timeout reached")
-							self.dm.set_cancel_loop(True)
+							stop_event.set()
 							return
 					await asyncio.sleep(0.01)
 
@@ -224,7 +229,7 @@ class ChatSpeechProcessor:
 				logging.info("STT Send start")
 
 				while not self.result_received and not stop_event.is_set():
-					if self.dm.get_cancel_loop():
+					if stop_event.is_set():
 						logging.info("Send(): Cancelled")
 						break
 
@@ -255,7 +260,7 @@ class ChatSpeechProcessor:
 
 
 				while not self.result_received and not stop_event.is_set():
-					if self.dm.get_cancel_loop():
+					if stop_event.is_set():
 						logging.info("Receive(): Cancelled")
 						self.result_str = False
 						self.result_received = True
