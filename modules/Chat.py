@@ -44,7 +44,7 @@ class Chat:
 		#Handle LLM request. Optionally convert to sentences and queue for tts, if needed.
 
 		#Queues for handling chunks, sentences, and tts sounds
-		sentences_queue = queue.Queue()  # create a queue to hold the sentences
+		sentences = [[]]  # create a queue to hold the sentences
 		#tts_queue = queue.Queue()  # create a queue to hold the tts_sounds
 
 		#Flags for handling chunks, sentences, and tts sounds
@@ -53,6 +53,7 @@ class Chat:
 		#tts_queue_complete = [False]	# use a list to make response_complete mutable
 
 		threads = []  # keep track of all threads created
+		text_stream = [""]
 		return_text = [""]
 
 		try:
@@ -64,20 +65,26 @@ class Chat:
 				stream=True
 			)
 
+			#Check for tool forms (Chat_request_inner)
+			#t = threading.Thread(target=self.stream_toolform_checker, args=(text_stream, sentences_queue, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event))
+			#t.start()
+			#threads.append(t)
+
 			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
-			t = threading.Thread(target=self.openai_stream_queue_sentences, args=(response, sentences_queue, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event))
+			t = threading.Thread(target=self.stream_queue_sentences, args=(response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event))
 			t.start()
 			threads.append(t)
 
 			if tts:
-				self.csp.queue_and_tts_sentences(sentences_queue, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event)
+				self.csp.queue_and_tts_sentences(sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event)
 
 			while not return_text[0]:
 				time.sleep(0.1)  # wait a bit before checking again
 
 			# return response_complete and return_text[0] when return_text is set
-			for thread in threads:
-				thread.join()
+			#for thread in threads:
+			t.join()
+
 			return return_text[0]
 		
 		# Handle different types of errors that may occur when sending request to OpenAI model
@@ -102,51 +109,82 @@ class Chat:
 			self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False  
 
-	def openai_stream_queue_sentences(self, response, sentences_queue, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
+	def toolform_checker(self, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
+		logging.debug("Checking for tool forms...")
+
+		#HOOK: Chat_request_inner
+		#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
+		#I may update this soon to allow for inline responses (For example: "5+5 is [Calculator: 5+5]")
+		logging.debug(self.hook_instances)
+		if "Chat_request_inner" in self.hook_instances:
+			for instance in self.hook_instances["Chat_request_inner"]:
+				logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
+
+				tool_found = instance.check(text_stream)
+
+				if tool_found:
+					print("FOUND TOOL FORM")
+					#Cancel and clear-out current request
+					#sentences[0].append(["END OF STREAM"])
+					sentence_queue_canceled[0] = True
+
+					hook_text = instance.main(text_stream, stop_event)
+
+					text_stream = ""
+
+					logging.debug("Hook text: "+hook_text)
+					if hook_text:
+
+
+						return_text[0] = hook_text	
+
+						self.ch.add_message_object('system', hook_text)
+						self.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, True)
+
+						return True
+					else:
+						return False
+		return False
+
+
+	def stream_queue_sentences(self, response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
+		sentence_queue_complete[0] = False
+		sentence_queue_canceled[0] = False
 		collected_chunks = []
 		collected_messages = []
 		text = ""
 
 		tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
+		i = 0
 		for chunk in response:
-			if not stop_event.is_set():
-				temp_sentences = []
-				collected_chunks.append(chunk)
-				chunk_message = chunk['choices'][0]['delta']
-				collected_messages.append(chunk_message)
-				text = ''.join([m.get('content', '') for m in collected_messages])
-				if text:
-					#HOOK: Chat_request_inner
-					#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
-					#I may update this soon to allow for inline responses (For example: "5+5 is [Calculator: 5+5]")
-					logging.debug(self.hook_instances)
-					if "Chat_request_inner" in self.hook_instances:
-						Chat_chat_inner_instances = self.hook_instances["Chat_request_inner"]
-						for instance in Chat_chat_inner_instances:
-							logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
-							hook_text = instance.main(text, stop_event, sound_stop_event)
-							if hook_text != False:
-								break
-						#Empty out text and queues, and return
-						if hook_text != False:
-							while not sentences_queue.empty():
-								sentences_queue.get()
-							sentences_queue.put(["END OF STREAM"])
-							sentence_queue_canceled[0] = True
-							return_text[0] = hook_text
-							return
-						
-				#Tokenize the text into sentences
-				temp_sentences = self.csp.nltk_sentence_tokenize(text)
+			if not sentence_queue_canceled[0]:
+				if not stop_event.is_set():
+					temp_sentences = []
+					collected_chunks.append(chunk)
+					chunk_message = chunk['choices'][0]['delta']
+					collected_messages.append(chunk_message)
+					text_stream[0] = ''.join([m.get('content', '') for m in collected_messages])
 
-				sentences_queue.put(temp_sentences)  # put the sentences into the queue
-		temp_sentences.append("END OF STREAM")
-		sentences_queue.put(temp_sentences)  # put the sentences into the queue
+					#Check for tool forms every 10 iterations to prevent slowdown
+					if i % 10 == 0:
+						if self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
+							logging.info("Sentence queue canceled from found toolform")
+							return
+					
+					#Tokenize the text into sentences
+					temp_sentences = self.csp.nltk_sentence_tokenize(text_stream[0])
+					sentences[0] = temp_sentences  # put the sentences into the queue
+
+			i += 1
+
+		
+		#sentences[0].append("END OF STREAM")
 		time.sleep(0.01)
 		sentence_queue_complete[0] = True
-		return_text[0] = text
-		print("Sentence queue complete")
+
+		logging.info("Sentence queue complete")
+		return_text[0] = text_stream[0]
 		return
 
 

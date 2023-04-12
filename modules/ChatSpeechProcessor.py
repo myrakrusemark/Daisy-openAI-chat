@@ -98,77 +98,96 @@ class ChatSpeechProcessor:
 				self.engine.say("Sorry, there was an error processing your request.")
 			self.engine.runAndWait()
 
-	def queue_and_tts_sentences(self, sentences_queue, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event=None):
+	def queue_and_tts_sentences(self, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event=None):
 		#user = ElevenLabsUser(self.api_key) #fill in your api key as a string
 		#voice = user.get_voices_by_name("Daisy")[0]  #fill in the name of the voice you want to use. ex: "Rachel"
 		#self.play(voice.generate_audio_bytes(text)) #fill in what you want the ai to say as a string
 
 		with ThreadPoolExecutor(max_workers=2) as executor:
-			executor.submit(self.queue_tts_from_queued_sentences, sentences_queue, sentence_queue_canceled, self.tts_queue_complete, self.tts_queue, stop_event)
+			executor.submit(self.queue_tts_from_sentences, sentences, sentence_queue_complete, sentence_queue_canceled, self.tts_queue_complete, self.tts_queue, stop_event)
 			executor.submit(self.play_tts_queue, self.tts_queue, sentence_queue_canceled, sentence_queue_complete, self.tts_queue_complete, stop_event, sound_stop_event)
 		return
 		  
-	def queue_tts_from_queued_sentences(self, sentences_queue, sentence_queue_canceled, tts_queue_complete, tts_queue, stop_event):
+	def queue_tts_from_sentences(self, sentences, sentence_queue_complete, sentence_queue_canceled, tts_queue_complete, tts_queue, stop_event):
+		tts_queue_complete[0] = False
 		sentences_length = 0
-		sentences = []
 		while not stop_event.is_set():
-			try:
-				sentences = sentences_queue.get(block=True, timeout=0.01)  # get sentences from the queue
-			except queue.Empty:
+
+			if not sentences[0]:
 				continue
 
-			if len(sentences) > sentences_length and len(sentences) >= 1:
-				sentences_length = len(sentences)
-				if len(sentences) >= 2:
-					print("Queued sentence: ", sentences[-2])  # print the second-to-last sentence in sentences
+			if len(sentences[0]) > sentences_length and len(sentences[0]) > 1:
+				#print("Sentences:", sentences)
+				sentence_length_difference = len(sentences[0]) - sentences_length
+				#print("Difference: ", sentence_length_difference)
+
+				sentences_length = len(sentences[0])
+
+				for i in range(sentence_length_difference):
+					index = (sentence_length_difference-i) * -1
+
+					queued_sentence = sentences[0][index]
+					print("Queued sentence: ", queued_sentence)
 
 					try:
-						tts_queue.put(self.tts.create_tts_audio(sentences[-2]))
+						tts_queue.put(self.tts.create_tts_audio(queued_sentence))
+						print("TTS Queue size: ", tts_queue.qsize())
 					except requests.exceptions.HTTPError as e:
 						self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
 						print(f"HTTP Error: {e}")
 
-			if sentences:
-				if sentences[-1] == "END OF STREAM":
-					tts_queue_complete[0] = True
-					print("TTS queue complete (END OF STREAM)")
-					return
-				if sentence_queue_canceled[0] or stop_event.is_set():
-					tts_queue_complete[0] = True
-					while not tts_queue.empty(): #Empty out the TTS queue so no sounds linger
-						tts_queue.get()
-					print("TTS queue complete (sentence_queue_canceled)")
-					return
+			if len(sentences[0]) == 1 and sentence_queue_complete[0]:
+				sentences_length = 1
+				queued_sentence = sentences[0][0]
+				print("Queued sentence: ", queued_sentence)
+
+				try:
+					tts_queue.put(self.tts.create_tts_audio(queued_sentence))
+				except requests.exceptions.HTTPError as e:
+					self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
+					print(f"HTTP Error: {e}")
+
+			if tts_queue.empty() and sentence_queue_complete[0]:
+				tts_queue_complete[0] = True
+				logging.info("TTS queue complete")
+				return
+			if sentence_queue_canceled[0] or stop_event.is_set():
+				tts_queue_complete[0] = True
+				while not tts_queue.empty(): #Empty out the TTS queue so no sounds linger
+					tts_queue.get()
+				logging.info("TTS queue canceled")
+				return
+			time.sleep(0.5) #Wait juuuust a bit to prevent sentence overlap
 				
 
-	def play_tts_queue(self, tts_queue, sentence_queue_canceled, sentence_queue_complete, tts_queue_complete, stop_event, sound_stop_event=None):
+	def play_tts_queue(self, tts_queue, sentence_queue_canceled, tts_queue_complete, stop_event, sound_stop_event=None):
 		tts = []
 
 		# Wait for tts to be generated
-		while not tts_queue.qsize() and not sentence_queue_canceled[0]:
+		while tts_queue.empty() and not sentence_queue_canceled[0]:
 			time.sleep(0.01)
 
 		# Play tts
-		while not stop_event.is_set() and not sentence_queue_canceled[0]:
-			try:
+		while not stop_event.is_set():
+			tts = None
+
+
+			if tts_queue.qsize():
 				tts = tts_queue.get(block=True, timeout=0.01)  # get tts from the queue
 
 				#Stop voice assistant "waiting" sound
 				if sound_stop_event:
 					sound_stop_event.set()
-				
-				self.sounds.play_sound(tts, 1.0)
+			
+				if tts:
+					self.sounds.play_sound(tts, 1.0)
+			elif tts_queue_complete[0]:
+				return
 
-			except queue.Empty:
-				if not tts_queue_complete[0]:
-					continue
-				elif not sentence_queue_complete[0]:
-					continue
-				elif sentence_queue_complete[0]:
-					while not tts_queue.empty(): #Empty out the TTS queue so no sounds linger
-						tts_queue.get()
-					print("Play TTS queue complete")
-					return
+
+			
+
+
 			
 
 
@@ -320,14 +339,12 @@ class ChatSpeechProcessor:
 				time.sleep(0.1)
 
 			# Join the thread to wait for it to finish
-			logging.info("Joining thread...")
+			logging.debug("Joining STT thread...")
 			thread.join()
-			logging.info("Thread stopped")
+			logging.debug("STT Thread stopped")
 
 			# Enable the ability to exit the program in a keyboard blocking state
-			if self.result_str:
-				self.result_str = self.result_str.lower()
-			exit_string = self.remove_non_alpha(self.result_str)
+			exit_string = self.remove_non_alpha(self.result_str.lower())
 			if exit_string == "exitprogram":
 				logging.info("Exiting program...")
 				sys.exit(0)

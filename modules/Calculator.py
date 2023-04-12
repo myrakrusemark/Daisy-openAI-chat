@@ -21,6 +21,7 @@ class Calculator:
 		self.ch = ch.instance
 		self.csp = csp.instance
 		self.chat = chat.instance
+		self.match = None
 
 
 		self.start_prompt = """You are a calculatorbot. If I ask you a question that requires calculation, respond using a "tool form" in the following format:
@@ -30,36 +31,35 @@ class Calculator:
 		logging.info("Calculator: Adding start prompt")
 		self.ch.add_message_object('system', self.start_prompt)
 
-
-	def main(self, text, stop_event, stop_sound):
-		#Find a search term in the response text (If --internet)
+	def check(self, text):
 		logging.debug("Calculator: Checking for tool forms")
+		found_tool_form = False
 		if "[calculator:" in text.lower():
-			match = re.search(r"\[calculator:.*\]", text)
-			if match:
-				processed_string = match.group()
-				start = processed_string.index(":") + 1
-				end = processed_string.index("]")
-				expression = processed_string[start:end]
+			self.match = re.search(r"\[calculator:\s*(.*?)\]", text)
+			if self.match:
+				logging.info("Calculator: Found tool form")
+				found_tool_form = True
+		return found_tool_form
 
-				logging.info("Calculator: Calculating: "+expression)
-
-				answer = self.evaluate_expression(expression)
-				answer = str(answer)
-				new_prompt="Respond using the answer below.\n"
-				new_prompt += "Answer: "+answer+"\n"
-
-				self.ch.add_message_object('system', new_prompt)
-
-				response_text = self.chat.request(self.ch.get_context_without_timestamp(), stop_event, stop_sound, True)
-				return response_text
 			
-			else:
-				return False
-		else:
-			return False
+			
+		
+	def main(self, text, stop_event):
+		#Find a search term in the response text (If --internet)
+		processed_string = self.match.group()
+		start = processed_string.index(":") + 1
+		end = processed_string.index("]")
+		expression = processed_string[start:end]
 
+		logging.info("Calculator: Calculating: "+expression)
 
-	def evaluate_expression(self, formula):
-		"""Evaluates mathematical expressions"""
-		return eval(formula)
+		answer = eval(expression)
+		answer = str(answer)
+		logging.info("Calculator: Answer: "+answer)
+		prompt = "Respond using the answer below.\n"
+		prompt += "Answer: "+answer+"\n"
+
+		self.match = None
+
+		return prompt
+			
