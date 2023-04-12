@@ -14,3 +14,6 @@ keys:
 hardware:
   input_device_index: 1
   led: False
+
+TTSElevenLabs:
+  voice: (Voice name)

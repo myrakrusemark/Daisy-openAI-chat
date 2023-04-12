@@ -17,16 +17,10 @@ class Calculator:
 
 
 	def __init__(self):
-
-		self.ch = ch.instance
-		self.csp = csp.instance
-		self.chat = chat.instance
 		self.match = None
+		self.ch = ch.instance
 
-
-		self.start_prompt = """You are a calculatorbot. If I ask you a question that requires calculation, respond using a "tool form" in the following format:
-		
-		[calculator: 5+5]."""
+		self.start_prompt = 'You are a Calculator Bot: If I ask you a question that requires calculation, respond with a TOOL FORM as your only response, containing the expression: [Calculator: 5+5]'
 
 		logging.info("Calculator: Adding start prompt")
 		self.ch.add_message_object('system', self.start_prompt)
@@ -34,16 +28,13 @@ class Calculator:
 	def check(self, text):
 		logging.debug("Calculator: Checking for tool forms")
 		found_tool_form = False
-		if "[calculator:" in text.lower():
-			self.match = re.search(r"\[calculator:\s*(.*?)\]", text)
+		if "[Calculator:" in text:
+			self.match = re.search(r"\[Calculator:\s*(.*?)\]", text)
 			if self.match:
 				logging.info("Calculator: Found tool form")
 				found_tool_form = True
 		return found_tool_form
 
-			
-			
-		
 	def main(self, text, stop_event):
 		#Find a search term in the response text (If --internet)
 		processed_string = self.match.group()

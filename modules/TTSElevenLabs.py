@@ -22,9 +22,10 @@ class TtsElevenLabs:
 		with open("configs.yaml", "r") as f:
 			configs = yaml.safe_load(f)
 			self.api_key = configs["keys"]["elevenlabs"]
+			self.voice = configs["TTSElevenLabs"]["voice"]
 
 		self.user = ElevenLabsUser(self.api_key)
-		self.voice = self.user.get_voices_by_name("Daisy")[0]
+		self.voice = self.user.get_voices_by_name(self.voice)[0]
 
 
 

@@ -123,7 +123,7 @@ class Chat:
 				tool_found = instance.check(text_stream)
 
 				if tool_found:
-					print("FOUND TOOL FORM")
+					logging.info("Found tool form.")
 					#Cancel and clear-out current request
 					#sentences[0].append(["END OF STREAM"])
 					sentence_queue_canceled[0] = True
@@ -134,14 +134,15 @@ class Chat:
 
 					logging.debug("Hook text: "+hook_text)
 					if hook_text:
-
-
-						return_text[0] = hook_text	
-
+						
 						self.ch.add_message_object('system', hook_text)
-						self.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, True)
 
-						return True
+						import modules.Chat as chat
+						tool_chat = chat.Chat()
+						response = tool_chat.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, True)
+						tool_chat = None
+
+						return response
 					else:
 						return False
 		return False
@@ -156,7 +157,6 @@ class Chat:
 
 		tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
-		i = 0
 		for chunk in response:
 			if not sentence_queue_canceled[0]:
 				if not stop_event.is_set():
@@ -165,26 +165,30 @@ class Chat:
 					chunk_message = chunk['choices'][0]['delta']
 					collected_messages.append(chunk_message)
 					text_stream[0] = ''.join([m.get('content', '') for m in collected_messages])
+					logging.debug(text_stream[0])
+
 
 					#Check for tool forms every 10 iterations to prevent slowdown
-					if i % 10 == 0:
-						if self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
-							logging.info("Sentence queue canceled from found toolform")
-							return
+					logging.debug("Checking for tool forms...")
+
+					response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event)
+					if response:
+						sentence_queue_complete[0] = True
+						return_text[0] = response
+						logging.info("Sentence queue complete by found toolform")
+						return
 					
 					#Tokenize the text into sentences
 					temp_sentences = self.csp.nltk_sentence_tokenize(text_stream[0])
 					sentences[0] = temp_sentences  # put the sentences into the queue
 
-			i += 1
 
 		
 		#sentences[0].append("END OF STREAM")
 		time.sleep(0.01)
 		sentence_queue_complete[0] = True
-
-		logging.info("Sentence queue complete")
 		return_text[0] = text_stream[0]
+		logging.info("Sentence queue complete")
 		return
 
 

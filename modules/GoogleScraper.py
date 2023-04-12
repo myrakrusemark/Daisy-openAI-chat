@@ -7,7 +7,7 @@ from modules import constants
 import re
 import yaml
 
-from modules.ContextHandlers import ContextHandlers
+import modules.ContextHandlers as ch
 import modules.Chat as chat
 import modules.ChatSpeechProcessor as csp
 
@@ -19,65 +19,69 @@ class GoogleScraper():
 	description = "A class for scraping Google search results based on a given search query."
 	module_hook = "Chat_request_inner"
 
-
 	def __init__(self):
 		with open("configs.yaml", "r") as f:
-			configs = yaml.safe_load(f)
-		self.api_key = configs["keys"]["serp_api"]
+			self.configs = yaml.safe_load(f)
 		
-		self.ch = ContextHandlers(constants.messages)
-		self.chat = chat.instance
-		self.start_prompt = """You are a Google searchbot. If I ask you any question that may require internet access, ask me if I would like you to search the web.
+		self.api_key = self.configs["keys"]["serp_api"]
 
-		If (only if) I am okay with that, respond with a "tool form" as the full body of your response, like so:
+		self.ch = ch.instance
 
-		[search: news headlines]"""
+		self.grid_url = None
 
-		logging.info("GoogleScraper: Adding start prompt")
+		self.start_prompt = """You are a Google Scraper Bot: If I ask you any question that may require internet access, ask me if I would like to search the web. Then respond with a "tool form" containing the search term: [GoogleScraper: search term]"""
+
 		self.ch.add_message_object('system', self.start_prompt)
 
-
-	def main(self, text, stop_event, stop_sound):
-		"""Main method that takes in response_text and performs the web search, returning the search results."""
-		#Find a search term in the response text (If --internet)
-		web_response_text = ""
+		
+	def check(self, text):
 		logging.debug("GoogleScraper: Checking for tool forms")
-		if "[search:" in text.lower():
-			match = re.search(r"\[search:.*\]", text)
-			if match:
-				web_response = match.group()
-				start = web_response.index(":") + 1
-				end = web_response.index("]")
-				search_query = web_response[start:end]
+		found_tool_form = False
+		if "[GoogleScraper:" in text:
+			self.match = re.search(r"\[GoogleScraper:\s*(.*?)\]", text)
+			if self.match:
+				logging.info("GoogleScraper: Found tool form")
+				found_tool_form = True
+		return found_tool_form
+	
+	def main(self, text, stop_event):
+		# Get the search query from the processed string.
+		try:
+			processed_string = self.match.group()
+		except Exception as e:
+			return False
 
-				logging.info(f"GoogleScraper: Searching the web for {search_query}...")
+		try:
+			start = processed_string.index(":") + 1
+			end = processed_string.index("]")
+			search_query = processed_string[start:end]
+		except Exception as e:
+			return False
 
-				params = {
-				  "engine": "google",
-				  "q": search_query,
-				  "api_key": self.api_key
-				}
-				search = GoogleSearch(params)
+		# Create the parameters for the Google Search API.
+		params = {
+			"engine": "google",
+			"q": search_query,
+			"api_key": self.api_key
+		}
 
-				results = search.get_dict()
-				organic_results = results["organic_results"]
-				if len(organic_results):
-					new_prompt=f'''Respond to the user's message using the information below.
-					Information: '''
+		# Create a new instance of the GoogleSearch class.
+		try:
+			search = GoogleSearch(params)
+		except Exception as e:
+			return False
 
-					for organic_result in organic_results:
-						if("snippet" in organic_result):
-							new_prompt += organic_result["snippet"]+"\n"
+		# Get a dictionary of the search results.
+		results = search.get_dict()
+		organic_results = results["organic_results"]
+		# If there are search results, create a new prompt with the snippets.
+		if len(organic_results):
+			prompt=f'''Respond using the search results below.\n'''
 
-					self.ch.add_message_object('system', new_prompt)
+			for organic_result in organic_results:
+				if("snippet" in organic_result):
+					prompt += organic_result["snippet"]+"\n"
 
-					response_text = self.chat.request(self.ch.get_context_without_timestamp(), stop_event, stop_sound, True)
-					print("returned from googlescraper")
-					return response_text
-				
-				else:
-					return False
-			else:
-				return False
+			return prompt
 		else:
 			return False

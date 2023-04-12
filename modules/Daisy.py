@@ -46,7 +46,7 @@ class Daisy:
 
 		while not self.daisy_stop_event.is_set():
 			self.awake_stop_event.clear()
-			
+
 			if self.cs.check_internet():
 				# If internet connection is restored, log a message
 				if self.internet_warning_logged:
@@ -80,11 +80,8 @@ class Daisy:
 							for instance in Daisy_wake_instances:
 								logging.info("Running Daisy_start module: "+type(instance).__name__)
 								response_text = instance.main()
-						else:
-							raise Exception("No Daisy_wake module found.")
-
 					except Exception as e:
-						logging.warning("Daisy_wake Hook error: "+str(e))
+						logging.warning("Daisy_wake Hook: "+str(e))
 
 					daisy_cancel_thread = threading.Thread(target=self.dm.daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
 					daisy_cancel_thread.start()
@@ -106,7 +103,7 @@ class Daisy:
 								sound_stop_event = threading.Event()
 								self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
 								text = self.chat.request(self.ch.get_context_without_timestamp(), self.awake_stop_event, sound_stop_event, True)
-
+								print("text: "+text)
 								if not text:
 									break
 

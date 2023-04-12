@@ -110,47 +110,76 @@ class ChatSpeechProcessor:
 		  
 	def queue_tts_from_sentences(self, sentences, sentence_queue_complete, sentence_queue_canceled, tts_queue_complete, tts_queue, stop_event):
 		tts_queue_complete[0] = False
-		sentences_length = 0
+		sentences_length = 1
+
+		def queue_tts_items(index):
+			queued_sentence = temp_sentences[index]
+			print("Queued sentence: ", queued_sentence)
+
+			try:
+				tts_queue.put(self.tts.create_tts_audio(queued_sentence))
+			except requests.exceptions.HTTPError as e:
+				self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
+				print(f"HTTP Error: {e}")
+
 		while not stop_event.is_set():
+			temp_sentences = sentences[0]
+			index = 0
 
 			if not sentences[0]:
 				continue
 
-			if len(sentences[0]) > sentences_length and len(sentences[0]) > 1:
-				#print("Sentences:", sentences)
-				sentence_length_difference = len(sentences[0]) - sentences_length
-				#print("Difference: ", sentence_length_difference)
+			if len(temp_sentences) > sentences_length:
+				logging.debug("Sentences:", sentences)
+				sentence_length_difference = len(temp_sentences) - sentences_length
 
-				sentences_length = len(sentences[0])
+				sentences_length = len(temp_sentences)
+				
+
 
 				for i in range(sentence_length_difference):
-					index = (sentence_length_difference-i) * -1
+					index = (sentence_length_difference-i+1) * -1
+					queue_tts_items(index)
 
-					queued_sentence = sentences[0][index]
-					print("Queued sentence: ", queued_sentence)
+			elif sentence_queue_complete[0]:
+
+				#Play a single sentence response
+				if len(sentences[0]) == 1:
+					logging.info("Single sentence response")
+					queued_sentence = sentences[0][0]
+					logging.info("Queued sentence: "+queued_sentence)
 
 					try:
 						tts_queue.put(self.tts.create_tts_audio(queued_sentence))
-						print("TTS Queue size: ", tts_queue.qsize())
 					except requests.exceptions.HTTPError as e:
 						self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
 						print(f"HTTP Error: {e}")
 
-			if len(sentences[0]) == 1 and sentence_queue_complete[0]:
-				sentences_length = 1
-				queued_sentence = sentences[0][0]
-				print("Queued sentence: ", queued_sentence)
+					tts_queue_complete[0] = True
+					logging.info("TTS queue complete: single sentence response")
+					return
 
-				try:
-					tts_queue.put(self.tts.create_tts_audio(queued_sentence))
-				except requests.exceptions.HTTPError as e:
-					self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
-					print(f"HTTP Error: {e}")
+				#Play the very last sentence
+				elif len(sentences[0]) == len(temp_sentences):
+					if len(sentences[0][-1]) == len(temp_sentences[-1]):
+							logging.debug("last sentence...")
 
-			if tts_queue.empty() and sentence_queue_complete[0]:
-				tts_queue_complete[0] = True
-				logging.info("TTS queue complete")
-				return
+							queue_tts_items(-1)
+
+							tts_queue_complete[0] = True
+							logging.info("TTS queue complete")
+							return
+
+				#All tts items used
+				if tts_queue.empty():
+					tts_queue_complete[0] = True
+					logging.info("TTS queue complete")
+					return
+
+
+
+
+
 			if sentence_queue_canceled[0] or stop_event.is_set():
 				tts_queue_complete[0] = True
 				while not tts_queue.empty(): #Empty out the TTS queue so no sounds linger
@@ -160,7 +189,7 @@ class ChatSpeechProcessor:
 			time.sleep(0.5) #Wait juuuust a bit to prevent sentence overlap
 				
 
-	def play_tts_queue(self, tts_queue, sentence_queue_canceled, tts_queue_complete, stop_event, sound_stop_event=None):
+	def play_tts_queue(self, tts_queue, sentence_queue_canceled, sentence_queue_complete, tts_queue_complete, stop_event, sound_stop_event=None):
 		tts = []
 
 		# Wait for tts to be generated
@@ -182,6 +211,7 @@ class ChatSpeechProcessor:
 				if tts:
 					self.sounds.play_sound(tts, 1.0)
 			elif tts_queue_complete[0]:
+				print("TTS play queue complete")
 				return
 
 
