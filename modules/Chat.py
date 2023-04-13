@@ -59,9 +59,9 @@ class Chat:
 		try:
 			logging.info("Sending request to OpenAI model...")
 			response = openai.ChatCompletion.create(
-				model='gpt-3.5-turbo',
+				model='gpt-4',
 				messages=messages,
-				temperature=0,
+				temperature=1,
 				stream=True
 			)
 

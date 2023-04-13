@@ -9,7 +9,7 @@ import threading
 import modules.ChatSpeechProcessor as csp
 import modules.SoundManager as sm
 
-class TtsElevenLabs:
+class TTSElevenLabs:
 	"""
 	Description: A description of this class and its capabilities.
 	Module Hook: The hook in the program where method main() will be passed into.
@@ -44,8 +44,13 @@ class TtsElevenLabs:
 		self.play_tts(self.voice.create_bytes(text)) 
 
 	def create_tts_audio(self, text):
-		logging.debug("Creating TTS")
-		return self.voice.generate_audio_bytes(text)
+		try:
+			logging.debug("Creating TTS")
+			audio = self.voice.generate_audio_bytes(text)
+			return audio
+		except requests.exceptions.HTTPError as e:
+			logging.error(f"Error creating TTS audio. Check your ElevenLabs account: {e}")
+			return None
 
 	def play_tts(self, bytesData):
 		logging.debug("Playing TTS")
