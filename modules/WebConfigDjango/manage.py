@@ -2,6 +2,7 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import logging
 
 # add parent directory of "modules" folder to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -17,7 +18,7 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    print(sys.argv)
+    logging.debug(sys.argv)
     execute_from_command_line(sys.argv)
 
 

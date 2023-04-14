@@ -1,24 +1,15 @@
 import openai
 import logging
-import queue
 import nltk.data
 import threading
 import time
-import requests
 import yaml
-
-from elevenlabslib import *
-import pydub
-import pydub.playback
-import io
-
 
 import system_modules.ConnectionStatus as cs
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.SoundManager as sm
 import system_modules.ContextHandlers as ch
 import modules.DaisyMethods as dm
-#import modules.TTSElevenLabs as tts
 import ModuleLoader as ml
 
 
@@ -34,32 +25,21 @@ class Chat:
 		self.dm = dm.instance
 		self.hook_instances = ml.instance.hook_instances
 
-		'''
-		#HOOK: Tts
-		logging.debug(self.hook_instances)
-		if "Tts" in self.hook_instances:
-			if len(self.hook_instances["Tts"]) > 1:
-				logging.warning("Multiple TTS modules found. Only the first one will be used.: "+type(self.hook_instances["Tts"][0]).__name__)
-			logging.debug("Importing Tts instance: "+type(instance).__name__)
-
-			self.tts = self.hook_instances["Tts"]
-		'''
-
 		with open("configs.yaml", "r") as f:
 			self.configs = yaml.safe_load(f)
 		openai.api_key = self.configs["keys"]["openai"]
+
+		nltk.data.load('tokenizers/punkt/english.pickle')
 
 	def request(self, messages, stop_event, sound_stop_event=None, tts=None):
 		#Handle LLM request. Optionally convert to sentences and queue for tts, if needed.
 
 		#Queues for handling chunks, sentences, and tts sounds
 		sentences = [[]]  # create a queue to hold the sentences
-		#tts_queue = queue.Queue()  # create a queue to hold the tts_sounds
 
 		#Flags for handling chunks, sentences, and tts sounds
 		sentence_queue_canceled = [False]  # use a list to make response_canceled mutable
 		sentence_queue_complete = [False]	# use a list to make response_complete mutable
-		#tts_queue_complete = [False]	# use a list to make response_complete mutable
 
 		threads = []  # keep track of all threads created
 		text_stream = [""]
@@ -73,11 +53,6 @@ class Chat:
 				temperature=1,
 				stream=True
 			)
-
-			#Check for tool forms (Chat_request_inner)
-			#t = threading.Thread(target=self.stream_toolform_checker, args=(text_stream, sentences_queue, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event))
-			#t.start()
-			#threads.append(t)
 
 			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
 			t = threading.Thread(target=self.stream_queue_sentences, args=(response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts))
@@ -163,9 +138,6 @@ class Chat:
 		sentence_queue_canceled[0] = False
 		collected_chunks = []
 		collected_messages = []
-		text = ""
-
-		tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
 		for chunk in response:
 			if not sentence_queue_canceled[0]:
@@ -192,9 +164,6 @@ class Chat:
 					temp_sentences = self.csp.nltk_sentence_tokenize(text_stream[0])
 					sentences[0] = temp_sentences  # put the sentences into the queue
 
-
-		
-		#sentences[0].append("END OF STREAM")
 		time.sleep(0.01)
 		sentence_queue_complete[0] = True
 		return_text[0] = text_stream[0]
@@ -207,8 +176,5 @@ class Chat:
 		for message in self.ch.messages:
 			# Check if the message role is in the list of roles to display
 			print(f"{message['role'].upper()}: {message['content']}\n\n")
-
-with open("configs.yaml", "r") as f:
-	configs = yaml.safe_load(f)
 
 instance = Chat()

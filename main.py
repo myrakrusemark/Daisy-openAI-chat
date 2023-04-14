@@ -12,8 +12,6 @@ import concurrent.futures
 
 import ModuleLoader as ml
 from system_modules.Logging import Logging
-from system_modules.SignalHandlers import SignalHandlers
-from system_modules.ConnectionStatus import ConnectionStatus
 
 if os.environ.get("LED") == "True":
 	from modules.RgbLed import RgbLed
@@ -21,7 +19,7 @@ if os.environ.get("LED") == "True":
 
 # Define a function that starts a new thread for a given hook instance
 def start_instance(instance):
-	logging.info("Main_start: Running %s module: %s", instance.__class__.__name__, type(instance).__name__)
+	logging.info("Main_start: Running %s module: %s "+instance.__class__.__name__, type(instance).__name__)
 	future = executor.submit(instance.main)
 	return future
 
@@ -37,7 +35,7 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
 			future_object = list(running_threads.values())[0]  # get the Future object from the dictionary
 			if future_object.exception() is not None:  # check if the Future object has a raised exception
 				runtime_error = future_object.exception()  # get the raised exception from the Future object
-				logging.error("An error occurred: %s", str(future_object.exception()))
+				logging.error("An error occurred: %s "+str(future_object.exception()))
 
 
 		hook_instances = ml.instance.get_hook_instances()

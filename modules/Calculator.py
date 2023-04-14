@@ -20,7 +20,7 @@ class Calculator:
 		self.match = None
 		self.ch = ch.instance
 
-		self.start_prompt = 'You are a Calculator Bot: If I ask you a question that requires calculation, respond with a TOOL FORM as your only response, containing the expression: [Calculator: 5+5]'
+		self.start_prompt = 'You are a Calculator Bot: If I ask you a question that requires calculation, respond with a TOOL FORM as your only response, containing the expression: [Calculator: 5+5].  Then formulate your response based on the system message.'
 
 		logging.info("Calculator: Adding start prompt")
 		self.ch.add_message_object('system', self.start_prompt)

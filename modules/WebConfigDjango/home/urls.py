@@ -60,7 +60,7 @@ def load_module_routes():
                 urlpatterns.append(path("", include(new_urlpatterns)))
                 logging.info(f"Added {len(new_urlpatterns)} routes from module: {module_name}")
 
-            print("URLS:", str(new_urlpatterns))
+            logging.debug("URLS: " + str(new_urlpatterns))
 
 
     except Exception as e:

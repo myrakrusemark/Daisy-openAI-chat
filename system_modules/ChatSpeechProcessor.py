@@ -57,19 +57,6 @@ class ChatSpeechProcessor:
 		self.engine.getProperty('voices')
 		self.engine.setProperty('voice', "english-us")
 		self.led = led.instance
-		'''
-		#HOOK: Tts
-		self.hook_instances = ml.instance.hook_instances
-		logging.debug(self.hook_instances)
-		if "Tts" in self.hook_instances:
-			if len(self.hook_instances["Tts"]) > 1:
-				logging.warning("Multiple TTS modules found. Only the first one will be used.: "+type(self.hook_instances["Tts"][0]).__name__)
-			logging.info("ChatSpeechProcessor: Importing Tts instance: "+type(instance).__name__)
-			self.tts = self.hook_instances["Tts"][0]
-			print("TTS: ",self.tts)
-		else:
-			logging.warning("ChatSpeechProcessor: No TTS module found. Using local TTS.")
-		'''
 
 		self.tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
@@ -84,36 +71,7 @@ class ChatSpeechProcessor:
 		self.porcupine.show_audio_devices()
 		return self.porcupine.run(stop_event)
 
-	'''
-	def tts(self, text):
-		#HOOK: Tts
-		try:
-			import ModuleLoader as ml
-			hook_instances = ml.instance.hook_instances
-			if "Tts" in hook_instances:
-				Tts_instances = hook_instances["Tts"]
-				for instance in Tts_instances:
-					logging.info("Running Tts module: "+type(instance).__name__)
-					response_text = instance.main(text)
-			else:
-				raise Exception("No TTS module found.")
-
-		#If TTS module somehow fails, fallback to local TTS
-		except Exception as e:
-			logging.warning("Tts Hook: "+str(e)+" Using local engine")
-			try:
-				self.engine.say(text)
-			except NameError as e:
-				logging.error("An error occurred:", e)
-				# Handle the error here, for example:
-				self.engine.say("Sorry, there was an error processing your request.")
-			self.engine.runAndWait()
-	'''
-
 	def queue_and_tts_sentences(self, tts, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event=None):
-		#user = ElevenLabsUser(self.api_key) #fill in your api key as a string
-		#voice = user.get_voices_by_name("Daisy")[0]  #fill in the name of the voice you want to use. ex: "Rachel"
-		#self.play(voice.generate_audio_bytes(text)) #fill in what you want the ai to say as a string
 
 		with ThreadPoolExecutor(max_workers=2) as executor:
 			executor.submit(self.queue_tts_from_sentences, tts, sentences, sentence_queue_complete, sentence_queue_canceled, self.tts_queue_complete, self.tts_queue, stop_event)
@@ -126,13 +84,13 @@ class ChatSpeechProcessor:
 
 		def queue_tts_items(index):
 			queued_sentence = temp_sentences[index]
-			print("Queued sentence: ", queued_sentence)
+			logging.info("Queued sentence: " + queued_sentence)
 
 			try:
 				tts_queue.put(tts.create_tts_audio(queued_sentence))
 			except requests.exceptions.HTTPError as e:
 				self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
-				print(f"HTTP Error: {e}")
+				logging.error(f"HTTP Error: {e}")
 
 		while not stop_event.is_set():
 			temp_sentences = sentences[0]
@@ -142,7 +100,7 @@ class ChatSpeechProcessor:
 				continue
 
 			if len(temp_sentences) > sentences_length:
-				logging.debug("Sentences:", sentences)
+				logging.debug("Sentences: " + str(sentences))
 				sentence_length_difference = len(temp_sentences) - sentences_length
 
 				sentences_length = len(temp_sentences)
@@ -165,7 +123,7 @@ class ChatSpeechProcessor:
 						tts_queue.put(tts.create_tts_audio(queued_sentence))
 					except requests.exceptions.HTTPError as e:
 						self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
-						print(f"HTTP Error: {e}")
+						logging.error(f"HTTP Error: {e}")
 
 					tts_queue_complete[0] = True
 					logging.info("TTS queue complete: single sentence response")
@@ -223,14 +181,8 @@ class ChatSpeechProcessor:
 				if tts:
 					self.sounds.play_sound(tts, 1.0)
 			elif tts_queue_complete[0]:
-				print("TTS play queue complete")
+				logging.info("TTS play queue complete")
 				return
-
-
-			
-
-
-			
 
 
 	async def stt_send_receive(self, stop_event, timeout_seconds=0):
@@ -455,17 +407,3 @@ class ChatSpeechProcessor:
 		return sentences
 
 instance = ChatSpeechProcessor()
-	
-"""
-# Initialize the ChatProcessor
-chat_processor = ChatProcessor()
-
-# Call the STT method to convert speech to text
-input_text = chat_processor.stt(audio_file)
-
-# Call the process method to generate a response
-response_text = chat_processor.process(input_text)
-
-# Call the TTS method to convert the response to speech
-chat_processor.tts(response_text)
-"""

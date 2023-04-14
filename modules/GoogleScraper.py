@@ -28,7 +28,7 @@ class GoogleScraper():
 
 		self.grid_url = None
 
-		self.start_prompt = """You are a Google Scraper Bot: If I ask you any question that may require internet access, ask me if I would like to search the web. Then respond with a "tool form" containing the search term: [GoogleScraper: search term]"""
+		self.start_prompt = """You are a Google Scraper Bot: If I ask you any question that may require internet access, ask me if I would like to search the web. Then respond with a "tool form" containing the search term: [GoogleScraper: search term]. Then formulate your response based on the system message."""
 
 		self.ch.add_message_object('system', self.start_prompt)
 

@@ -39,12 +39,12 @@ class WebConfig:
         def _send_message():
             try:
                 message = request.json
-                print("Add MESSAGE TO CONTEXT")
-                print(message)
+                logging.info("Add MESSAGE TO CONTEXT")
+                logging.info(message)
                 self.ch.add_message_object(message['role'], message['content'])
                 return jsonify({'status': 'success', 'message': message})
             except Exception as e:
-                print(e)
+                logging.error(e)
                 return jsonify({'status': 'error', 'message': str(e)})
 
 
@@ -138,6 +138,6 @@ class WebConfig:
             instance.load_module_routes()
             instance.start_app()
         except Exception as e:
-            print(f"Error starting web app: {e}")
+            logging.error(f"Error starting web app: {e}")
 
 instance = WebConfig()

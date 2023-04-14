@@ -100,13 +100,4 @@ class ContextHandlers:
 			pass
 		return False
 
-	"""
-	get_messages(self)
-	get_last_message(self)
-	get_message_count(self)
-	add_message_objects(self, messages)
-	remove_message_object(self, index)
-	set_message_object(self, index, role, message)
-	"""
-
 instance = ContextHandlers()

@@ -29,7 +29,7 @@ class WeatherNoaaNl:
 		# initialize the grid url
 		self.grid_url = None
 		# initialize the start prompt
-		self.start_prompt = """You are a Weather Bot: If I ask you for the weather, respond with a "tool form": [WeatherNoaaNl: forecast]"""
+		self.start_prompt = """You are a Weather Bot: If I ask you for the weather, respond with a "tool form": [WeatherNoaaNl: forecast]. Then formulate your response based on the system message."""
 		# add the start prompt to the ChatterBot
 		logging.info("WeatherNoaaNl: Adding start prompt")
 		self.ch.add_message_object('system', self.start_prompt)
@@ -40,7 +40,7 @@ class WeatherNoaaNl:
 
 	def check(self, text):
 		# Check for the presence of a tool form in the text.
-		logging.debug("WeatherNoaaNl: Checking for tool forms", text)
+		logging.debug("WeatherNoaaNl: Checking for tool forms "+text)
 		found_tool_form = False
 		if "[WeatherNoaaNl:" in text:
 			self.match = re.search(r"\[WeatherNoaaNl:\s*(.*?)\]", text)
@@ -60,7 +60,7 @@ class WeatherNoaaNl:
 		except:
 			prompt = self.return_prompt_start+"I'm sorry, I can't get the weather forecast."
 		# Print the weather forecast
-		print("WeatherNoaaNl:", prompt)
+		logging.info("WeatherNoaaNl: "+prompt)
 		# Return the weather forecast
 		return prompt
 
@@ -92,7 +92,7 @@ class WeatherNoaaNl:
 			self.grid_url = data["properties"]["forecastGridData"]
 			print(self.grid_url)
 		else:
-			print("Error connecting to the API")
+			logging.error("Error connecting to the API")
 
 
 

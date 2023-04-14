@@ -35,25 +35,13 @@ class DaisyMethods:
 		awake_stop_event.set()
 		return 
 
-	'''
-	def get_cancel_loop(self):
-		try:
-			return self.cancel_loop
-		except Exception as e:
-			logging.error("Error daisy_get_cancel_loop: %s", e)
-			return False
-	'''
-
 
 	def set_cancel_loop(self, boolean):
-		#print("DAISY CANCEL LOOP setting TO: "+str(boolean))
 
 		try:
 			self.cancel_loop = boolean
 		except Exception as e:
 			logging.error("Error daisy_set_cancel_loop: %s", e)
-
-		#print("DAISY CANCEL LOOP NOW SET TO: "+str(self.cancel_loop))
 
 		return self.cancel_loop
 
