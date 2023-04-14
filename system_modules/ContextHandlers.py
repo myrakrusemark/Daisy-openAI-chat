@@ -1,4 +1,3 @@
-from modules import constants
 import logging
 import datetime as dt
 from datetime import datetime
@@ -7,7 +6,7 @@ from datetime import datetime
 class ContextHandlers:
 	description = "A class for handling and managing messages in the chatGPT context object"
 	
-	def __init__(self, messages):
+	def __init__(self, messages=[]):
 		self.messages = messages
 
 	def get_context(self):
@@ -110,4 +109,4 @@ class ContextHandlers:
 	set_message_object(self, index, role, message)
 	"""
 
-instance = ContextHandlers(constants.messages)
+instance = ContextHandlers()

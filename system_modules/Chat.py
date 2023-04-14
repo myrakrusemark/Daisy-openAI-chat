@@ -13,12 +13,12 @@ import pydub.playback
 import io
 
 
-import modules.ConnectionStatus as cs
-import modules.ChatSpeechProcessor as csp
-import modules.SoundManager as sm
-import modules.ContextHandlers as ch
+import system_modules.ConnectionStatus as cs
+import system_modules.ChatSpeechProcessor as csp
+import system_modules.SoundManager as sm
+import system_modules.ContextHandlers as ch
 import modules.DaisyMethods as dm
-import modules.TTSElevenLabs as tts
+#import modules.TTSElevenLabs as tts
 import ModuleLoader as ml
 
 
@@ -32,15 +32,24 @@ class Chat:
 		self.sounds = sm.instance
 		self.ch = ch.instance
 		self.dm = dm.instance
-		self.tts = tts.TtsElevenLabs()
-
 		self.hook_instances = ml.instance.hook_instances
+
+		'''
+		#HOOK: Tts
+		logging.debug(self.hook_instances)
+		if "Tts" in self.hook_instances:
+			if len(self.hook_instances["Tts"]) > 1:
+				logging.warning("Multiple TTS modules found. Only the first one will be used.: "+type(self.hook_instances["Tts"][0]).__name__)
+			logging.debug("Importing Tts instance: "+type(instance).__name__)
+
+			self.tts = self.hook_instances["Tts"]
+		'''
 
 		with open("configs.yaml", "r") as f:
 			self.configs = yaml.safe_load(f)
 		openai.api_key = self.configs["keys"]["openai"]
 
-	def request(self, messages, stop_event, sound_stop_event=None, tts=False):
+	def request(self, messages, stop_event, sound_stop_event=None, tts=None):
 		#Handle LLM request. Optionally convert to sentences and queue for tts, if needed.
 
 		#Queues for handling chunks, sentences, and tts sounds
@@ -71,12 +80,12 @@ class Chat:
 			#threads.append(t)
 
 			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
-			t = threading.Thread(target=self.stream_queue_sentences, args=(response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event))
+			t = threading.Thread(target=self.stream_queue_sentences, args=(response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts))
 			t.start()
 			threads.append(t)
 
 			if tts:
-				self.csp.queue_and_tts_sentences(sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event)
+				self.csp.queue_and_tts_sentences(tts, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event)
 
 			while not return_text[0]:
 				time.sleep(0.1)  # wait a bit before checking again
@@ -109,13 +118,14 @@ class Chat:
 			self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False  
 
-	def toolform_checker(self, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
+	def toolform_checker(self, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts=None):
 		logging.debug("Checking for tool forms...")
 
 		#HOOK: Chat_request_inner
 		#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
 		#I may update this soon to allow for inline responses (For example: "5+5 is [Calculator: 5+5]")
 		logging.debug(self.hook_instances)
+		import ModuleLoader as ml
 		if "Chat_request_inner" in self.hook_instances:
 			for instance in self.hook_instances["Chat_request_inner"]:
 				logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
@@ -137,9 +147,9 @@ class Chat:
 						
 						self.ch.add_message_object('system', hook_text)
 
-						import modules.Chat as chat
+						import system_modules.Chat as chat
 						tool_chat = chat.Chat()
-						response = tool_chat.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, True)
+						response = tool_chat.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, tts)
 						tool_chat = None
 
 						return response
@@ -148,7 +158,7 @@ class Chat:
 		return False
 
 
-	def stream_queue_sentences(self, response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event):
+	def stream_queue_sentences(self, response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts=None):
 		sentence_queue_complete[0] = False
 		sentence_queue_canceled[0] = False
 		collected_chunks = []
@@ -171,7 +181,7 @@ class Chat:
 					#Check for tool forms every 10 iterations to prevent slowdown
 					logging.debug("Checking for tool forms...")
 
-					response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event)
+					response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts)
 					if response:
 						sentence_queue_complete[0] = True
 						return_text[0] = response

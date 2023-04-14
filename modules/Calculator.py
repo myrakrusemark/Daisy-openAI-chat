@@ -1,9 +1,9 @@
 import logging
 import re
 
-import modules.ContextHandlers as ch
-import modules.ChatSpeechProcessor as csp
-import modules.Chat as chat
+import system_modules.ContextHandlers as ch
+import system_modules.ChatSpeechProcessor as csp
+import system_modules.Chat as chat
 
 
 

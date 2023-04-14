@@ -2,8 +2,8 @@ import logging
 import requests
 import io
 
-import modules.ChatSpeechProcessor as csp
-import modules.SoundManager as sm
+import system_modules.ChatSpeechProcessor as csp
+import system_modules.SoundManager as sm
 
 class TtsGoogle:
     """

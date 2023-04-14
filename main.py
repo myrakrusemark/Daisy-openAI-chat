@@ -1,5 +1,5 @@
 import logging
-from modules.Logging import Logging
+from system_modules.Logging import Logging
 
 logger = Logging('daisy.log')
 logger.set_up_logging()
@@ -11,12 +11,9 @@ import time
 import concurrent.futures
 
 import ModuleLoader as ml
-import modules.ChatSpeechProcessor
-from modules.Logging import Logging
-from modules.SignalHandlers import SignalHandlers
-from modules.ConnectionStatus import ConnectionStatus
-from modules import constants
-from modules.Chat import Chat
+from system_modules.Logging import Logging
+from system_modules.SignalHandlers import SignalHandlers
+from system_modules.ConnectionStatus import ConnectionStatus
 
 if os.environ.get("LED") == "True":
 	from modules.RgbLed import RgbLed

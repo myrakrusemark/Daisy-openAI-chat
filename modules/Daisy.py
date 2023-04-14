@@ -5,14 +5,15 @@ import platform
 import pvporcupine
 import threading
 import os
-from modules import constants
-import modules.ChatSpeechProcessor as csp
-import modules.ConnectionStatus as cs
-import modules.ContextHandlers as ch
-import modules.SoundManager as sm
-import modules.Chat as chat
+import system_modules.ChatSpeechProcessor as csp
+import system_modules.ConnectionStatus as cs
+import system_modules.ContextHandlers as ch
+import system_modules.SoundManager as sm
+import system_modules.Chat as chat
+import system_modules.LoadTts as loadtts
 import modules.Porcupine as porcupine
 import modules.DaisyMethods as dm
+import ModuleLoader as ml
 
 
 import modules.RgbLed as led
@@ -31,10 +32,13 @@ class Daisy:
 		self.sounds = sm.instance
 		self.chat = chat.instance
 		self.dm = dm.instance
+		self.ml = ml.instance
 
 		self.led = led.instance
 
 		self.internet_warning_logged = False
+		self.tts = None
+
 
 
 	def close(self):
@@ -43,6 +47,13 @@ class Daisy:
 
 	def main(self):
 		self.sounds.play_sound("beep", 0.5)
+		print("DAISY")
+
+		# Create the TtsThread instance and start it in time for when its needed
+		tts_thread = loadtts.LoadTts(self)
+		tts_thread.start()
+
+		print("TTS LOADED", self.tts)
 
 		while not self.daisy_stop_event.is_set():
 			self.awake_stop_event.clear()
@@ -102,8 +113,8 @@ class Daisy:
 
 								sound_stop_event = threading.Event()
 								self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
-								text = self.chat.request(self.ch.get_context_without_timestamp(), self.awake_stop_event, sound_stop_event, True)
-								print("text: "+text)
+								print("TTS:", self.tts)
+								text = self.chat.request(self.ch.get_context_without_timestamp(), self.awake_stop_event, sound_stop_event, self.tts)
 								if not text:
 									break
 

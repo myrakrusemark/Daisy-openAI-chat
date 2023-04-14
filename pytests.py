@@ -1,10 +1,10 @@
-from modules.ChatSpeechProcessor import ChatSpeechProcessor
+from system_modules.ChatSpeechProcessor import ChatSpeechProcessor
 from unittest.mock import MagicMock
-from modules.ContextHandlers import ContextHandlers
-from modules.SoundManager import SoundManager
+from system_modules.ContextHandlers import ContextHandlers
+from system_modules.SoundManager import SoundManager
 from ModuleLoader import ModuleLoader
-from modules.Chat import Chat
-from modules import constants
+from system_modules.Chat import Chat
+from modules import 
 import os
 
 test_messages=[{"role": "system", "content": "Daisy"}]

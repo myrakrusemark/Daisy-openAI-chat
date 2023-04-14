@@ -6,8 +6,8 @@ import io
 import yaml
 import threading
 
-import modules.ChatSpeechProcessor as csp
-import modules.SoundManager as sm
+import system_modules.ChatSpeechProcessor as csp
+import system_modules.SoundManager as sm
 
 class TTSElevenLabs:
 	"""

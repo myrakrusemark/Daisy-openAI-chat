@@ -1,11 +1,11 @@
-from pydub import AudioSegment
-from pydub.playback import play
 import simpleaudio as sa
 from io import BytesIO
 from google.cloud import texttospeech
 import threading
 import requests
 import logging
+import yaml
+import os
 
 class TTSGoogleCloud:
 	"""
@@ -21,6 +21,10 @@ class TTSGoogleCloud:
 			configs = yaml.safe_load(f)
 			self.api_key = configs["keys"]["elevenlabs"]
 			self.voice = configs["TTSGoogleCloud"]["voice"]
+			self.project = configs["TTSGoogleCloud"]["project"]
+
+			#set self.project as environment variable
+			os.environ["GOOGLE_CLOUD_PROJECT"] = self.project
 
 			self.client = texttospeech.TextToSpeechClient()
 

@@ -6,9 +6,8 @@ import yaml
 import time
 import threading
 
-from modules import constants
-from modules.ContextHandlers import ContextHandlers
-ch = ContextHandlers(constants.messages)
+from system_modules.ContextHandlers import ContextHandlers
+ch = ContextHandlers()
 
 class ModuleLoader:
 	initialized = False

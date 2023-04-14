@@ -7,8 +7,8 @@ import time
 import logging
 
 
-import modules.ContextHandlers as ch
-import modules.Chat as chat
+import system_modules.ContextHandlers as ch
+import system_modules.Chat as chat
 import ModuleLoader as ml
 
 class ChatView(TemplateView):

@@ -3,13 +3,12 @@ import openai
 from serpapi import GoogleSearch
 import logging
 import os
-from modules import constants
 import re
 import yaml
 
-import modules.ContextHandlers as ch
-import modules.Chat as chat
-import modules.ChatSpeechProcessor as csp
+import system_modules.ContextHandlers as ch
+import system_modules.Chat as chat
+import system_modules.ChatSpeechProcessor as csp
 
 class GoogleScraper():
 	"""
