@@ -13,6 +13,6 @@ class DaisyPrompt():
 		self.ch = ch.instance
 
 		#DAN Prompt 11.0 from https://github.com/0xk1h0/ChatGPT_DAN
-		self.start_prompt = "You are Daisy. You speak in confident but concise responses, about two sentences long. You are having a real-world vocal conversation. Current date: " + datetime.now().strftime("%Y-%m-%d")
+		self.start_prompt = "You are Daisy. You speak in confident but concise responses, only about one or two sentences long, one or two words if it's warranted. You are having a real-world vocal conversation. Current date: " + datetime.now().strftime("%Y-%m-%d")
 		
 		self.ch.add_message_object('system', self.start_prompt)

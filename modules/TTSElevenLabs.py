@@ -51,6 +51,9 @@ class TTSElevenLabs:
 		except requests.exceptions.HTTPError as e:
 			logging.error(f"Error creating TTS audio. Check your ElevenLabs account: {e}")
 			return None
+		except requests.exceptions.ConnectTimeout as e:
+			logging.error(f"The request timed out. {e}")
+
 
 	def play_tts(self, bytesData):
 		logging.debug("Playing TTS")
