@@ -4,6 +4,7 @@ import nltk.data
 import threading
 import time
 import yaml
+import requests
 
 import system_modules.ConnectionStatus as cs
 import system_modules.ChatSpeechProcessor as csp
@@ -51,7 +52,8 @@ class Chat:
 				model='gpt-4',
 				messages=messages,
 				temperature=1,
-				stream=True
+				stream=True,
+				request_timeout=2,
 			)
 
 			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
@@ -62,35 +64,43 @@ class Chat:
 			if tts:
 				self.csp.queue_and_tts_sentences(tts, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event)
 
-			while not return_text[0]:
+			while not return_text[0] and not stop_event.is_set():
 				time.sleep(0.1)  # wait a bit before checking again
+			print("HELLO")
 
 			# return response_complete and return_text[0] when return_text is set
 			#for thread in threads:
 			t.join()
-
 			return return_text[0]
 		
 		# Handle different types of errors that may occur when sending request to OpenAI model
+		except openai.error.Timeout as e:
+			logging.error(f"Timeout: {e}")
+			#self.csp.tts("TimeoutError Error. Check your internet connection.")
+			return False  
+		except openai.error.APIConnectionError as e:
+			logging.error(f"APIConnectionError: {e}")
+			#self.csp.tts("APIConnectionError. Sorry, I can't talk right now.")
+			return False  
 		except openai.error.InvalidRequestError as e:
 			logging.error(f"Invalid Request Error: {e}")
-			self.csp.tts("Invalid Request Error. Sorry, I can't talk right now.")
+			#self.csp.tts("Invalid Request Error. Sorry, I can't talk right now.")
 			return False        
 		except openai.APIError as e:
 			logging.error(f"API Error: {e}")
-			self.csp.tts("API Error. Sorry, I can't talk right now.")
+			#self.csp.tts("API Error. Sorry, I can't talk right now.")
 			return False
 		except openai.error.RateLimitError as e:
 			logging.error(f"RateLimitError: {e}")
-			self.csp.tts("Rate Limit Error. Sorry, I can't talk right now.")
+			#self.csp.tts("Rate Limit Error. Sorry, I can't talk right now.")
 			return False
 		except ValueError as e:
 			logging.error(f"Value Error: {e}")
-			self.csp.tts("Value Error. Sorry, I can't talk right now.")
+			#self.csp.tts("Value Error. Sorry, I can't talk right now.")
 			return False    
 		except TypeError as e:
 			logging.error(f"Type Error: {e}")
-			self.csp.tts("Type Error. Sorry, I can't talk right now.")
+			#self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False  
 
 	def toolform_checker(self, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts=None):
@@ -109,8 +119,6 @@ class Chat:
 
 				if tool_found:
 					logging.info("Found tool form.")
-					#Cancel and clear-out current request
-					#sentences[0].append(["END OF STREAM"])
 					sentence_queue_canceled[0] = True
 
 					hook_text = instance.main(text_stream, stop_event)
@@ -139,34 +147,44 @@ class Chat:
 		collected_chunks = []
 		collected_messages = []
 
-		for chunk in response:
-			if not sentence_queue_canceled[0]:
-				if not stop_event.is_set():
-					temp_sentences = []
-					collected_chunks.append(chunk)
-					chunk_message = chunk['choices'][0]['delta']
-					collected_messages.append(chunk_message)
-					text_stream[0] = ''.join([m.get('content', '') for m in collected_messages])
-					logging.debug(text_stream[0])
+		try:
+			for chunk in response:
+				if not sentence_queue_canceled[0]:
+					if not stop_event.is_set():
+						temp_sentences = []
+						collected_chunks.append(chunk)
+						chunk_message = chunk['choices'][0]['delta']
+						collected_messages.append(chunk_message)
+						text_stream[0] = ''.join([m.get('content', '') for m in collected_messages])
+						logging.debug(text_stream[0])
 
 
-					#Check for tool forms every 10 iterations to prevent slowdown
-					logging.debug("Checking for tool forms...")
+						#Check for tool forms every 10 iterations to prevent slowdown
+						logging.debug("Checking for tool forms...")
 
-					response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts)
-					if response:
-						sentence_queue_complete[0] = True
-						return_text[0] = response
-						logging.info("Sentence queue complete by found toolform")
+						response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts)
+						if response:
+							sentence_queue_complete[0] = True
+							return_text[0] = response
+							logging.info("Sentence queue complete by found toolform")
+							return
+						
+						#Tokenize the text into sentences
+						temp_sentences = self.csp.nltk_sentence_tokenize(text_stream[0])
+						sentences[0] = temp_sentences  # put the sentences into the queue
+					else:
+						sentence_queue_canceled[0] = True
+						logging.info("Sentence queue canceled")
 						return
-					
-					#Tokenize the text into sentences
-					temp_sentences = self.csp.nltk_sentence_tokenize(text_stream[0])
-					sentences[0] = temp_sentences  # put the sentences into the queue
+		except requests.exceptions.ConnectionError as e:
+			logging.error("stream_queue_sentences(): Request timeout. Check your internet connection.")
+			sentence_queue_canceled[0] = True
+
 
 		time.sleep(0.01)
 		sentence_queue_complete[0] = True
 		return_text[0] = text_stream[0]
+		sound_stop_event.set()
 		logging.info("Sentence queue complete")
 		return
 

@@ -20,9 +20,10 @@ import threading
 import time
 import queue
 import requests
+import platform
 from concurrent.futures import ThreadPoolExecutor
 
-
+import modules.Porcupine.Porcupine as porcupine
 import system_modules.SoundManager as sm
 import modules.Porcupine.Porcupine as porcupine
 import modules.DaisyMethods as dm
@@ -51,7 +52,6 @@ class ChatSpeechProcessor:
 		#self.r = sr.Recognizer()
 
 		self.sounds = sm.instance
-		self.porcupine = porcupine.instance
 		self.dm = dm.instance
 		self.engine = pyttsx3.init()
 		self.engine.getProperty('voices')
@@ -64,12 +64,7 @@ class ChatSpeechProcessor:
 		self.tts_queue_complete = [False]	# use a list to make response_complete mutable
 
 		self.threads = []  # keep track of all threads created
-		
 
-
-	def listen_for_wake_word(self, stop_event):
-		self.porcupine.show_audio_devices()
-		return self.porcupine.run(stop_event)
 
 	def queue_and_tts_sentences(self, tts, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event=None):
 
@@ -89,8 +84,12 @@ class ChatSpeechProcessor:
 			try:
 				tts_queue.put(tts.create_tts_audio(queued_sentence))
 			except requests.exceptions.HTTPError as e:
-				self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
+				#self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
 				logging.error(f"HTTP Error: {e}")
+			except requests.exceptions.ConnectionError as e:
+				#self.csp.tts("Connection Error. Error creating TTS audio. Please check your TTS account.")
+				logging.error(f"Connection Error: {e}")
+
 
 		while not stop_event.is_set():
 			temp_sentences = sentences[0]
@@ -108,8 +107,9 @@ class ChatSpeechProcessor:
 
 
 				for i in range(sentence_length_difference):
-					index = (sentence_length_difference-i+1) * -1
-					queue_tts_items(index)
+					if not sentence_queue_canceled[0]:
+						index = (sentence_length_difference-i+1) * -1
+						queue_tts_items(index)
 
 			elif sentence_queue_complete[0]:
 
@@ -120,9 +120,10 @@ class ChatSpeechProcessor:
 					logging.info("Queued sentence: "+queued_sentence)
 
 					try:
-						tts_queue.put(tts.create_tts_audio(queued_sentence))
+						if not sentence_queue_canceled[0]:
+							tts_queue.put(tts.create_tts_audio(queued_sentence))
 					except requests.exceptions.HTTPError as e:
-						self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
+						#self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
 						logging.error(f"HTTP Error: {e}")
 
 					tts_queue_complete[0] = True
@@ -179,13 +180,13 @@ class ChatSpeechProcessor:
 					sound_stop_event.set()
 			
 				if tts:
-					self.sounds.play_sound(tts, 1.0)
+					self.sounds.play_sound(tts, 1.0, stop_event)
 			elif tts_queue_complete[0]:
 				logging.info("TTS play queue complete")
 				return
 
 
-	async def stt_send_receive(self, stop_event, timeout_seconds=0):
+	async def stt_send_receive(self, stop_event, timeout_seconds=0, sound = None):
 		"""Sends audio data to AssemblyAI STT API and receives text transcription in real time using websockets."""
 
 		self.result_str = ""
@@ -206,115 +207,128 @@ class ChatSpeechProcessor:
 			frames_per_buffer=FRAMES_PER_BUFFER
 		)
 
-		async with websockets.connect(
-			self.uri,
-			extra_headers=(("Authorization", self.assembly_ai_api_key),),
-			ping_interval=5,
-			ping_timeout=20
-		) as _ws:
-			await asyncio.sleep(0.1)
-			logging.info("Receiving SessionBegins ...")
-			session_begins = await _ws.recv()
-			logging.info(session_begins)
-			logging.info("AAI Listening ...")
+		try:
+			async with websockets.connect(
+				self.uri,
+				extra_headers=(("Authorization", self.assembly_ai_api_key),),
+				ping_interval=5,
+				ping_timeout=20
+			) as _ws:
+				await asyncio.sleep(0.1)
+				logging.info("Receiving SessionBegins ...")
+				session_begins = await _ws.recv()
+				logging.info(session_begins)
+				logging.info("AAI Listening ...")
 
-			async def timeout():
-				start_time = time.time()
-				elapsed_time = 0
+				async def timeout():
+					start_time = time.time()
+					elapsed_time = 0
 
-				while not self.result_received and not stop_event.is_set():
-					elapsed_time = time.time() - start_time
-					if stop_event.is_set():
-						logging.info("Timeout()")
-						break
-					if timeout_seconds > 0: # If timeout is 0s, then dont timeout
-						if elapsed_time > timeout_seconds:
-							logging.info("Timeout reached")
-							stop_event.set()
-							return
-					await asyncio.sleep(0.01)
+					while not self.result_received and not stop_event.is_set():
+						elapsed_time = time.time() - start_time
+						if stop_event.is_set():
+							logging.info("Timeout()")
+							break
+						if timeout_seconds > 0: # If timeout is 0s, then dont timeout
+							if elapsed_time > timeout_seconds:
+								logging.info("Timeout reached")
+								stop_event.set()
+								return
+						await asyncio.sleep(0.01)
 
-				logging.info("Timeout cancelled or result received")
-				return
+					logging.info("timeout(): Timeout cancelled or result received")
+					print("Result received: " + str(self.result_received))
+					print("Stop event: " + str(stop_event.is_set()))
+
+					return
 
 
-			async def send():
-				logging.info("STT Send start")
+				async def send():
+					logging.info("STT Send start")
 
-				while not self.result_received and not stop_event.is_set():
-					if stop_event.is_set():
-						logging.info("Send(): Cancelled")
-						break
+					while not self.result_received and not stop_event.is_set():
+						if stop_event.is_set():
+							logging.info("Send(): Cancelled")
+							break
 
-					try:
-						data = stream.read(FRAMES_PER_BUFFER)
-						data = base64.b64encode(data).decode("utf-8")
-						json_data = json.dumps({
-							"audio_data":str(data), 
-							"punctuate": False, 
-							"format_text": False
-							})
-						await _ws.send(json_data)
-					except websockets.exceptions.ConnectionClosedError as e:
-						logging.error(f"Connection closed with error code {e.code}: {e.reason}")
-						break
-					except Exception as e:
-						logging.exception(f"Unexpected error: {e}")
-						break
-					await asyncio.sleep(0.01)
+						try:
+							data = stream.read(FRAMES_PER_BUFFER)
+							data = base64.b64encode(data).decode("utf-8")
+							json_data = json.dumps({
+								"audio_data":str(data), 
+								"punctuate": False, 
+								"format_text": False
+								})
+							await _ws.send(json_data)
+						except websockets.exceptions.ConnectionClosedError as e:
+							logging.error(f"Connection closed with error code {e.code}: {e.reason}")
+							break
+						except Exception as e:
+							logging.exception(f"Unexpected error: {e}")
+							break
+						await asyncio.sleep(0.01)
 
-				logging.info("Send(): STT Send done")
-				return
-						
-			
-			async def receive():
-				logging.info("STT Receive start")
+					logging.info("send(): STT Send done")
+					return
+							
 				
+				async def receive():
+					logging.info("STT Receive start")
 
-
-				while not self.result_received and not stop_event.is_set():
-					if stop_event.is_set():
-						logging.info("Receive(): Cancelled")
-						self.result_str = False
-						self.result_received = True
-						break
-					try:
-						self.new_result = await _ws.recv()
-						self.result_str_obj = json.loads(self.new_result)
-
-
-						logging.info("You: "+str(self.result_str_obj['text']))
-						self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
-
-						if self.result_str_obj['message_type'] == "FinalTranscript" and self.result_str_obj['text'] != "":
-							#DONE
-							logging.info("Receive(): STT Receive done")
-							logging.info("Receive(): You said: "+str(self.result_str_obj['text']))
-
-							self.result_str = self.result_str_obj['text']
+					while not self.result_received and not stop_event.is_set():
+						if stop_event.is_set():
+							logging.info("receive(): Cancelled")
+							self.result_str = False
 							self.result_received = True
+							break
 
-					except websockets.exceptions.ConnectionClosedError as e:
-						logging.error(f"Connection closed with error code {e.code}: {e.reason}")
-						self.result_str = False
-						self.result_received = True
-					except Exception as e:
-						logging.exception(f"Unexpected error: {e}")
-						self.result_str = False
-						self.result_received = True
+						try:
+							self.new_result = await asyncio.wait_for(_ws.recv(), timeout=2) #Timeout if connection is lost
+							self.result_str_obj = json.loads(self.new_result)
 
-				return
+							logging.info("You: "+str(self.result_str_obj['text']))
+							self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
+
+							# If the message type is FinalTranscript, then we are done
+							if self.result_str_obj['message_type'] == "FinalTranscript" and self.result_str_obj['text'] != "":
+								#DONE
+								logging.info("receive(): STT Receive done")
+								logging.info("receive(): You said: "+str(self.result_str_obj['text']))
+
+								self.result_str = self.result_str_obj['text']
+								self.result_received = True
+
+						except asyncio.TimeoutError:
+							logging.warning("receive(): Receive timed out")
+							self.result_str = False
+							self.result_received = True
+						except websockets.exceptions.ConnectionClosedError as e:
+							logging.error(f"Connection closed with error code {e.code}: {e.reason}")
+							self.result_str = False
+							self.result_received = True
+						except Exception as e:
+							logging.exception(f"Unexpected error: {e}")
+							self.result_str = False
+							self.result_received = True
+					logging.info("receive(): STT Receive done")
+					return
 
 
 
-			
-			self.sounds.play_sound_with_thread('alert')
-			send_result, receive_result, timeout_result = await asyncio.gather(
-				asyncio.shield(timeout()), asyncio.shield(send()), asyncio.shield(receive())
-			)
+				#Play start sound
+				if sound:
+					self.sounds.play_sound_with_thread(sound)
+
+				send_result, receive_result, timeout_result = await asyncio.gather(
+					asyncio.shield(timeout()), asyncio.shield(send()), asyncio.shield(receive())
+				)
+		except websockets.exceptions.ConnectionClosedError as e:
+			logging.error(f"Connection closed with error code {e.code}: {e.reason}")
+			self.result_str = False
+			self.result_received = True
 
 
-	def stt(self, stop_event, timeout_seconds=0):
+	def stt(self, stop_event, timeout_seconds=0, sound = None):
 		"""Calls stt_send_receive in a new thread and returns the final transcription."""
 		# Create an event object to signal the thread to stop
 		stt_stop_event = threading.Event()
@@ -337,19 +351,13 @@ class ChatSpeechProcessor:
 			thread.join()
 			logging.debug("STT Thread stopped")
 
-			# Enable the ability to exit the program in a keyboard blocking state
-			exit_string = self.remove_non_alpha(self.result_str.lower())
-			if exit_string == "exitprogram":
-				logging.info("Exiting program...")
-				sys.exit(0)
-
 			return self.result_str
 
 
 		# Set up AssemblyAI stt_send_receive loop
 		#This is a thread in a thread. I think it can be reduced.
 		def start_stt_send_receive():
-			asyncio.run(self.stt_send_receive(stop_event, timeout_seconds))
+			asyncio.run(self.stt_send_receive(stop_event, timeout_seconds, sound))
 
 		# Create and start the stt_send_receive thread
 		thread = threading.Thread(target=start_stt_send_receive)

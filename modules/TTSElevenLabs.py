@@ -5,7 +5,8 @@ import pydub.playback
 import io
 import yaml
 import threading
-
+import requests
+import time
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.SoundManager as sm
 
@@ -22,10 +23,19 @@ class TTSElevenLabs:
 		with open("configs.yaml", "r") as f:
 			configs = yaml.safe_load(f)
 			self.api_key = configs["keys"]["elevenlabs"]
-			self.voice = configs["TTSElevenLabs"]["voice"]
+			self.voice_name = configs["TTSElevenLabs"]["voice"]
 
 		self.user = ElevenLabsUser(self.api_key)
-		self.voice = self.user.get_voices_by_name(self.voice)[0]
+
+		while True:
+			logging.debug("Getting ElevenLabs voice")
+			try:
+				self.voice = self.user.get_voices_by_name(self.voice_name)[0]
+			except requests.exceptions.ConnectionError:
+				logging.warning("TTSElevenLabs: Failed to get voice")
+				time.sleep(1)
+				continue
+			break
 
 
 

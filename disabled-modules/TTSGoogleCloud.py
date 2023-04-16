@@ -20,7 +20,7 @@ class TTSGoogleCloud:
 		with open("configs.yaml", "r") as f:
 			configs = yaml.safe_load(f)
 			self.api_key = configs["keys"]["elevenlabs"]
-			self.voice = configs["TTSGoogleCloud"]["voice"]
+			self.voice_config = configs["TTSGoogleCloud"]["voice"]
 			self.project = configs["TTSGoogleCloud"]["project"]
 
 			#set self.project as environment variable
@@ -29,11 +29,12 @@ class TTSGoogleCloud:
 			self.client = texttospeech.TextToSpeechClient()
 
 			self.voice = texttospeech.VoiceSelectionParams(
-				language_code="en-US", name=self.voice, ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+				language_code="en-US", name=self.voice_config, ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
 			)
-			self.audio_config = texttospeech.AudioConfig(
-				audio_encoding=texttospeech.AudioEncoding.LINEAR16
-			)
+			
+		self.audio_config = texttospeech.AudioConfig(
+			audio_encoding=texttospeech.AudioEncoding.LINEAR16
+		)
 
 
 	def main(self, text, as_thread=False): 

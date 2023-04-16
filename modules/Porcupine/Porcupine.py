@@ -41,7 +41,7 @@ class Porcupine():
 		self._sensitivities = sensitivities
 		#self._output_path = output_path
 
-	def run(self, stop_event):
+	def run(self, stop_event, awake_stop_event=threading.Event()):
 		"""
 		 Creates an input audio stream, instantiates an instance of Porcupine object, and monitors the audio stream for
 		 occurrences of the wake word(s). It prints the time of detection for each occurrence and the wake word.
@@ -79,16 +79,18 @@ class Porcupine():
 				logging.info('  %s (%.2f)' % (keyword, sensitivity))
 			logging.info('}')
 
-			while not stop_event.is_set():
-				pcm = recorder.read()
 
-				if wav_file is not None:
-					wav_file.writeframes(struct.pack("h" * len(pcm), *pcm))
+			while not stop_event.is_set() and not awake_stop_event.is_set():
+				if not awake_stop_event.is_set():
+					pcm = recorder.read()
 
-				result = porcupine.process(pcm)
-				if result >= 0:
-					logging.debug('[%s] Detected %s' % (str(datetime.now()), keywords[result]))
-					return True
+					if wav_file is not None:
+						wav_file.writeframes(struct.pack("h" * len(pcm), *pcm))
+
+					result = porcupine.process(pcm)
+					if result >= 0:
+						logging.debug('[%s] Detected %s' % (str(datetime.now()), keywords[result]))
+						return True
 
 					
 		except pvporcupine.PorcupineInvalidArgumentError as e:
@@ -137,14 +139,3 @@ class Porcupine():
 		for i in range(len(devices)):
 			logging.info('index: %d, device name: %s' % (i, devices[i]))
 
-#Instantiate DEFAULT ("daisy daisy") wake word
-keyword_paths = None
-if platform.system() == "Windows":
-	keyword_paths = ["modules/Porcupine/porcupine_models/daisy-daisy_en_windows_v2_1_0.ppn", "modules/Porcupine/porcupine_models/hey-daisy_en_windows_v2_1_0.ppn"]
-elif platform.system() == "Linux":
-	keyword_paths = ["modules/Porcupine/porcupine_models/daisy-daisy_en_raspberry-pi_v2_1_0.ppn", "modules/Porcupine/porcupine_models/hey-daisy_en_raspberry-pi_v2_1_0.ppn"]
-else:
-	logging.error("Unknown operating system, can't load wake word model.")
-instance = Porcupine(
-				keyword_paths=keyword_paths,
-				sensitivities=[0.5,0.5])
