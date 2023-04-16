@@ -2,28 +2,30 @@ import platform
 import subprocess
 import threading
 import logging
+import time
 
 class ConnectionStatus(threading.Thread):
     description = "A class that checks the status of internet connectivity."
 
-    # Check if Internet is available
-    class CheckInternetThread(threading.Thread):
-        description = "A nested class that checks for internet connectivity by pinging Google."
 
-        def __init__(self):
-            threading.Thread.__init__(self)
-            self.is_connected = False
+    def __init__(self):
+        self.is_connected = False
 
-        def run(self):
-            """Method of CheckInternetThread that is executed when the thread starts; pings Google to check for internet connectivity and logs a message."""
+
+
+    def check_internet(self, stop_event, awake_stop_event):
+        """Creates and starts a new CheckInternetThread instance, waits for it to complete or timeout, and returns a boolean value indicating if internet connectivity is available."""
+
+        while not stop_event.is_set():
             try:
                 # Ping google.com and check if we receive any response
                 logging.debug('Pinging google.com')
 
                 if platform.system() == 'Windows':
-                    output = subprocess.check_output(['ping', '-n', '1', 'google.com'], stderr=subprocess.PIPE)
+                    subprocess.check_output(['ping', '-n', '1', 'google.com'], stderr=subprocess.PIPE)
+                
                 else:
-                    output = subprocess.check_output(['ping', '-c', '1', 'google.com'], stderr=subprocess.PIPE)
+                    subprocess.check_output(['ping', '-c', '1', 'google.com'], stderr=subprocess.PIPE)
                 self.is_connected = True
 
                 # Log a message to indicate that the Internet is available
@@ -34,21 +36,19 @@ class ConnectionStatus(threading.Thread):
 
                 # Log a warning message to indicate that the Internet is not available
                 logging.debug('Internet connection is not available')
+            except Exception as e:
+                # general exception handling
+                logging.exception(e)
 
+            # Check if the thread is connected and cancel the loop if it is
+            if not self.is_connected:
+                awake_stop_event.set()
+                logging.error("No Internet connection.")
+            else:
+                awake_stop_event.clear()
+                logging.debug("Internet connection available.")
+        
+            time.sleep(1)
 
-    def check_internet(self):
-        """Creates and starts a new CheckInternetThread instance, waits for it to complete or timeout, and returns a boolean value indicating if internet connectivity is available."""
-
-        # Create a new thread to check for internet connectivity
-        thread = self.CheckInternetThread()
-        thread.start()
-
-        # Wait for the thread to complete or timeout after 5 seconds
-        # This prevents the function from blocking indefinitely
-        thread.join(timeout=5)
-
-        # Check if the thread is connected and return the result
-        is_connected = thread.is_connected
-        return is_connected
 
 instance = ConnectionStatus()

@@ -26,12 +26,26 @@ class DaisyMethods:
 		self.porcupine_daisy_cancel = porcupine.Porcupine(
 						keyword_paths=keyword_paths,
 						sensitivities=[0.5])
+		
+		keyword_paths = None
+		if platform.system() == "Windows":
+			keyword_paths = ["modules/Porcupine/porcupine_models/daisy-daisy_en_windows_v2_1_0.ppn", "modules/Porcupine/porcupine_models/hey-daisy_en_windows_v2_1_0.ppn"]
+		elif platform.system() == "Linux":
+			keyword_paths = ["modules/Porcupine/porcupine_models/daisy-daisy_en_raspberry-pi_v2_1_0.ppn", "modules/Porcupine/porcupine_models/hey-daisy_en_raspberry-pi_v2_1_0.ppn"]
+		else:
+			logging.error("Unknown operating system, can't load wake word model.")
 
-	def daisy_cancel(self, stop_event, awake_stop_event):
-		# os.environ["CANCEL_LOOP"] = str(self.porcupine_daisy_cancel.run())
-		cancel_loop = str(self.porcupine_daisy_cancel.run(stop_event))
+		self.porcupine_daisy_wake = porcupine.Porcupine(
+						keyword_paths=keyword_paths,
+						sensitivities=[0.5, 0.5])
+
+	def listen_for_daisy_wake(self, stop_event, awake_stop_event):
+		awake_stop_event.clear()
+		return self.porcupine_daisy_wake.run(stop_event, awake_stop_event)
+	
+	def listen_for_daisy_cancel(self, stop_event, awake_stop_event):
+		self.porcupine_daisy_cancel.run(stop_event, awake_stop_event)
 		logging.info("<------DAISY CANCEL------>")
-		#self.set_cancel_loop(cancel_loop)
 		awake_stop_event.set()
 		return 
 

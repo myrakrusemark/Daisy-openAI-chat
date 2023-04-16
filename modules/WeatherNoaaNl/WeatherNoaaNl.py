@@ -32,7 +32,7 @@ class WeatherNoaaNl:
 		self.start_prompt = """You are a Weather Bot: If I ask you for the weather, respond with a "tool form": [WeatherNoaaNl: forecast]. Then formulate your response based on the system message."""
 		# add the start prompt to the ChatterBot
 		logging.info("WeatherNoaaNl: Adding start prompt")
-		self.ch.add_message_object('system', self.start_prompt)
+		self.ch.add_message_object_at_start('system', self.start_prompt)
 		# initialize the return prompt
 		self.return_prompt_start = "Respond using the real-time weather forecast below.\n"
 

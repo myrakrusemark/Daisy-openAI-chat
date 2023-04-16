@@ -19,7 +19,7 @@ if os.environ.get("LED") == "True":
 
 # Define a function that starts a new thread for a given hook instance
 def start_instance(instance):
-	logging.info("Main_start: Running %s module: %s "+instance.__class__.__name__, type(instance).__name__)
+	logging.info("Main_start: Running %s module: %s "+instance.__class__.__name__+" "+type(instance).__name__)
 	future = executor.submit(instance.main)
 	return future
 

@@ -9,8 +9,8 @@ import system_modules.LoadTts as loadtts
 import modules.DaisyMethods as dm
 import ModuleLoader as ml
 
-
 import modules.RgbLed as led
+
 
 class Daisy:
 	description = "Provides a user flow for Chat"
@@ -33,100 +33,89 @@ class Daisy:
 		self.internet_warning_logged = False
 		self.tts = None
 
-
-
 	def close(self):
 		self.daisy_stop_event.set()
 
-
 	def main(self):
 		self.sounds.play_sound("beep", 0.5)
-		logging.info("DAISY")
+		print("🌼DAISY🌼")
+		threads = []
 
-		# Create the TtsThread instance and start it in time for when its needed
-		tts_thread = loadtts.LoadTts(self)
-		tts_thread.start()
+		# Create the TtsThread instance and start it in time for when it's needed
+		t = loadtts.LoadTts(self)
+		threads.append(t)
+		t.start()
 
-		logging.info("TTS Loaded " + str(self.tts))
+		# Check for Internet connection
+		self.awake_stop_event.clear()
+		t = threading.Thread(target=self.cs.check_internet, args=(self.daisy_stop_event, self.awake_stop_event))
+		threads.append(t)
+		t.start()
 
 		while not self.daisy_stop_event.is_set():
-			self.awake_stop_event.clear()
 
-			if self.cs.check_internet():
-				# If internet connection is restored, log a message
-				if self.internet_warning_logged:
-					logging.info('Internet connection restored!')
-					self.internet_warning_logged = False
+			self.led.turn_on_color(0, 100, 0)  # Solid Green
 
-				# Detect a wake word before listening for a prompt
-				awoken = False
+			awake = self.dm.listen_for_daisy_wake(self.daisy_stop_event, self.awake_stop_event)
 
-				self.led.turn_on_color(0, 100, 0)  # Solid Green
+			self.led.breathe_color(100, 100, 100)  # Breathe Blue
 
+			if awake:
+				# Check for "Daisy Cancel" sleep word
+				dc_thread = threading.Thread(target=self.dm.listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
+				threads.append(dc_thread)
+				dc_thread.start()
+
+				# HOOK: Daisy_wake
 				try:
-					# Listen for Porcupine wake word
-					awoken = self.csp.listen_for_wake_word(self.daisy_stop_event)
+					hook_instances = self.ml.hook_instances
+					if "Daisy_wake" in hook_instances:
+						Daisy_wake_instances = hook_instances["Daisy_wake"]
+						for instance in Daisy_wake_instances:
+							logging.info("Running Daisy_start module: "+type(instance).__name__)
+							response_text = instance.main()
 				except Exception as e:
-					# Catch the exception and handle it
-					logging.error(f"Error initializing Porcupine: {e}")
-					continue
+					logging.warning("Daisy_wake Hook: "+str(e))
 
-				if awoken:
-					self.led.breathe_color(100, 100, 100)  # Breathe Blue
+				while not self.daisy_stop_event.is_set() and not self.awake_stop_event.is_set():
+					self.led.breathe_color(0, 0, 100)  # Breathe Blue
+					stt_text = self.csp.stt(self.awake_stop_event, 30, 'alert') # 30-second timeout
+					logging.info("STT DONE")
 
-					sleep_word_detected = False
+					if self.awake_stop_event.is_set() or not stt_text:
+						break
 
-					#HOOK: Daisy_wake
+					self.led.breathe_color(100,0,100)  # Breathe Blue #NEEDS CANCEL LOOP
+
+					self.ch.add_message_object('user', stt_text)
+
+					sound_stop_event = threading.Event()
+					self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
+
+				   
 					try:
-						import ModuleLoader as ml
-						hook_instances = ml.instance.hook_instances
-						if "Daisy_wake" in hook_instances:
-							Daisy_wake_instances = hook_instances["Daisy_wake"]
-							for instance in Daisy_wake_instances:
-								logging.info("Running Daisy_start module: "+type(instance).__name__)
-								response_text = instance.main()
+						context = self.ch.get_context_without_timestamp()
+						text = self.chat.request(context, self.awake_stop_event, sound_stop_event, self.tts)
 					except Exception as e:
-						logging.warning("Daisy_wake Hook: "+str(e))
+						logging.error("Daisy request error: "+ e)
+						self.awake_stop_event.set()
+						break
 
-					daisy_cancel_thread = threading.Thread(target=self.dm.daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
-					daisy_cancel_thread.start()
-					#self.dm.set_cancel_loop(False)
+					if not text:
+						logging.error("Daisy request error: No response")
+						self.awake_stop_event.set()
+						break
 
-					while not self.daisy_stop_event.is_set():
-						if not self.awake_stop_event.is_set():
-								self.led.breathe_color(0, 0, 100)  # Breathe Blue
-								stt_text = self.csp.stt(self.awake_stop_event, 30) #30s timeout
+					self.ch.add_message_object('assistant', text)
 
-								self.led.breathe_color(100,0,100)  # Breathe Blue #NEEDS CANCEL LOOP
+					self.chat.display_messages()
+					if self.awake_stop_event.is_set():
+						break
 
-								self.ch.add_message_object('user', stt_text)
+					self.led.breathe_color(100, 100, 100)  # Breathe White
 
-								if self.awake_stop_event.is_set():
-									self.sounds.play_sound_with_thread('end', 1.0)
-									break
+				dc_thread.join()
+				self.sounds.play_sound_with_thread('end', 1.0)
 
-								sound_stop_event = threading.Event()
-								self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
-
-								text = self.chat.request(self.ch.get_context_without_timestamp(), self.awake_stop_event, sound_stop_event, self.tts)
-								if not text:
-									break
-
-								self.ch.add_message_object('assistant', text)
-
-								self.chat.display_messages()
-								if self.awake_stop_event.is_set():
-									self.sounds.play_sound_with_thread('end', 1.0)
-									break
-
-								self.led.breathe_color(100, 100, 100)  # Breathe White
-
-						else:
-							daisy_cancel_thread.join()
-							break
-			else:
-				# Log a warning message if there is no internet connection and the warning hasn't been logged yet
-				if not self.internet_warning_logged:
-					self.led.turn_on_color(100, 0, 0)  # Solid Red
-					logging.warning('No Internet connection. When a connection is available the script will automatically re-activate.')
-					self.internet_warning_logged = True
+		for t in threads:
+			t.join()
