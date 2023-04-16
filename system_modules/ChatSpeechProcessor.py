@@ -45,7 +45,8 @@ class ChatSpeechProcessor:
 		with open("configs.yaml", "r") as f:
 			configs = yaml.safe_load(f)
 		self.assembly_ai_api_key = configs["keys"]["assembly_ai"]
-		self.tts_speed = configs["TTS"]["speed"]
+
+		self.tts_speed = 1.0
 
 		self.result_str = ""
 		self.new_result_str = ""
@@ -181,6 +182,11 @@ class ChatSpeechProcessor:
 					sound_stop_event.set()
 			
 				if tts:
+					
+					# Define global variables
+					with open("configs.yaml", "r") as f:
+						configs = yaml.safe_load(f)
+						self.tts_speed = configs["TTS"]["speed"]
 					self.sounds.play_sound(tts, 1.0, stop_event, None, self.tts_speed)
 			elif tts_queue_complete[0]:
 				logging.info("TTS play queue complete")

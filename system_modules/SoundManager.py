@@ -7,6 +7,7 @@ import pydub
 from pydub.utils import mediainfo
 import modules.DaisyMethods as dm
 from pydub import AudioSegment
+from pydub.effects import speedup
 import simpleaudio
 import numpy as np
 
@@ -52,8 +53,8 @@ class SoundManager:
             stop_event = threading.Event()
 
         # adjust the playback speed of the sound
-        if speed is not 1.0:
-            sound = self.speed_change(sound, speed)
+        if speed != 1.0:
+            sound = speedup(sound, speed)
 
         # create a new thread to play the sound
         self._play_sound_method(sound, volume, stop_event, sound_stop_event)
@@ -105,15 +106,5 @@ class SoundManager:
         thread = threading.Thread(target=self.play_sound, args=(name_or_bytes, volume, awake_stop_event, sound_stop_event))
         thread.start()
 
-    def speed_change(self, sound, speed=1.0):
-        # Manually override the frame_rate. This tells the computer how many
-        # samples to play per second
-        sound_with_altered_frame_rate = sound._spawn(sound.raw_data, overrides={
-            "frame_rate": int(sound.frame_rate * speed)
-        })
-        # convert the sound with altered frame rate to a standard frame rate
-        # so that regular playback programs will work right. They often only
-        # know how to play audio at standard frame rate (like 44.1k)
-        return sound_with_altered_frame_rate.set_frame_rate(sound.frame_rate)
 
 instance = SoundManager('sounds/')
