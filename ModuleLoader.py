@@ -6,8 +6,6 @@ import yaml
 import time
 import threading
 
-from system_modules.ContextHandlers import ContextHandlers
-ch = ContextHandlers()
 
 class ModuleLoader:
 	initialized = False
@@ -211,6 +209,3 @@ class ModuleLoader:
 
 
 
-instance = ModuleLoader("modules")
-thread = threading.Thread(target=instance.update_modules_loop)
-thread.start()

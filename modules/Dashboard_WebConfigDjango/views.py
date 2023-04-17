@@ -1,31 +1,35 @@
 from django.http import HttpResponse
 from django.views.generic import TemplateView
-from django.template import RequestContext
 from django.shortcuts import render
-import json
-import time
 import logging
 
 
-import system_modules.ContextHandlers as ch
-import system_modules.Chat as chat
-import ModuleLoader as ml
-
-class ChatView(TemplateView):
+class Dashboard(TemplateView):
 	template_name = 'Dashboard_WebConfigDjango/templates/pages/dashboard.html'
-	route_path = 'chat/'
+	route_path = 'dashboard/'
 	#route_path = '/'
 
 
 	def __init__(self):
-		self.ch = ch.instance
-		self.chat = chat.instance
-		self.ml = ml.instance
+		print("DASHBOARD")
+		self.ml = None
+		self.ch = None
+		self.chat = None
+
+
 		self.context = {}
 
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
+		
+		from modules.WebConfigDjango.WebConfigDjango import GLOBAL_ML, GLOBAL_CH, GLOBAL_CHAT
+		self.ml = GLOBAL_ML
+		self.ch = GLOBAL_CH
+		self.chat = GLOBAL_CHAT
+
+		print(self.ml)
+
 		messages = self.ch.get_context()
 		self.context['messages'] = messages
 

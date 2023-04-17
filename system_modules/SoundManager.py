@@ -2,10 +2,7 @@ import os
 from io import BytesIO
 import logging
 import threading
-import time
 import pydub
-from pydub.utils import mediainfo
-import modules.DaisyMethods as dm
 from pydub import AudioSegment
 from pydub.effects import speedup
 import simpleaudio
@@ -14,11 +11,10 @@ import numpy as np
 class SoundManager:
     description = "A class for managing sound files in a directory, playing sounds, and stopping playback."
     
-    def __init__(self, directory):
+    def __init__(self, directory='sounds/'):
         self.directory = directory
         self.sounds = {}
         self.current_sound = None
-        self.dm = dm.instance
         self.playback = None
 
         # Load all sound files in the directory
@@ -107,4 +103,3 @@ class SoundManager:
         thread.start()
 
 
-instance = SoundManager('sounds/')

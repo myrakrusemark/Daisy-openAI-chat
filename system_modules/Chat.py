@@ -6,25 +6,19 @@ import time
 import yaml
 import requests
 
-import system_modules.ConnectionStatus as cs
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.SoundManager as sm
-import system_modules.ContextHandlers as ch
-import modules.DaisyMethods as dm
-import ModuleLoader as ml
 
 
 
 class Chat:
 	description = "Implements a chatbot using OpenAI's GPT-3 language model and allows for interaction with the user through speech or text."
 
-	def __init__(self):
-		self.csp = csp.instance
-		self.cs = cs.instance
-		self.sounds = sm.instance
-		self.ch = ch.instance
-		self.dm = dm.instance
-		self.hook_instances = ml.instance.hook_instances
+	def __init__(self, ml, ch):
+		self.ml = ml
+		self.ch = ch
+		self.csp = csp.ChatSpeechProcessor()
+		self.sounds = sm.SoundManager()
 
 		with open("configs.yaml", "r") as f:
 			self.configs = yaml.safe_load(f)
@@ -109,10 +103,11 @@ class Chat:
 		#HOOK: Chat_request_inner
 		#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
 		#I may update this soon to allow for inline responses (For example: "5+5 is [Calculator: 5+5]")
-		logging.debug(self.hook_instances)
-		import ModuleLoader as ml
-		if "Chat_request_inner" in self.hook_instances:
-			for instance in self.hook_instances["Chat_request_inner"]:
+		hook_instances = self.ml.get_hook_instances()
+		logging.debug(hook_instances)
+
+		if "Chat_request_inner" in hook_instances:
+			for instance in hook_instances["Chat_request_inner"]:
 				logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
 
 				tool_found = instance.check(text_stream)
@@ -189,10 +184,9 @@ class Chat:
 		return
 
 
-	def display_messages(self):
+	def display_messages(self, chat_handlers):
 		"""Displays the messages stored in the messages attribute of ContectHandlers."""
-		for message in self.ch.messages:
+		for message in chat_handlers.messages:
 			# Check if the message role is in the list of roles to display
 			print(f"{message['role'].upper()}: {message['content']}\n\n")
 
-instance = Chat()

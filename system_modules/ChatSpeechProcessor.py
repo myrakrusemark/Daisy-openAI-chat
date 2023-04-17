@@ -6,7 +6,6 @@ import base64
 import json
 import threading
 import time
-import sys
 import re
 import string
 from dotenv import load_dotenv
@@ -20,15 +19,10 @@ import threading
 import time
 import queue
 import requests
-import platform
 from concurrent.futures import ThreadPoolExecutor
 
-import modules.Porcupine.Porcupine as porcupine
 import system_modules.SoundManager as sm
-import modules.Porcupine.Porcupine as porcupine
-import modules.DaisyMethods as dm
 import modules.RgbLed as led
-import ModuleLoader as ml
 
 
 
@@ -45,21 +39,17 @@ class ChatSpeechProcessor:
 		with open("configs.yaml", "r") as f:
 			configs = yaml.safe_load(f)
 		self.assembly_ai_api_key = configs["keys"]["assembly_ai"]
-
 		self.tts_speed = 1.0
 
 		self.result_str = ""
 		self.new_result_str = ""
 		self.result_received = False
+		self.sounds = sm.SoundManager('sounds/')
 		#self.r = sr.Recognizer()
-
-		self.sounds = sm.instance
-		self.dm = dm.instance
 		self.engine = pyttsx3.init()
-		self.engine.getProperty('voices')
-		self.engine.setProperty('voice', "english-us")
-		self.led = led.instance
-
+		#self.engine.getProperty('voices')
+		#self.engine.setProperty('voice', "english-us")
+		self.led = led.RgbLed()
 		self.tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
 		self.tts_queue = queue.Queue()  # create a queue to hold the tts_sounds
@@ -421,4 +411,3 @@ class ChatSpeechProcessor:
 		# Return the modified string
 		return sentences
 
-instance = ChatSpeechProcessor()

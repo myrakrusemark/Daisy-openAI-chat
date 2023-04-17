@@ -2,13 +2,10 @@ import logging
 import threading
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.ConnectionStatus as cs
-import system_modules.ContextHandlers as ch
 import system_modules.SoundManager as sm
 import system_modules.Chat as chat
 import system_modules.LoadTts as loadtts
 import modules.DaisyMethods as dm
-import ModuleLoader as ml
-
 
 import modules.RgbLed as led
 
@@ -16,36 +13,40 @@ class Daisy:
 	description = "Provides a user flow for Chat"
 	module_hook = "Main_start"
 
-	def __init__(self):
+	def __init__(self, ml=None, ch=None):
+		self.ml = ml
+		self.ch = ch
+		self.chat = None
+		self.csp = csp.ChatSpeechProcessor()
+		self.cs = cs.ConnectionStatus()
+		self.sounds = sm.SoundManager()
+		self.dm = dm.DaisyMethods()
+		self.led = led.RgbLed()
+		self.tts = None
+
 		self.daisy_stop_event = threading.Event()
 		self.awake_stop_event = threading.Event()
 
-		self.csp = csp.instance
-		self.cs = cs.instance
-		self.ch = ch.instance
-		self.sounds = sm.instance
-		self.chat = chat.instance
-		self.dm = dm.instance
-		self.ml = ml.instance
-
-		self.led = led.instance
-
 		self.internet_warning_logged = False
-		self.tts = None
-
 
 	def close(self):
 		self.daisy_stop_event.set()
 
 
-	def main(self):
+	def main(self, ml=None, ch=None):
 		self.sounds.play_sound("beep", 0.5)
-		print("🌼DAISY🌼")
+		print("🌼 DAISY - Voice Assistant 🌼")
+
+		#Bring in dependencies
+		if not self.ml:
+			self.ml = ml
+		if not self.ch:
+			self.ch = ch
+		self.chat = chat.Chat(ml, ch)
+
 		threads = []
-
-
 		# Create the TtsThread instance and start it in time for when its needed
-		t = loadtts.LoadTts(self)
+		t = loadtts.LoadTts(self, ml)
 		threads.append(t)
 		t.start()
 
@@ -74,7 +75,7 @@ class Daisy:
 				#HOOK: Daisy_wake
 				try:
 					import ModuleLoader as ml
-					hook_instances = ml.instance.hook_instances
+					hook_instances = self.ml.hook_instances
 					if "Daisy_wake" in hook_instances:
 						Daisy_wake_instances = hook_instances["Daisy_wake"]
 						for instance in Daisy_wake_instances:
@@ -117,7 +118,7 @@ class Daisy:
 
 							self.ch.add_message_object('assistant', text)
 
-							self.chat.display_messages()
+							self.chat.display_messages(self.ch)
 							if self.awake_stop_event.is_set():
 								break
 
@@ -136,3 +137,5 @@ class Daisy:
 
 		for t in threads:
 			t.join()
+
+

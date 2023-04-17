@@ -1,12 +1,11 @@
 import threading
 import time
 import logging
-import ModuleLoader as ml
 
 class LoadTts(threading.Thread):
-    def __init__(self, ext_instance):
+    def __init__(self, ext_instance, ml):
         threading.Thread.__init__(self)
-        self.ml = ml.instance
+        self.ml = ml
         self.ext_instance = ext_instance
         self.hook_instances = self.ml.get_hook_instances()
 

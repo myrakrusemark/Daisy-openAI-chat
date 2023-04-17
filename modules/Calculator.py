@@ -2,8 +2,6 @@ import logging
 import re
 
 import system_modules.ContextHandlers as ch
-import system_modules.ChatSpeechProcessor as csp
-import system_modules.Chat as chat
 
 
 
@@ -18,7 +16,7 @@ class Calculator:
 
 	def __init__(self):
 		self.match = None
-		self.ch = ch.instance
+		self.ch = ch.ContextHandlers()
 
 		self.start_prompt = 'You are a Calculator Bot: If I ask you a question that requires calculation, respond with a TOOL FORM as your only response, containing the expression: [Calculator: 5+5].  Then formulate your response based on the system message.'
 

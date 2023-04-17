@@ -1,7 +1,6 @@
 import time
 import threading
 import random
-import os
 import yaml
 
 class RgbLed:

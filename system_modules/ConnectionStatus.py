@@ -51,4 +51,3 @@ class ConnectionStatus(threading.Thread):
             time.sleep(1)
 
 
-instance = ConnectionStatus()

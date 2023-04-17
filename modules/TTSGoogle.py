@@ -2,7 +2,6 @@ import logging
 import requests
 from io import BytesIO
 import io
-import os
 import threading
 from pydub import AudioSegment
 import system_modules.ChatSpeechProcessor as csp
@@ -16,7 +15,7 @@ class TTSGoogle:
 	module_hook = "Tts"
 
 	def __init__(self):
-		self.csp = csp.instance
+		self.csp = csp.ChatSpeechProcessor()
 
 	def main(self, text, as_thread=False): 
 		if as_thread:

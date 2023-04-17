@@ -1,32 +1,62 @@
 import os
-import sys
 from django.core.management import execute_from_command_line
 import threading
 from wsgiref.simple_server import WSGIRequestHandler
 
+import system_modules.Chat as chat
+
 
 class WebConfigDjango:
-    """
-    Description: A description of this class and its capabilities.
-    Module Hook: The hook in the program where method main() will be passed into.
-    """
-    #NOTE: This module cannot currently gracefully shutdown. Daisy must be restarted to stop the server.
-    
-    description = "A module that serves a web page."
-    module_hook = "Main_start"
+	"""
+	Description: A description of this class and its capabilities.
+	Module Hook: The hook in the program where method main() will be passed into.
+	"""
+	#NOTE: This module cannot currently gracefully shutdown. Daisy must be restarted to stop the server.
+	
+	description = "A module that serves a web page."
+	module_hook = "Main_start"
 
-    def __init__(self, settings_module="modules.WebConfigDjango.core.settings"):
-        self.settings_module = settings_module
-        self.server = None
-        self.stop_event = threading.Event()
+	def __init__(self, settings_module="modules.WebConfigDjango.core.settings", ml=None, ch=None):
+		self.settings_module = settings_module
+		self.server = None
 
-    def close(self):
-        self.stop_event.set()
-        if self.server:
-            self.server.shutdown()
+		self.ml = ml
+		self.ch = ch
+		self.chat = None
 
-    def main(self):
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", self.settings_module)
-        argv = ['modules/WebConfigDjango/manage.py', 'runserver', '--noreload']
-        handler = WSGIRequestHandler
-        self.server = execute_from_command_line(argv)
+
+
+		self.stop_event = threading.Event()
+
+	def close(self):
+		self.stop_event.set()
+		if self.server:
+			self.server.shutdown()
+
+	def main(self, ml=None, ch=None):
+		print("🌎 DAISY - Web Config 🖥️")
+
+		#Bring in dependencies
+
+		if not self.ml:
+			self.ml = ml
+		if not self.ch:
+			self.ch = ch
+		self.chat = chat.Chat(ml, ch)
+
+
+		# Store ml, ch, and chat in the global scope
+		global GLOBAL_ML, GLOBAL_CH, GLOBAL_CHAT
+		GLOBAL_ML = self.ml
+		GLOBAL_CH = self.ch
+		GLOBAL_CHAT = self.chat
+
+		print("GLOBALS", GLOBAL_CH, GLOBAL_ML)
+
+		#Start the server
+		os.environ.setdefault("DJANGO_SETTINGS_MODULE", self.settings_module)
+		argv = ['modules/WebConfigDjango/manage.py', 'runserver', '--noreload']
+		handler = WSGIRequestHandler
+		self.server = execute_from_command_line(argv)
+
+instance = WebConfigDjango()

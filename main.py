@@ -10,17 +10,22 @@ import threading
 import time
 import concurrent.futures
 
-import ModuleLoader as ml
+import ModuleLoader as module_loader
+import system_modules.ContextHandlers as context_handlers
+import system_modules.Chat as cht
 from system_modules.Logging import Logging
 
-if os.environ.get("LED") == "True":
-	from modules.RgbLed import RgbLed
+#Instantiate ModuleLoader and ContextHandlers for global use by front-ends
+ml = module_loader.ModuleLoader("modules")
+update_modules_loop_thread = threading.Thread(target=ml.update_modules_loop)
+update_modules_loop_thread.start()
 
+ch = context_handlers.ContextHandlers('context.json')
 
 # Define a function that starts a new thread for a given hook instance
 def start_instance(instance):
 	logging.info("Main_start: Running %s module: %s "+instance.__class__.__name__+" "+type(instance).__name__)
-	future = executor.submit(instance.main)
+	future = executor.submit(instance.main, ml, ch)
 	return future
 
 # Define a dictionary to keep track of running threads
@@ -38,11 +43,11 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
 				logging.error("An error occurred: %s "+str(future_object.exception()))
 
 
-		hook_instances = ml.instance.get_hook_instances()
+		hook_instances = ml.get_hook_instances()
 		# Check if any new hook instances have been added or removed
 		if "Main_start" in hook_instances:
 			for instance in hook_instances["Main_start"]:
-				for module in ml.instance.get_available_modules():
+				for module in ml.get_available_modules():
 					if module['class_name'] == instance.__module__ and instance not in running_threads:
 						if module['enabled']:
 							future = executor.submit(start_instance, instance)

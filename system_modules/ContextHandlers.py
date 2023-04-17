@@ -126,4 +126,3 @@ class ContextHandlers:
         return False
 
 
-instance = ContextHandlers()

@@ -18,7 +18,7 @@ class WeatherNoaaNl:
 
 	def __init__(self):
 		# initialize the ChatterBot instance
-		self.ch = ch.instance
+		self.ch = ch.ContextHandlers()
 		# stop event for the thread
 		self.stop_event = threading.Event()
 		# load the configs.yaml file

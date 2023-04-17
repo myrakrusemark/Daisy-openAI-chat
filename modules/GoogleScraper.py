@@ -1,14 +1,9 @@
-from dotenv import load_dotenv
-import openai
 from serpapi import GoogleSearch
 import logging
-import os
 import re
 import yaml
 
 import system_modules.ContextHandlers as ch
-import system_modules.Chat as chat
-import system_modules.ChatSpeechProcessor as csp
 
 class GoogleScraper():
 	"""
@@ -24,7 +19,7 @@ class GoogleScraper():
 		
 		self.api_key = self.configs["keys"]["serp_api"]
 
-		self.ch = ch.instance
+		self.ch = ch.ContextHandlers()
 
 		self.grid_url = None
 

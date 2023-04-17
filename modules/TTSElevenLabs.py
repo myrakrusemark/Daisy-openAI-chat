@@ -7,8 +7,6 @@ import yaml
 import threading
 import requests
 import time
-import system_modules.ChatSpeechProcessor as csp
-import system_modules.SoundManager as sm
 
 class TTSElevenLabs:
 	"""

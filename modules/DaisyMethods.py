@@ -1,6 +1,4 @@
-import os
 import platform
-import pvporcupine
 import logging
 
 import modules.Porcupine.Porcupine as porcupine

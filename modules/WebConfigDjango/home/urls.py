@@ -3,6 +3,7 @@ from importlib import import_module
 import os
 from django.conf import settings
 from django.urls import path
+import inspect
 from . import views
 
 urlpatterns = [
@@ -23,14 +24,51 @@ def load_module_routes():
             module_path = f"{modules_folder}.{module_name}"
             logging.debug(f"Importing URLs and views from module: {module_name}")
 
+
             try:
                 urls_module = import_module(f"{module_path}.urls")
                 views_module = import_module(f"{module_path}.views")
+
+                #Run __init__() method for views.py
+                class_name = None
+                class_obj = None
+                for attr_name in dir(views_module):
+                    attr = getattr(views_module, attr_name)
+                    if inspect.isclass(attr):
+                        class_name = attr_name
+                        class_obj = attr
+                        break
+
+                print("Class name:", class_name)
+                print("Class object:", class_obj)
+
+                if hasattr(views_module, class_name):
+                    logging.info(f"Running __init__() method for class: {class_name}")
+                    class_obj = getattr(views_module, class_name)
+                    instance = class_obj()  # create an instance of the class
+                    instance.__init__()
+
             except ModuleNotFoundError:
                 logging.debug(f"Skipping module {module_name}: urls.py or views.py not found")
                 continue
 
             if hasattr(urls_module, "urlpatterns"):
+
+
+
+                try:
+                    module = import_module(module_path)
+                except ModuleNotFoundError:
+                    logging.debug(f"Skipping module {module_name}: module not found")
+                    continue
+
+                if hasattr(module, "__init__"):
+                    logging.info(f"Running __init__() method for module: {module_name}")
+                    print("MODULE", module_name)
+                    module.__init__("modules.Dashboard_WebConfigDjango.views.Dashboard(TemplateView)")
+
+
+
                 new_urlpatterns = getattr(urls_module, "urlpatterns")
             else:
                 new_urlpatterns = []

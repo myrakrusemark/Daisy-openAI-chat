@@ -10,7 +10,7 @@ class LittleDogsAdventure():
 	module_hook = "Start_prompt"
 
 	def __init__(self):
-		self.ch = ch.instance
+		self.ch = ch.ContextHandlers()
 
 		#DAN Prompt 11.0 from https://github.com/0xk1h0/ChatGPT_DAN
 		self.start_prompt = """Let's play a text based adventure game where I am a dog and you help me survive and find my way home. First, me choose the kind of dog that I am. Do not choose for me! Then go over the back story. Then, lets start the game.
