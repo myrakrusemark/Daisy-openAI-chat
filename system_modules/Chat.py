@@ -10,7 +10,6 @@ import system_modules.ConnectionStatus as cs
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.SoundManager as sm
 import system_modules.ContextHandlers as ch
-import modules.DaisyMethods as dm
 import ModuleLoader as ml
 
 
@@ -23,7 +22,6 @@ class Chat:
 		self.cs = cs.instance
 		self.sounds = sm.instance
 		self.ch = ch.instance
-		self.dm = dm.instance
 		self.hook_instances = ml.instance.hook_instances
 
 		with open("configs.yaml", "r") as f:

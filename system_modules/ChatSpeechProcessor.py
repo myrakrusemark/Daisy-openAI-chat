@@ -23,12 +23,8 @@ import requests
 import platform
 from concurrent.futures import ThreadPoolExecutor
 
-import modules.Porcupine.Porcupine as porcupine
 import system_modules.SoundManager as sm
-import modules.Porcupine.Porcupine as porcupine
-import modules.DaisyMethods as dm
 import modules.RgbLed as led
-import ModuleLoader as ml
 
 
 
@@ -54,7 +50,6 @@ class ChatSpeechProcessor:
 		#self.r = sr.Recognizer()
 
 		self.sounds = sm.instance
-		self.dm = dm.instance
 		self.engine = pyttsx3.init()
 		self.engine.getProperty('voices')
 		self.engine.setProperty('voice', "english-us")

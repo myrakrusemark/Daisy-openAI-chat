@@ -5,6 +5,7 @@ import logging
 import yaml
 import time
 import threading
+import pprint
 
 from system_modules.ContextHandlers import ContextHandlers
 ch = ContextHandlers()
@@ -14,11 +15,13 @@ class ModuleLoader:
 	
 	def __init__(self, directory="modules"):
 		if not ModuleLoader.initialized:
-			logging.info("Loading modules...")
 			self.directory = directory
 			self.start_prompts = []
 			self.hook_instances = {}
 			self.loaded = False
+
+			self.stop_event = threading.Event()
+			self.thread = threading.Thread(target=self.update_modules_loop)
 
 			# Load modules
 			self.available_modules = []
@@ -26,98 +29,94 @@ class ModuleLoader:
 
 			ModuleLoader.initialized = True
 
+	def close(self):
+		self.stop_event.set()
+		self.thread.join()
+
+	def start(self):
+		self.thread.start()
+		
 	def get_hook_instances(self):
 		return self.hook_instances
 	
 	def get_available_modules(self):
-		# Load enabled modules from config file
-		with open('configs.yaml', 'r') as f:
-			config = yaml.safe_load(f)
-
-		enabled_modules = config['enabled_modules']
-		# If the module has not been loaded yet, set the 'loaded' flag to True and create available modules.
 		if not self.loaded:
 			self.loaded = True
-			logging.info("Creating classes for available modules...")
-			#self.available_modules = []
+			logging.info("Loading modules...")
 
-			# Walk through the given directory and its subdirectories, and find Python files.
-			for root, dirs, files in os.walk(self.directory):
-				for filename in files:
-					if filename.endswith('.py'):
-						# Get the full path of the Python file and the relative path of the module.
-						module_path = os.path.join(root, filename)
-						rel_path = os.path.relpath(module_path, self.directory)
+			# Load enabled modules from config file
+			with open('configs.yaml', 'r') as f:
+				config = yaml.safe_load(f)
 
-						# Convert the relative path to a Python module name.
-						module_name = "modules." + rel_path[:-3].replace(os.sep, ".")
+			enabled_modules = config['enabled_modules']
+			for module_name in enabled_modules:
 
-						# Check if the module is enabled in configs.yaml
-						enabled = True if module_name in enabled_modules else False
+				# If module is in configs.yaml, it is enabled.
+				enabled = True
+				# Check if the module is already in available modules
+				module_in_available = False
+				for module in self.available_modules:
+					if module['class_name'] == module_name:
+						module_in_available = True
+						if module_in_available:
+							module["enabled"] = enabled
+						break
 
-						# Check if the module is already in available modules
-						module_in_available = False
-						for module in self.available_modules:
-							if module['class_name'] == module_name:
-								module_in_available = True
-								if module_in_available:
-									module["enabled"] = enabled
-								break
+				# Add the module if it's NOT in available modules
+				if not module_in_available:
+					# Attempt to import the module, and handle exceptions.
+					try:
+						module = importlib.import_module(module_name, package=None)
+					except ModuleNotFoundError as e:
+						logging.warning(f"Failed to load {module_name} due to missing dependency: {str(e)}")
+						continue  # Skip this module and proceed with the next one
 
-						#Remove the module from available_modules if it's not enabled
-						if not enabled and module_in_available:
-							#self.available_modules = [module for module in self.available_modules if module['class_name'] != module_name]
-							self.rebuild_hook_instances()
+					# Find all classes in the module, and extract their methods and initialization parameters.
+					for name in dir(module):
+						if name == module.__name__.split(".")[-1]:
+							obj = getattr(module, name)
+							if isinstance(obj, type):
+								module_hook = getattr(obj, "module_hook", "")
 
-						# Add the module if it's NOT in available modules
-						elif not module_in_available:
-							# Attempt to import the module, and handle exceptions.
-							try:
-								module = importlib.import_module(module_name, package=None)
-							except ModuleNotFoundError as e:
-								logging.warning(f"Failed to load {module_name} due to missing dependency: {str(e)}")
-								continue  # Skip this module and proceed with the next one
+								if module_hook:
+									class_description = getattr(obj, "description", "No description.")
+									module_dict = {"class_name": module_name, "description": class_description}
 
-							# Find all classes in the module, and extract their methods and initialization parameters.
-							for name in dir(module):
-								if name == module.__name__.split(".")[-1]:
-									obj = getattr(module, name)
-									if isinstance(obj, type):
-										class_methods = []
-										init_params = []
-										module_hook = getattr(obj, "module_hook", "")
+									# Add module_hook and enabled attributes to module dictionary
+									module_dict["module_hook"] = module_hook
+									module_dict["enabled"] = enabled
 
-										if module_hook:
-											class_description = getattr(obj, "description", "No description.")
-											module_dict = {"class_name": module_name, "description": class_description}
+									self.available_modules.append(module_dict)
 
-											# Add module_hook and enabled attributes to module dictionary
-											module_dict["module_hook"] = module_hook
-											module_dict["enabled"] = enabled
+									# If the class has a module_hook attribute, create an instance of it and add it to
+									# the list of hook instances.
+									if enabled and module_hook:
+										if isinstance(obj, type) and obj.__module__ == module.__name__:
+											logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
+										else:
+											logging.debug(module_name + " failed to load.")
+									elif not enabled:
+										logging.debug("MODULE DISABLED: " + module_name)
+									else:
+										logging.debug("Class " + module_name + " has no module_hook value. Skipped.")
 
-											self.available_modules.append(module_dict)
+			#Remove the module from available_modules if it's no loger in configs.yaml
+			for available_module in self.available_modules:
+				module_found = False
+				if available_module["class_name"] not in enabled_modules:
+					available_module["enabled"] = False
+					logging.info(available_module["class_name"]+" has been disabled.")
+			
+			self.build_hook_instances()
+			pprint.pprint(self.hook_instances)
 
-											# If the class has a module_hook attribute, create an instance of it and add it to
-											# the list of hook instances.
-											if enabled and module_hook:
-												if module_hook not in self.hook_instances:
-													self.hook_instances[module_hook] = []
-												if isinstance(obj, type) and obj.__module__ == module.__name__:
-													instance = obj()
-													self.hook_instances[module_hook].append(instance)
-													logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
-												else:
-													logging.debug(module_name + " failed to load.")
-											elif not enabled:
-												logging.debug("MODULE DISABLED: " + module_name)
-											else:
-												logging.debug("Class " + module_name + " has no module_hook value. Skipped.")
 		return self.available_modules
 		
-	def rebuild_hook_instances(self):
+	def build_hook_instances(self):
 		# Create a new dictionary to keep track of updated hook instances
 		updated_hook_instances = {}
 
+		#Create a new object, using existing instances where available.
 		for module in self.available_modules:
 			if module['enabled'] == True:
 				module_hook = module['module_hook']
@@ -148,7 +147,7 @@ class ModuleLoader:
 				except Exception as e:
 					logging.warning(f"Failed to update hook instance for {module_name}: {str(e)}")
 
-		# Remove instances that are no longer needed
+		# Notify and close removed instances
 		for hook in self.hook_instances:
 			for instance in self.hook_instances[hook]:
 				if hook not in updated_hook_instances or instance not in updated_hook_instances[hook]:
@@ -156,15 +155,9 @@ class ModuleLoader:
 					if hasattr(instance, 'close') and callable(getattr(instance, 'close')):
 						instance.close()
 
+		#Replace existing object with the new one
+		self.hook_instances = updated_hook_instances
 
-		# Add updated instances to self.hook_instances
-		for hook in updated_hook_instances:
-			if hook not in self.hook_instances:
-				self.hook_instances[hook] = []
-			for instance in updated_hook_instances[hook]:
-				if instance not in self.hook_instances[hook]:
-					logging.info("Adding instance of " + instance.__class__.__name__ + " to " + hook + ".")
-					self.hook_instances[hook].append(instance)
 
 	def update_modules_loop(self):
 		last_modified_time = 0
@@ -173,6 +166,7 @@ class ModuleLoader:
 			if current_modified_time > last_modified_time:
 				self.loaded = False
 				self.get_available_modules()
+				
 				last_modified_time = current_modified_time
 
 			time.sleep(1)
@@ -212,5 +206,4 @@ class ModuleLoader:
 
 
 instance = ModuleLoader("modules")
-thread = threading.Thread(target=instance.update_modules_loop)
-thread.start()
+instance.start()
