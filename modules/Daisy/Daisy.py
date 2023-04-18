@@ -6,7 +6,7 @@ import system_modules.ContextHandlers as ch
 import system_modules.SoundManager as sm
 import system_modules.Chat as chat
 import system_modules.LoadTts as loadtts
-import modules.DaisyMethods as dm
+import modules.Daisy.DaisyMethods as dm
 import ModuleLoader as ml
 
 

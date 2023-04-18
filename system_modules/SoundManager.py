@@ -5,7 +5,7 @@ import threading
 import time
 import pydub
 from pydub.utils import mediainfo
-import modules.DaisyMethods as dm
+import modules.Daisy.DaisyMethods as dm
 from pydub import AudioSegment
 from pydub.effects import speedup
 import simpleaudio
