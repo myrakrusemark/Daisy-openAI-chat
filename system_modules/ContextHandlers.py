@@ -119,7 +119,8 @@ class ContextHandlers:
             index = int(index)
             if index < len(self.messages) and index >= 0:
                 self.messages[index]['content'] = message
-                self.messages[index]['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                now = datetime.datetime.now()
+                self.messages[index]['timestamp'] = now.strftime("%Y-%m-%d %H:%M:%S")
                 self.save_context()
         except ValueError:
             pass

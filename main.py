@@ -15,12 +15,13 @@ import system_modules.ContextHandlers as context_handlers
 import system_modules.Chat as cht
 from system_modules.Logging import Logging
 
+ch = context_handlers.ContextHandlers('context.json')
+
 #Instantiate ModuleLoader and ContextHandlers for global use by front-ends
-ml = module_loader.ModuleLoader("modules")
+ml = module_loader.ModuleLoader(ch, "modules")
 update_modules_loop_thread = threading.Thread(target=ml.update_modules_loop)
 update_modules_loop_thread.start()
 
-ch = context_handlers.ContextHandlers('context.json')
 
 # Define a function that starts a new thread for a given hook instance
 def start_instance(instance):

@@ -1,10 +1,6 @@
 import logging
 import re
 
-import system_modules.ContextHandlers as ch
-
-
-
 class Calculator:
 	"""
 	Description: A description of this class and its capabilities.
@@ -14,11 +10,16 @@ class Calculator:
 	module_hook = "Chat_request_inner"
 
 
-	def __init__(self):
+	def __init__(self, ml):
+		self.ml = ml
+		self.ch = ml.ch
+
 		self.match = None
-		self.ch = ch.ContextHandlers()
 
 		self.start_prompt = 'You are a Calculator Bot: If I ask you a question that requires calculation, respond with a TOOL FORM as your only response, containing the expression: [Calculator: 5+5].  Then formulate your response based on the system message.'
+
+
+	def start(self):
 
 		logging.info("Calculator: Adding start prompt")
 		self.ch.add_message_object_at_start('system', self.start_prompt)

@@ -15,7 +15,7 @@ class TTSGoogleCloud:
 	description = "A TTS model using Google Cloud's TTS service"
 	module_hook = "Tts"
 	
-	def __init__(self):
+	def __init__(self, ml):
 
 		with open("configs.yaml", "r") as f:
 			configs = yaml.safe_load(f)

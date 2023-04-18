@@ -16,15 +16,13 @@ class WebConfigDjango:
 	description = "A module that serves a web page."
 	module_hook = "Main_start"
 
-	def __init__(self, settings_module="modules.WebConfigDjango.core.settings", ml=None, ch=None):
+	def __init__(self, ml, settings_module="modules.WebConfigDjango.core.settings"):
+		self.ml = ml
+		self.ch = ml.ch
+		self.chat = chat.Chat(self.ml, self.ch)
+
 		self.settings_module = settings_module
 		self.server = None
-
-		self.ml = ml
-		self.ch = ch
-		self.chat = None
-
-
 
 		self.stop_event = threading.Event()
 
@@ -35,15 +33,6 @@ class WebConfigDjango:
 
 	def main(self, ml=None, ch=None):
 		print("🌎 DAISY - Web Config 🖥️")
-
-		#Bring in dependencies
-
-		if not self.ml:
-			self.ml = ml
-		if not self.ch:
-			self.ch = ch
-		self.chat = chat.Chat(ml, ch)
-
 
 		# Store ml, ch, and chat in the global scope
 		global GLOBAL_ML, GLOBAL_CH, GLOBAL_CHAT
@@ -59,4 +48,3 @@ class WebConfigDjango:
 		handler = WSGIRequestHandler
 		self.server = execute_from_command_line(argv)
 
-instance = WebConfigDjango()

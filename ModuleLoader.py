@@ -10,13 +10,15 @@ import threading
 class ModuleLoader:
 	initialized = False
 	
-	def __init__(self, directory="modules"):
+	def __init__(self, ch, directory="modules"):
+		self.ch = ch
 		if not ModuleLoader.initialized:
 			logging.info("Loading modules...")
 			self.directory = directory
 			self.start_prompts = []
 			self.hook_instances = {}
 			self.loaded = False
+
 
 			# Load modules
 			self.available_modules = []
@@ -78,11 +80,11 @@ class ModuleLoader:
 
 							# Find all classes in the module, and extract their methods and initialization parameters.
 							for name in dir(module):
+								if name == "Daisy":
+									print("Daisy")
 								if name == module.__name__.split(".")[-1]:
 									obj = getattr(module, name)
 									if isinstance(obj, type):
-										class_methods = []
-										init_params = []
 										module_hook = getattr(obj, "module_hook", "")
 
 										if module_hook:
@@ -99,13 +101,18 @@ class ModuleLoader:
 											# the list of hook instances.
 											if enabled and module_hook:
 												if module_hook not in self.hook_instances:
-													self.hook_instances[module_hook] = []
+													self.hook_instances[module_hook] = []	
+
 												if isinstance(obj, type) and obj.__module__ == module.__name__:
-													instance = obj()
-													self.hook_instances[module_hook].append(instance)
-													logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
-												else:
-													logging.debug(module_name + " failed to load.")
+													instance = obj(self)
+													instance.ch = self.ch  # Add self.ch to the instance
+													instance.ml = self  # Add self to the instance
+												if hasattr(instance, "start") and callable(getattr(instance, "start")):
+													instance.start()
+
+												self.hook_instances[module_hook].append(instance)
+												logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
+
 											elif not enabled:
 												logging.debug("MODULE DISABLED: " + module_name)
 											else:

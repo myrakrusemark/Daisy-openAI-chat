@@ -14,7 +14,7 @@ class TTSGoogle:
 	description = "A TTS model using Google Translate's TTS service"
 	module_hook = "Tts"
 
-	def __init__(self):
+	def __init__(self, ml):
 		self.csp = csp.ChatSpeechProcessor()
 
 	def main(self, text, as_thread=False): 

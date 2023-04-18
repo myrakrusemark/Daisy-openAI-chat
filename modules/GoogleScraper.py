@@ -13,21 +13,22 @@ class GoogleScraper():
 	description = "A class for scraping Google search results based on a given search query."
 	module_hook = "Chat_request_inner"
 
-	def __init__(self):
+	def __init__(self, ml):
+		self.ch = ml.ch
+
 		with open("configs.yaml", "r") as f:
 			self.configs = yaml.safe_load(f)
 		
 		self.api_key = self.configs["keys"]["serp_api"]
 
-		self.ch = ch.ContextHandlers()
-
 		self.grid_url = None
 
 		self.start_prompt = """You are a Google Scraper Bot: If I ask you any question that may require internet access, ask me if I would like to search the web. Then respond with a "tool form" containing the search term: [GoogleScraper: search term]. Then formulate your response based on the system message."""
 
+
+	def start(self):
 		self.ch.add_message_object_at_start('system', self.start_prompt)
 
-		
 	def check(self, text):
 		logging.debug("GoogleScraper: Checking for tool forms")
 		found_tool_form = False

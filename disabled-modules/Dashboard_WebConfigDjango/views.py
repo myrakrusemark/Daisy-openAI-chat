@@ -11,7 +11,6 @@ class Dashboard(TemplateView):
 
 
 	def __init__(self):
-		print("DASHBOARD")
 		self.ml = None
 		self.ch = None
 		self.chat = None
@@ -37,6 +36,12 @@ class Dashboard(TemplateView):
 		return self.context
 
 	def post(self, request, *args, **kwargs):
+
+		from modules.WebConfigDjango.WebConfigDjango import GLOBAL_ML, GLOBAL_CH, GLOBAL_CHAT
+		self.ml = GLOBAL_ML
+		self.ch = GLOBAL_CH
+		self.chat = GLOBAL_CHAT
+	
 		logging.debug(request.POST)
 		action = request.POST.get('action')
 		message = request.POST.get('message')
@@ -52,7 +57,7 @@ class Dashboard(TemplateView):
 			return self.update_messages_section(request)
 		elif action == 'send':
 			self.ch.add_message_object(role, message)
-			response_text = self.chat.chat(self.ch.get_context_without_timestamp())
+			response_text = self.chat.request(self.ch.get_context_without_timestamp())
 			self.ch.add_message_object("assistant", response_text)
 			return self.update_messages_section(request)
 		elif action == 'append':

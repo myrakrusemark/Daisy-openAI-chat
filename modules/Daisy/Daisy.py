@@ -5,7 +5,7 @@ import system_modules.ConnectionStatus as cs
 import system_modules.SoundManager as sm
 import system_modules.Chat as chat
 import system_modules.LoadTts as loadtts
-import modules.DaisyMethods as dm
+import modules.Daisy.DaisyMethods as dm
 
 import modules.RgbLed as led
 
@@ -13,10 +13,11 @@ class Daisy:
 	description = "Provides a user flow for Chat"
 	module_hook = "Main_start"
 
-	def __init__(self, ml=None, ch=None):
+	def __init__(self, ml):
 		self.ml = ml
-		self.ch = ch
-		self.chat = None
+		self.ch = ml.ch
+
+		self.chat = chat.Chat(self.ml, self.ch)
 		self.csp = csp.ChatSpeechProcessor()
 		self.cs = cs.ConnectionStatus()
 		self.sounds = sm.SoundManager()
@@ -37,11 +38,6 @@ class Daisy:
 		self.sounds.play_sound("beep", 0.5)
 		print("🌼 DAISY - Voice Assistant 🌼")
 
-		#Bring in dependencies
-		if not self.ml:
-			self.ml = ml
-		if not self.ch:
-			self.ch = ch
 		self.chat = chat.Chat(ml, ch)
 
 		threads = []

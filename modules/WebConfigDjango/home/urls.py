@@ -24,7 +24,6 @@ def load_module_routes():
             module_path = f"{modules_folder}.{module_name}"
             logging.debug(f"Importing URLs and views from module: {module_name}")
 
-
             try:
                 urls_module = import_module(f"{module_path}.urls")
                 views_module = import_module(f"{module_path}.views")
@@ -38,9 +37,6 @@ def load_module_routes():
                         class_name = attr_name
                         class_obj = attr
                         break
-
-                print("Class name:", class_name)
-                print("Class object:", class_obj)
 
                 if hasattr(views_module, class_name):
                     logging.info(f"Running __init__() method for class: {class_name}")
@@ -64,7 +60,6 @@ def load_module_routes():
 
                 if hasattr(module, "__init__"):
                     logging.info(f"Running __init__() method for module: {module_name}")
-                    print("MODULE", module_name)
                     module.__init__("modules.Dashboard_WebConfigDjango.views.Dashboard(TemplateView)")
 
 
@@ -99,7 +94,6 @@ def load_module_routes():
                 logging.info(f"Added {len(new_urlpatterns)} routes from module: {module_name}")
 
             logging.debug("URLS: " + str(new_urlpatterns))
-
 
     except Exception as e:
         logging.error(f"Error loading module routes: {e}")

@@ -26,11 +26,16 @@ class Chat:
 
 		nltk.data.load('tokenizers/punkt/english.pickle')
 
-	def request(self, messages, stop_event, sound_stop_event=None, tts=None):
+	def request(self, messages, stop_event=None, sound_stop_event=None, tts=None):
 		#Handle LLM request. Optionally convert to sentences and queue for tts, if needed.
 
 		#Queues for handling chunks, sentences, and tts sounds
 		sentences = [[]]  # create a queue to hold the sentences
+
+		if not stop_event:
+			stop_event = threading.Event()
+		if not sound_stop_event:
+			sound_stop_event = threading.Event()
 
 		#Flags for handling chunks, sentences, and tts sounds
 		sentence_queue_canceled = [False]  # use a list to make response_canceled mutable
@@ -126,7 +131,7 @@ class Chat:
 						self.ch.add_message_object('system', hook_text)
 
 						import system_modules.Chat as chat
-						tool_chat = chat.Chat()
+						tool_chat = chat.Chat(self.ml, self.ch)
 						response = tool_chat.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, tts)
 						tool_chat = None
 

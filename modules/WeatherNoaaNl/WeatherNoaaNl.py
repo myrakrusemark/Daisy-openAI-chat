@@ -16,9 +16,9 @@ class WeatherNoaaNl:
 	description = "A module that checks NOAA for the weather based on lat/lon"
 	module_hook = "Chat_request_inner"
 
-	def __init__(self):
+	def __init__(self, ml):
 		# initialize the ChatterBot instance
-		self.ch = ch.ContextHandlers()
+		self.ch = ml.ch
 		# stop event for the thread
 		self.stop_event = threading.Event()
 		# load the configs.yaml file
@@ -30,13 +30,12 @@ class WeatherNoaaNl:
 		self.grid_url = None
 		# initialize the start prompt
 		self.start_prompt = """You are a Weather Bot: If I ask you for the weather, respond with a "tool form": [WeatherNoaaNl: forecast]. Then formulate your response based on the system message."""
-		# add the start prompt to the ChatterBot
-		logging.info("WeatherNoaaNl: Adding start prompt")
-		self.ch.add_message_object_at_start('system', self.start_prompt)
 		# initialize the return prompt
 		self.return_prompt_start = "Respond using the real-time weather forecast below.\n"
 
-
+	def start(self):
+		logging.info("WeatherNoaaNl: Adding start prompt")
+		self.ch.add_message_object_at_start('system', self.start_prompt)
 
 	def check(self, text):
 		# Check for the presence of a tool form in the text.

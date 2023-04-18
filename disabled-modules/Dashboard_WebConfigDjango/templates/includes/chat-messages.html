@@ -2,7 +2,8 @@
 <div class="row {% if message.role == 'user' %}d-flex justify-content-end{% elif message.role == 'system' %}system{% endif %} mb-4">
     <div class="card card-message {{ message.role }}{% if message.role == 'system' %} col-lg-12 border-success {% elif message.role == 'user' %} col-lg-8 {% elif message.role == 'assistant' %} border-info {% endif %}" data-message-index="{{ forloop.counter0 }}">
         <div class="card-body">
-            <p class="card-text">{{ message.timestamp }} : {{ message.content|linebreaksbr }}</p>
+            <h5 class="card-date">{{ message.timestamp }}</h5>
+            <p class="card-text">{{ message.content|linebreaksbr }}</p>
             <div class="d-flex justify-content-end dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                 Options
