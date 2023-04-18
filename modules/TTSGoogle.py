@@ -54,13 +54,19 @@ class TTSGoogle:
 				except requests.exceptions.RequestException as error:
 					# Log the error message instead of printing it to stdout
 					logging.error(f'RequestException: {error}')
+				except requests.exceptions.HTTPError as error:
+					# Log the error message instead of printing it to stdout
+					logging.error(f'HTTPError: {error}')
 						
 				audio_segments.append(io.BytesIO(response.content))
 
 			combined_audio = AudioSegment.empty()
 			for audio_segment in audio_segments:
 				audio_segment.seek(0) # Reset the buffer to the beginning
-				combined_audio += AudioSegment.from_file(audio_segment, format="mp3")
+				try:
+					combined_audio += AudioSegment.from_file(audio_segment, format="mp3")
+				except CouldntDecodeError as e:
+					logging.error("Error decoding the audio file. It might be empty.")
 				audio_segment.close()
 				
 			with io.BytesIO() as buffer:

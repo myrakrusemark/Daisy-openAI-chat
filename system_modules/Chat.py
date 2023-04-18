@@ -10,7 +10,6 @@ import system_modules.ConnectionStatus as cs
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.SoundManager as sm
 import system_modules.ContextHandlers as ch
-import ModuleLoader as ml
 
 
 
@@ -22,7 +21,6 @@ class Chat:
 		self.cs = cs.instance
 		self.sounds = sm.instance
 		self.ch = ch.instance
-		self.hook_instances = ml.instance.hook_instances
 
 		with open("configs.yaml", "r") as f:
 			self.configs = yaml.safe_load(f)
@@ -102,16 +100,17 @@ class Chat:
 			return False  
 
 	def toolform_checker(self, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts=None):
-		logging.debug("Checking for tool forms...")
+		logging.info("Checking for tool forms...")
 
 		#HOOK: Chat_request_inner
 		#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
 		#I may update this soon to allow for inline responses (For example: "5+5 is [Calculator: 5+5]")
-		logging.debug(self.hook_instances)
 		import ModuleLoader as ml
-		if "Chat_request_inner" in self.hook_instances:
-			for instance in self.hook_instances["Chat_request_inner"]:
+		hook_instances = ml.instance.get_hook_instances()
+		if "Chat_request_inner" in hook_instances:
+			for instance in hook_instances["Chat_request_inner"]:
 				logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
+				print(text_stream)
 
 				tool_found = instance.check(text_stream)
 

@@ -5,7 +5,6 @@ import logging
 import yaml
 import time
 import threading
-import pprint
 
 from system_modules.ContextHandlers import ContextHandlers
 ch = ContextHandlers()
@@ -28,6 +27,7 @@ class ModuleLoader:
 			#self.get_available_modules()
 
 			ModuleLoader.initialized = True
+			
 
 	def close(self):
 		self.stop_event.set()
@@ -108,7 +108,6 @@ class ModuleLoader:
 					logging.info(available_module["class_name"]+" has been disabled.")
 			
 			self.build_hook_instances()
-			pprint.pprint(self.hook_instances)
 
 		return self.available_modules
 		
@@ -116,36 +115,36 @@ class ModuleLoader:
 		# Create a new dictionary to keep track of updated hook instances
 		updated_hook_instances = {}
 
-		#Create a new object, using existing instances where available.
-		for module in self.available_modules:
-			if module['enabled'] == True:
-				module_hook = module['module_hook']
-				module_name = module['class_name']
-				try:
-					module_class = importlib.import_module(module_name)
-					for name in dir(module_class):
-						if name == module_class.__name__.split(".")[-1]:
-							obj = getattr(module_class, name)
-							if isinstance(obj, type) and getattr(obj, "module_hook", "") == module_hook:
-								# Check if the instance already exists in hook_instances and use it if found
-								existing_instance = None
-								if module_hook in self.hook_instances:
-									for instance in self.hook_instances[module_hook]:
-										if isinstance(instance, obj):
-											existing_instance = instance
-											break
+		# Iterate over the modules in the order they appear in configs.yaml
+		with open('configs.yaml', 'r') as f:
+			config = yaml.safe_load(f)
+			for module_name in config['enabled_modules']:
+				for module in self.available_modules:
+					if module['class_name'] == module_name:
+						if module['module_hook'] not in updated_hook_instances:
+							updated_hook_instances[module['module_hook']] = []
 
-								if existing_instance:
-									instance = existing_instance
-								else:
-									instance = obj()
+						# Check if the instance already exists in hook_instances and use it if found
+						existing_instance = None
+						if module['module_hook'] in self.hook_instances:
+							for instance in self.hook_instances[module['module_hook']]:
+								if isinstance(instance, type) and instance.__class__.__name__ == module_name:
+									existing_instance = instance
+									break
 
-								# Add the updated instance to the updated_hook_instances
-								if module_hook not in updated_hook_instances:
-									updated_hook_instances[module_hook] = []
-								updated_hook_instances[module_hook].append(instance)
-				except Exception as e:
-					logging.warning(f"Failed to update hook instance for {module_name}: {str(e)}")
+						if existing_instance:
+							instance = existing_instance
+						else:
+							module_class = importlib.import_module(module_name)
+							for name in dir(module_class):
+								if name == module_class.__name__.split(".")[-1]:
+									obj = getattr(module_class, name)
+									if isinstance(obj, type) and getattr(obj, "module_hook", "") == module['module_hook']:
+										instance = obj()
+										break
+
+						# Add the updated instance to the updated_hook_instances
+						updated_hook_instances[module['module_hook']].append(instance)
 
 		# Notify and close removed instances
 		for hook in self.hook_instances:
@@ -157,6 +156,7 @@ class ModuleLoader:
 
 		#Replace existing object with the new one
 		self.hook_instances = updated_hook_instances
+
 
 
 	def update_modules_loop(self):

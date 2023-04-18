@@ -285,7 +285,7 @@ class ChatSpeechProcessor:
 							break
 
 						try:
-							self.new_result = await asyncio.wait_for(_ws.recv(), timeout=2) #Timeout if connection is lost
+							self.new_result = await asyncio.wait_for(_ws.recv(), timeout=3) #Timeout if connection is lost
 							self.result_str_obj = json.loads(self.new_result)
 
 							logging.info("You: "+str(self.result_str_obj['text']))
