@@ -40,8 +40,6 @@ class WebConfigDjango:
 		GLOBAL_CH = self.ch
 		GLOBAL_CHAT = self.chat
 
-		print("GLOBALS", GLOBAL_CH, GLOBAL_ML)
-
 		#Start the server
 		os.environ.setdefault("DJANGO_SETTINGS_MODULE", self.settings_module)
 		argv = ['modules/WebConfigDjango/manage.py', 'runserver', '--noreload']
