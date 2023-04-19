@@ -4,6 +4,8 @@ enabled_modules:
 - modules.GoogleScraper
 - modules.Calculator
 
+conversation: CONVERSATION_ID
+
 keys:
   assembly_ai: APIKEY
   openai: APIKEY
@@ -11,9 +13,15 @@ keys:
   elevenlabs: APIKEY
   porcupine: APIKEY
 
+location: LAT, LON
+
+
 hardware:
   input_device_index: 1
   led: False
 
+TTS:
+  speed: SPEED
+
 TTSElevenLabs:
-  voice: (Voice name)
+  voice: VOICE_NAME

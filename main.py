@@ -14,7 +14,7 @@ import ModuleLoader as module_loader
 import system_modules.ContextHandlers as context_handlers
 from system_modules.Logging import Logging
 
-ch = context_handlers.ContextHandlers('context.json')
+ch = context_handlers.ContextHandlers('daisy.db')
 
 #Instantiate ModuleLoader and ContextHandlers for global use by front-ends
 ml = module_loader.ModuleLoader(ch, "modules")
