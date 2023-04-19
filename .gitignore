@@ -7,3 +7,4 @@ __pycache__/
 daisy.log
 configs.yaml
 context.json
+daisy.db

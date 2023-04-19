@@ -14,7 +14,7 @@ import system_modules.SoundManager as sm
 class Chat:
 	description = "Implements a chatbot using OpenAI's GPT-3 language model and allows for interaction with the user through speech or text."
 
-	def __init__(self, ml, ch):
+	def __init__(self, ml=None, ch=None):
 		self.ml = ml
 		self.ch = ch
 		self.csp = csp.ChatSpeechProcessor()
@@ -107,36 +107,37 @@ class Chat:
 		#HOOK: Chat_request_inner
 		#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
 		#I may update this soon to allow for inline responses (For example: "5+5 is [Calculator: 5+5]")
-		hook_instances = self.ml.get_hook_instances()
-		logging.debug(hook_instances)
+		if self.ml:
+			hook_instances = self.ml.get_hook_instances()
+			logging.debug(hook_instances)
 
-		if "Chat_request_inner" in hook_instances:
-			for instance in hook_instances["Chat_request_inner"]:
-				logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
+			if "Chat_request_inner" in hook_instances:
+				for instance in hook_instances["Chat_request_inner"]:
+					logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
 
-				tool_found = instance.check(text_stream)
+					tool_found = instance.check(text_stream)
 
-				if tool_found:
-					logging.info("Found tool form.")
-					sentence_queue_canceled[0] = True
+					if tool_found:
+						logging.info("Found tool form.")
+						sentence_queue_canceled[0] = True
 
-					hook_text = instance.main(text_stream, stop_event)
+						hook_text = instance.main(text_stream, stop_event)
 
-					text_stream = ""
+						text_stream = ""
 
-					logging.debug("Hook text: "+hook_text)
-					if hook_text:
-						
-						self.ch.add_message_object('system', hook_text)
+						logging.debug("Hook text: "+hook_text)
+						if hook_text:
+							
+							self.ch.add_message_object('system', hook_text)
 
-						import system_modules.Chat as chat
-						tool_chat = chat.Chat(self.ml, self.ch)
-						response = tool_chat.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, tts)
-						tool_chat = None
+							import system_modules.Chat as chat
+							tool_chat = chat.Chat(self.ml, self.ch)
+							response = tool_chat.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, tts)
+							tool_chat = None
 
-						return response
-					else:
-						return False
+							return response
+						else:
+							return False
 		return False
 
 
@@ -189,7 +190,7 @@ class Chat:
 
 	def display_messages(self, chat_handlers):
 		"""Displays the messages stored in the messages attribute of ContectHandlers."""
-		for message in chat_handlers.messages:
+		for message in chat_handlers.get_context():
 			# Check if the message role is in the list of roles to display
 			print(f"{message['role'].upper()}: {message['content']}\n\n")
 

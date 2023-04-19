@@ -1,8 +1,4 @@
-import os
 import requests
-import time
-from datetime import datetime
-import system_modules.ContextHandlers as ch
 import logging
 import threading
 import yaml
@@ -35,7 +31,7 @@ class WeatherNoaaNl:
 
 	def start(self):
 		logging.info("WeatherNoaaNl: Adding start prompt")
-		self.ch.add_message_object_at_start('system', self.start_prompt)
+		self.ch.add_start_propmpt('system', self.start_prompt)
 
 	def check(self, text):
 		# Check for the presence of a tool form in the text.
