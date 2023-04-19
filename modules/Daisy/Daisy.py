@@ -128,7 +128,9 @@ class Daisy:
 				dc_t.join()
 				self.sounds.play_sound_with_thread('end', 1.0)
 
-			
+				#Start a thread that will run every minute
+				thread = threading.Thread(target=self.ch.update_conversation_name_summary, args=())
+				thread.start()
 
 		for t in threads:
 			t.join()

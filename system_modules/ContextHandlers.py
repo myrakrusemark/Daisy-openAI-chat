@@ -66,52 +66,47 @@ class ContextHandlers:
 		self.connection_pool = ConnectionPool(db_path)
 
 		self.load_context()
-		
-		#Start a thread that will run every minute
-		thread = threading.Thread(target=self.update_conversation_name_summary, args=())
-		thread.start()
 
 	def update_conversation_name_summary(self):
-		while True:
-			# Get the name of the current conversation from the LLM
-			logging.debug("GETTING NAME AND SUMMARY FROM LLM")
-			context = self.get_context_without_timestamp()
-			prompt = """
-			Please respond with a name, and summary for this conversation.
-			1. The name should be a single word or short phrase, no more than 5 words."
-			2. The summary should be a short description of the conversation, no more than 2 paragraphs.
-			3. The output must follow the following JSON format: {"name": name, "summary": summary}
-			"""
-			context.append(self.single_message_context('system', prompt, False))
-			response = self.chat.request(context)
+		# Get the name of the current conversation from the LLM
+		logging.info("Updating conversation name and summary...")
+		context = self.get_context_without_timestamp()
+		prompt = """
+		Please respond with a name, and summary for this conversation.
+		1. The name should be a single word or short phrase, no more than 5 words."
+		2. The summary should be a short description of the conversation, no more than 2 paragraphs.
+		3. The output must follow the following JSON format: {"name": name, "summary": summary}
+		"""
+		context.append(self.single_message_context('system', prompt, False))
+		response = self.chat.request(context)
 
-			# Extract the JSON response from the string
-			response_match = re.search(r"{.*}", response)
-			if response_match:
-				response_json = response_match.group(0)
-			else:
-				logging.error("Invalid response format while setting conversation name and summary")
-				continue
+		# Extract the JSON response from the string
+		response_match = re.search(r"{.*}", response)
+		if response_match:
+			response_json = response_match.group(0)
+		else:
+			logging.error("Invalid response format while setting conversation name and summary")
+			return
 
-			# Convert the JSON response to an object
-			try:
-				response_obj = json.loads(response_json)
-			except Exception as e:
-				logging.error("Invalid JSON response while setting conversation name and summary: " + str(e))
-				continue
+		# Convert the JSON response to an object
+		try:
+			response_obj = json.loads(response_json)
+		except Exception as e:
+			logging.error("Invalid JSON response while setting conversation name and summary: " + str(e))
+			return
 
-			# Update the name and summary of the current conversation in the database
-			with self.connection_pool.get_connection() as conn:
-				cursor = conn.cursor()
-				cursor.execute(
-					'''UPDATE conversations SET name = ?, summary = ? WHERE id = ?''',
-					(response_obj["name"], response_obj["summary"], self.conversation_id)
-				)
-				conn.commit()
+		# Update the name and summary of the current conversation in the database
+		with self.connection_pool.get_connection() as conn:
+			cursor = conn.cursor()
+			cursor.execute(
+				'''UPDATE conversations SET name = ?, summary = ? WHERE id = ?''',
+				(response_obj["name"], response_obj["summary"], self.conversation_id)
+			)
+			conn.commit()
 
-			#Update every 3 minutes
-			time.sleep(180)
+		logging.info("Name and summary updated: " + response_obj["name"])
 
+		return
 
 
 	def load_context(self):
