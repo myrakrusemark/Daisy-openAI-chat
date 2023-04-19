@@ -34,4 +34,4 @@ class DaisyPrompt():
 
 	def start(self):
 		logging.info("DaisyPrompt: Adding start prompt")
-		self.ch.add_message_object_at_start('system', self.start_prompt)
+		self.ch.add_start_propmpt('system', self.start_prompt)

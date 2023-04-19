@@ -3,8 +3,6 @@ import logging
 import re
 import yaml
 
-import system_modules.ContextHandlers as ch
-
 class GoogleScraper():
 	"""
 	Description: A description of this class and its capabilities.
@@ -27,7 +25,7 @@ class GoogleScraper():
 
 
 	def start(self):
-		self.ch.add_message_object_at_start('system', self.start_prompt)
+		self.ch.add_start_propmpt('system', self.start_prompt)
 
 	def check(self, text):
 		logging.debug("GoogleScraper: Checking for tool forms")
