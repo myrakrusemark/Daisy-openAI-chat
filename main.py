@@ -12,7 +12,6 @@ import concurrent.futures
 
 import ModuleLoader as module_loader
 import system_modules.ContextHandlers as context_handlers
-import system_modules.Chat as cht
 from system_modules.Logging import Logging
 
 ch = context_handlers.ContextHandlers('context.json')

@@ -58,6 +58,14 @@ class ChatSpeechProcessor:
 		self.threads = []  # keep track of all threads created
 
 
+	def tts(self, text, tts, stop_event=None, sound_stop_event=None):
+		with open("configs.yaml", "r") as f:
+			configs = yaml.safe_load(f)
+			self.tts_speed = configs["TTS"]["speed"]
+
+		audio = tts.create_tts_audio(text)
+		self.sounds.play_sound(audio, 1.0, stop_event, sound_stop_event, self.tts_speed)
+
 	def queue_and_tts_sentences(self, tts, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event=None):
 
 		with ThreadPoolExecutor(max_workers=2) as executor:
@@ -76,10 +84,10 @@ class ChatSpeechProcessor:
 			try:
 				tts_queue.put(tts.create_tts_audio(queued_sentence))
 			except requests.exceptions.HTTPError as e:
-				#self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
+				self.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
 				logging.error(f"HTTP Error: {e}")
 			except requests.exceptions.ConnectionError as e:
-				#self.csp.tts("Connection Error. Error creating TTS audio. Please check your TTS account.")
+				self.tts("Connection Error. Error creating TTS audio. Please check your TTS account.")
 				logging.error(f"Connection Error: {e}")
 
 
@@ -115,7 +123,7 @@ class ChatSpeechProcessor:
 						if not sentence_queue_canceled[0]:
 							tts_queue.put(tts.create_tts_audio(queued_sentence))
 					except requests.exceptions.HTTPError as e:
-						#self.csp.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
+						self.tts("HTTP Error. Error creating TTS audio. Please check your TTS account.")
 						logging.error(f"HTTP Error: {e}")
 
 					tts_queue_complete[0] = True
@@ -138,10 +146,6 @@ class ChatSpeechProcessor:
 					tts_queue_complete[0] = True
 					logging.info("TTS queue complete")
 					return
-
-
-
-
 
 			if sentence_queue_canceled[0] or stop_event.is_set():
 				tts_queue_complete[0] = True
@@ -280,7 +284,7 @@ class ChatSpeechProcessor:
 							break
 
 						try:
-							self.new_result = await asyncio.wait_for(_ws.recv(), timeout=2) #Timeout if connection is lost
+							self.new_result = await asyncio.wait_for(_ws.recv(), timeout=3) #Timeout if connection is lost
 							self.result_str_obj = json.loads(self.new_result)
 
 							logging.info("You: "+str(self.result_str_obj['text']))

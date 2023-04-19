@@ -65,7 +65,6 @@ class Chat:
 
 			while not return_text[0] and not stop_event.is_set():
 				time.sleep(0.1)  # wait a bit before checking again
-			print("HELLO")
 
 			# return response_complete and return_text[0] when return_text is set
 			#for thread in threads:
@@ -157,7 +156,6 @@ class Chat:
 						collected_messages.append(chunk_message)
 						text_stream[0] = ''.join([m.get('content', '') for m in collected_messages])
 						logging.debug(text_stream[0])
-
 
 						#Check for tool forms every 10 iterations to prevent slowdown
 						logging.debug("Checking for tool forms...")

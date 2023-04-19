@@ -57,7 +57,8 @@ class WeatherNoaaNl:
 		try:
 			prompt = self.return_prompt_start+forecast["properties"]["periods"][0]["detailedForecast"]
 		except:
-			prompt = self.return_prompt_start+"I'm sorry, I can't get the weather forecast."
+			logging.error("Error getting forecast")
+			prompt = self.return_prompt_start+"I'm sorry there was an error. I can't get the weather forecast."
 		# Print the weather forecast
 		logging.info("WeatherNoaaNl: "+prompt)
 		# Return the weather forecast

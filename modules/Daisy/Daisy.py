@@ -6,7 +6,6 @@ import system_modules.SoundManager as sm
 import system_modules.Chat as chat
 import system_modules.LoadTts as loadtts
 import modules.Daisy.DaisyMethods as dm
-
 import modules.RgbLed as led
 
 class Daisy:
