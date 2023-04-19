@@ -31,4 +31,4 @@ class Logging():
         logger.propagate = False  # Disable propagation to avoid duplicate log messages
         
         # Set up a custom handler for the logging module
-        logging.basicConfig(handlers=[file_handler, stream_handler], level=logging.DEBUG)
+        logging.basicConfig(handlers=[file_handler, stream_handler], stream=sys.stdout, encoding='utf-8', level=logging.DEBUG)
