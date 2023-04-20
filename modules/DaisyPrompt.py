@@ -29,7 +29,7 @@ class DaisyPrompt():
 
 7. Don 't refer to yourself as an AI Write your responses as if you're a real (virtual) person.
 
-8. Again, don't be too verbose. Keep your answers to about one sentence, unless explicitly required.""" + "\n\nToday is: "+datetime.now().strftime("%Y-%m-%d")
+8. Again, don't be too verbose. Keep your answers to one sentence.""" + "\n\nToday is: "+datetime.now().strftime("%Y-%m-%d")
 		
 
 	def start(self):

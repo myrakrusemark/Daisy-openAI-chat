@@ -1,5 +1,8 @@
 import logging
-import re
+import math
+import numpy
+import datetime
+import scipy
 
 class Calculator:
 	"""
@@ -9,8 +12,7 @@ class Calculator:
 	description = "A module for evaluating mathematical expressions."
 	module_hook = "Chat_request_inner"
 	tool_form_name = "Calculator"
-	tool_form_description = "A module that calculates mathematical expressions."
-	tool_form_argument = "Mathematical Expression"
+	tool_form_description = """Uses eval() to evaluate any valid Python expression, such as arithmetic and logical operations, comparison operations, and function calls, as long as the expression is designed to produce a value and does not include statements or constructs that are not designed to produce a value. Additionally, if the expression involves functions or methods provided by external modules or packages (like 'math' or 'numpy' or 'datetime'), the required package would need to have its namespace specified in the expression, similar to the math module. Examples of such modules include numpy or scipy for complex mathematical or scientific computations, and datetime or time for working with dates and times."""
 
 	def __init__(self, ml):
 		self.ml = ml

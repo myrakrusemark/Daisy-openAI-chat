@@ -174,7 +174,7 @@ Tools:
 				else:
 					logging.warning("No JSON data found in string.")
 
-				logging.info("Tool form chosen: "+str(data)
+				logging.info("Tool form chosen: "+str(data))
 				
 				prompt = ""
 				if data:

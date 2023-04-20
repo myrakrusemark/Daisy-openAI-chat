@@ -220,6 +220,18 @@ class ContextHandlers:
 			del message_without_timestamp['timestamp']
 			messages_without_timestamp.append(message_without_timestamp)
 		return messages_without_timestamp
+	
+	def get_conversation_name_summary(self):
+		with self.connection_pool.get_connection() as conn:
+			cursor = conn.cursor()
+			cursor.execute(
+				'''SELECT name, summary FROM conversations'''
+			)
+			rows = cursor.fetchall()
+			if rows:
+				return [(name, summary) for name, summary in rows]
+			else:
+				return None
 
 
 	def single_message_context(self, role, message, incl_timestamp=True):
