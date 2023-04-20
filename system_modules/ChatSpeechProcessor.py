@@ -238,8 +238,6 @@ class ChatSpeechProcessor:
 						await asyncio.sleep(0.01)
 
 					logging.info("timeout(): Timeout cancelled or result received")
-					print("Result received: " + str(self.result_received))
-					print("Stop event: " + str(stop_event.is_set()))
 
 					return
 

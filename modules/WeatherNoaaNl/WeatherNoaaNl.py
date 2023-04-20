@@ -11,6 +11,9 @@ class WeatherNoaaNl:
 	"""
 	description = "A module that checks NOAA for the weather based on lat/lon"
 	module_hook = "Chat_request_inner"
+	tool_form_name = "Weather"
+	tool_form_description = "A module that provides current weather data based on location, or configured location. If no location is provided, respond with 'No Location' as the argument."
+	tool_form_argument = "Location (City, Zip, Lat/Lon, etc.) / Or None if not specified."
 
 	def __init__(self, ml):
 		# initialize the ChatterBot instance
@@ -24,41 +27,23 @@ class WeatherNoaaNl:
 		self.latlon = self.configs["location"]
 		# initialize the grid url
 		self.grid_url = None
-		# initialize the start prompt
-		self.start_prompt = """You are a Weather Bot: If I ask you for the weather, respond with a "tool form": [WeatherNoaaNl: forecast]. Then formulate your response based on the system message."""
 		# initialize the return prompt
-		self.return_prompt_start = "Respond using the real-time weather forecast below.\n"
 
-	def start(self):
-		logging.info("WeatherNoaaNl: Adding start prompt")
-		self.ch.add_start_propmpt('system', self.start_prompt)
 
-	def check(self, text):
-		# Check for the presence of a tool form in the text.
-		logging.debug("WeatherNoaaNl: Checking for tool forms "+text)
-		found_tool_form = False
-		if "[WeatherNoaaNl:" in text:
-			self.match = re.search(r"\[WeatherNoaaNl:\s*(.*?)\]", text)
-			if self.match:
-				# Found a tool form.
-				logging.info("WeatherNoaaNl: Found tool form")
-				found_tool_form = True
-		return found_tool_form
-
-	def main(self, text, stop_event):
+	def main(self, arg, stop_event):
 		logging.info("WeatherNoaaNl: Getting weather...")
 		# Get the weather forecast
 		forecast = self.get_forecast()
 		# Get the detailed forecast for today
 		try:
-			prompt = self.return_prompt_start+forecast["properties"]["periods"][0]["detailedForecast"]
+			result = "Weather forecast: "+forecast["properties"]["periods"][0]["detailedForecast"]
 		except:
 			logging.error("Error getting forecast")
-			prompt = self.return_prompt_start+"I'm sorry there was an error. I can't get the weather forecast."
+			result = self.return_prompt_start+"Weather forecast: There was an error and the forecast could not be retrieved."
 		# Print the weather forecast
-		logging.info("WeatherNoaaNl: "+prompt)
+		logging.info("WeatherNoaaNl: "+result)
 		# Return the weather forecast
-		return prompt
+		return result
 
 
 	def get_forecast(self):

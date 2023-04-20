@@ -13,6 +13,8 @@ class ModuleLoader:
 	def __init__(self, ch, directory="modules"):
 		self.ch = ch
 		if not ModuleLoader.initialized:
+			ModuleLoader.initialized = True
+
 			self.directory = directory
 			self.start_prompts = []
 			self.hook_instances = {}
@@ -23,9 +25,7 @@ class ModuleLoader:
 
 			# Load modules
 			self.available_modules = []
-			#self.get_available_modules()
 
-			ModuleLoader.initialized = True
 
 			# Load enabled modules from config file
 			with open('configs.yaml', 'r') as f:
@@ -41,7 +41,7 @@ class ModuleLoader:
 		
 	def get_hook_instances(self):
 		return self.hook_instances
-	
+		
 	def get_available_modules(self):
 		# Load enabled modules from config file
 		with open('configs.yaml', 'r') as f:
@@ -83,11 +83,22 @@ class ModuleLoader:
 
 								if module_hook:
 									class_description = getattr(obj, "description", "No description.")
-									module_dict = {"class_name": module_name, "description": class_description}
+									tool_form_name = getattr(obj, "tool_form_name", None)
+									tool_form_description = getattr(obj, "tool_form_description", None)
+									tool_form_argument = getattr(obj, "tool_form_argument", None)
 
 									# Add module_hook and enabled attributes to module dictionary
+									module_dict = {}
+									module_dict["class_name"] = module_name
+									module_dict["description"] = class_description
 									module_dict["module_hook"] = module_hook
 									module_dict["enabled"] = enabled
+									if tool_form_name:
+										module_dict["tool_form_name"] = tool_form_name
+									if tool_form_description:
+										module_dict["tool_form_description"] = tool_form_description
+									if tool_form_argument:
+										module_dict["tool_form_argument"] = tool_form_argument
 
 									self.available_modules.append(module_dict)
 

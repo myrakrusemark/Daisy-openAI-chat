@@ -83,7 +83,6 @@ class Daisy:
 					if not self.awake_stop_event.is_set():
 						self.led.breathe_color(0, 0, 100)  # Breathe Blue
 						stt_text = self.csp.stt(self.awake_stop_event, 30, 'alert') #30s timeout
-						print("STT DONE")
 
 						if self.awake_stop_event.is_set():
 							break
