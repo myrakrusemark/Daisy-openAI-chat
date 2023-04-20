@@ -4,6 +4,7 @@ import nltk.data
 import threading
 import time
 import yaml
+import json
 import requests
 
 import system_modules.ChatSpeechProcessor as csp
@@ -26,11 +27,13 @@ class Chat:
 
 		nltk.data.load('tokenizers/punkt/english.pickle')
 
-	def request(self, messages, stop_event=None, sound_stop_event=None, tts=None):
+	def request(self, messages, stop_event=None, sound_stop_event=None, tts=None, tool_check=True, model="gpt-3.5-turbo", ):
 		#Handle LLM request. Optionally convert to sentences and queue for tts, if needed.
 
 		#Queues for handling chunks, sentences, and tts sounds
 		sentences = [[]]  # create a queue to hold the sentences
+
+
 
 		if not stop_event:
 			stop_event = threading.Event()
@@ -45,12 +48,19 @@ class Chat:
 		text_stream = [""]
 		return_text = [""]
 
+
+
+		if tool_check:
+			response = self.toolform_checker(messages, stop_event, sound_stop_event, tts)
+			if response:
+				messages.append(self.ch.single_message_context("system", response, False))
+
 		try:
 			logging.info("Sending request to OpenAI model...")
 			response = openai.ChatCompletion.create(
-				model='gpt-4',
+				model=model,
 				messages=messages,
-				temperature=1,
+				temperature=0.7,
 				stream=True,
 				request_timeout=2,
 			)
@@ -101,7 +111,7 @@ class Chat:
 			#self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False  
 
-	def toolform_checker(self, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts=None):
+	def toolform_checker(self, messages, stop_event, sound_stop_event, tts=None):
 		logging.debug("Checking for tool forms...")
 
 		#HOOK: Chat_request_inner
@@ -112,32 +122,84 @@ class Chat:
 			logging.debug(hook_instances)
 
 			if "Chat_request_inner" in hook_instances:
-				for instance in hook_instances["Chat_request_inner"]:
-					logging.debug("Running Chat_request_inner module: "+type(instance).__name__)
 
-					tool_found = instance.check(text_stream)
+				#Create a tool-chooser prompt
+				prompt = """1. "Tools" contains a list of available tools for you to use.
+2. Choose one, or more, or None of the tools that are most useful given the context of the "Conversation".
+4. Format your response using JSON, like this: [{"name":"tool_form_name", "arg":"tool_form_argument"}]
+5. If you choose more than one tool, create an list. Like this: [{"name":"tool_form_name", "arg":"tool_form_argument"}, {"name":"tool_form_name", "arg":"tool_form_argument"}]
+6. If you choose no tools, respond with ["None"].
+7. Your response will be parsed in a computer program. Do not include any additional text in your response.
+8. "Conversation" starts with the earliest message and ends with the most recent message.
+9. If the latest message changes the subject of the conversation, even if an earlier message is still relevant, you may respond with ["None"].
 
-					if tool_found:
-						logging.info("Found tool form.")
-						sentence_queue_canceled[0] = True
+Tools:
+"""
+				#Add all available tools to the prompt
+				for module in self.ml.get_available_modules():
+					if "tool_form_name" in module:
+						prompt += '{"name":"'
+						if "tool_form_name" in module:
+							prompt += module["tool_form_name"]+'", "arg":"'
+						if "tool_form_argument" in module:
+							prompt += module["tool_form_argument"]+'"}\n'
+						if "tool_form_description" in module:
+							prompt += module["tool_form_description"]+"\n\n"
 
-						hook_text = instance.main(text_stream, stop_event)
+				#Get the last three messages and add them to the prompt
+				prompt += "Conversation:\n"
+				last_three_messages = messages[-3:]
+				for message in last_three_messages:
+					prompt += str(message)+"\n"
+				print("PROMPT",prompt)
+				message = [{'role': 'system', 'content': prompt}]
+				logging.debug(prompt)
 
-						text_stream = ""
+				#Send prompt to OpenAI model
+				response = self.request(message, stop_event, None, None, False)
 
-						logging.debug("Hook text: "+hook_text)
-						if hook_text:
-							
-							self.ch.add_message_object('system', hook_text)
+				#Parse JSON response
+				data = None
+				start_index = response.find('[')
+				if start_index >= 0:
+					end_index = response.find(']', start_index) + 1
+					json_data = response[start_index:end_index]
+					try:
+						data = json.loads(json_data)
+					except json.decoder.JSONDecodeError as e:
+						print("JSONDecodeError: "+str(e))
+						data = None
+					if data and data[0] == "None":
+						data = None
+				else:
+					logging.warning("No JSON data found in string.")
 
-							import system_modules.Chat as chat
-							tool_chat = chat.Chat(self.ml, self.ch)
-							response = tool_chat.request(self.ch.get_context_without_timestamp(), stop_event, sound_stop_event, tts)
-							tool_chat = None
+				logging.info("Tool form chosen: "+str(data)
+				
+				prompt = ""
+				if data:
+					for d in data:
+						for module in self.ml.get_available_modules():
+							if "tool_form_name" in module:
+								if module["tool_form_name"] == d["name"]:
+									logging.info("Tool form found: "+module["tool_form_name"])
+									class_name = module["class_name"]
+									chat_request_inner_hook_instances = self.ml.get_hook_instances()["Chat_request_inner"]
+									for instance in chat_request_inner_hook_instances:
+										if instance.__class__.__name__ == class_name.split(".")[-1]:
+											logging.info("Found instance: "+instance.__class__.__name__)
+											result = instance.main(d['arg'], stop_event)
 
-							return response
-						else:
-							return False
+											prompt += """Below is the response from the tool: """+module["tool_form_name"]+". Use it to continue the conversation.\n"
+											prompt += result + "\n\n"
+											print("PROMPT",prompt)
+
+				if prompt:
+					return prompt
+				else:
+					logging.warning("No data found.")
+					return False
+
 		return False
 
 
@@ -159,14 +221,14 @@ class Chat:
 						logging.debug(text_stream[0])
 
 						#Check for tool forms every 10 iterations to prevent slowdown
-						logging.debug("Checking for tool forms...")
+						#logging.debug("Checking for tool forms...")
 
-						response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts)
-						if response:
-							sentence_queue_complete[0] = True
-							return_text[0] = response
-							logging.info("Sentence queue complete by found toolform")
-							return
+						#response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts)
+						#if response:
+						#	sentence_queue_complete[0] = True
+						#	return_text[0] = response
+						#	logging.info("Sentence queue complete by found toolform")
+						#	return
 						
 						#Tokenize the text into sentences
 						temp_sentences = self.csp.nltk_sentence_tokenize(text_stream[0])

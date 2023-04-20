@@ -10,6 +10,9 @@ class GoogleScraper():
 	"""
 	description = "A class for scraping Google search results based on a given search query."
 	module_hook = "Chat_request_inner"
+	tool_form_name = "Google"
+	tool_form_description = "A module that scrapes Google search results."
+	tool_form_argument = "Search term"
 
 	def __init__(self, ml):
 		self.ch = ml.ch
@@ -21,40 +24,14 @@ class GoogleScraper():
 
 		self.grid_url = None
 
-		self.start_prompt = """You are a Google Scraper Bot: If I ask you any question that may require internet access, ask me if I would like to search the web. Then respond with a "tool form" containing the search term: [GoogleScraper: search term]. Then formulate your response based on the system message."""
-
-
-	def start(self):
-		self.ch.add_start_propmpt('system', self.start_prompt)
-
-	def check(self, text):
-		logging.debug("GoogleScraper: Checking for tool forms")
-		found_tool_form = False
-		if "[GoogleScraper:" in text:
-			self.match = re.search(r"\[GoogleScraper:\s*(.*?)\]", text)
-			if self.match:
-				logging.info("GoogleScraper: Found tool form")
-				found_tool_form = True
-		return found_tool_form
 	
-	def main(self, text, stop_event):
-		# Get the search query from the processed string.
-		try:
-			processed_string = self.match.group()
-		except Exception as e:
-			return False
+	def main(self, arg, stop_event):
 
-		try:
-			start = processed_string.index(":") + 1
-			end = processed_string.index("]")
-			search_query = processed_string[start:end]
-		except Exception as e:
-			return False
 
 		# Create the parameters for the Google Search API.
 		params = {
 			"engine": "google",
-			"q": search_query,
+			"q": arg,
 			"api_key": self.api_key
 		}
 
@@ -68,13 +45,12 @@ class GoogleScraper():
 		results = search.get_dict()
 		organic_results = results["organic_results"]
 		# If there are search results, create a new prompt with the snippets.
+		search_results = ""
 		if len(organic_results):
-			prompt=f'''Respond using the search results below.\n'''
-
 			for organic_result in organic_results:
 				if("snippet" in organic_result):
-					prompt += organic_result["snippet"]+"\n"
+					search_results += organic_result['snippet']+"\n"
 
-			return prompt
+			return search_results
 		else:
 			return False
