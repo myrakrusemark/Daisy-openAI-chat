@@ -8,7 +8,6 @@ import threading
 import time
 import re
 import string
-from dotenv import load_dotenv
 import pyttsx3
 import requests
 import logging
@@ -33,7 +32,6 @@ class ChatSpeechProcessor:
 		# Set up AssemblyAI API key and websocket endpoint
 		self.uri = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
 
-		load_dotenv()
 
 		# Define global variables
 		with open("configs.yaml", "r") as f:
@@ -180,7 +178,9 @@ class ChatSpeechProcessor:
 					# Define global variables
 					with open("configs.yaml", "r") as f:
 						configs = yaml.safe_load(f)
-						self.tts_speed = configs["TTS"]["speed"]
+						if "TTS" in configs:
+							if "speed" in configs["TTS"]:
+								self.tts_speed = configs["TTS"]["speed"]
 					self.sounds.play_sound(tts, 1.0, stop_event, None, self.tts_speed)
 			elif tts_queue_complete[0]:
 				logging.info("TTS play queue complete")

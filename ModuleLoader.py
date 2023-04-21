@@ -63,7 +63,6 @@ class ModuleLoader:
 						if module_in_available:
 							module["enabled"] = enabled
 						break
-
 				# Add the module if it's NOT in available modules
 				if not module_in_available:
 					# Attempt to import the module, and handle exceptions.

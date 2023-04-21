@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import logging
 import argparse
 import os
@@ -13,7 +12,6 @@ import yaml
 
 
 
-load_dotenv()
 
 class Porcupine():
 	"""

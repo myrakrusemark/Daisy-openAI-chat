@@ -53,6 +53,7 @@ class Chat:
 		if tool_check:
 			response = self.toolform_checker(messages, stop_event, sound_stop_event, tts)
 			if response:
+				#self.ch.add_message_object("system", response)
 				messages.append(self.ch.single_message_context("system", response, False))
 
 		try:
@@ -62,7 +63,7 @@ class Chat:
 				messages=messages,
 				temperature=0.7,
 				stream=True,
-				request_timeout=2,
+				request_timeout=5,
 			)
 
 			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
@@ -112,7 +113,7 @@ class Chat:
 			return False  
 
 	def toolform_checker(self, messages, stop_event, sound_stop_event, tts=None):
-		logging.debug("Checking for tool forms...")
+		logging.info("Checking for tool forms...")
 
 		#HOOK: Chat_request_inner
 		#Right now, only one hook can be run at a time. If a hook returns a value, the rest of the hooks are skipped.
@@ -158,6 +159,8 @@ Tools:
 				#Send prompt to OpenAI model
 				response = self.request(message, stop_event, None, None, False)
 
+				logging.info("Tool form response: "+str(response))
+
 				#Parse JSON response
 				data = None
 				start_index = response.find('[')
@@ -190,7 +193,7 @@ Tools:
 											logging.info("Found instance: "+instance.__class__.__name__)
 											result = instance.main(d['arg'], stop_event)
 
-											prompt += """Below is the response from the tool: """+module["tool_form_name"]+". Use it to continue the conversation.\n"
+											prompt += """Below is the response from the tool: """+module["tool_form_name"]+". Use it to continue the conversation. Do not mention that you received this information. If the information is irrelevant, ignore it and do not mention it.\n"
 											prompt += result + "\n\n"
 											print("PROMPT",prompt)
 
