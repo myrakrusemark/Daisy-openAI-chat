@@ -1,20 +1,25 @@
+#Modules are loaded in the order they are listed here.
 enabled_modules:
 - modules.Daisy
 - modules.TtsElevenLabs
 - modules.GoogleScraper
 - modules.Calculator
 
-conversation: CONVERSATION_ID
+conversation_id: CONVERSATION_ID
+#Set the id of an existing conversation to load it.
+#Leave empty to load the latest conversation.
+#Set the id of a non-existing conversation to create a new one with that ID.
 
+#API Keys for the modules that need them. 
 keys:
-  assembly_ai: APIKEY
-  openai: APIKEY
-  serp_api: APIKEY
-  elevenlabs: APIKEY
-  porcupine: APIKEY
+  assembly_ai: API_KEY
+  openai: API_KEY
+  serp_api: API_KEY
+  elevenlabs: API_KEY
+  porcupine: API_KEY
 
-location: LAT, LON
-
+#Set natural language location. Currently only used for weather.
+location: CITY_NAME
 
 hardware:
   input_device_index: 1
@@ -25,3 +30,7 @@ TTS:
 
 TTSElevenLabs:
   voice: VOICE_NAME
+
+TTSGoogleCloud:
+  voice: en-US-Studio-O
+  project: PROJECT_NAME

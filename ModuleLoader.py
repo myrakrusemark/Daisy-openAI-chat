@@ -5,6 +5,8 @@ import logging
 import yaml
 import time
 import threading
+from ruamel.yaml import YAML
+yaml = YAML()
 
 
 class ModuleLoader:
@@ -29,7 +31,7 @@ class ModuleLoader:
 
 			# Load enabled modules from config file
 			with open('configs.yaml', 'r') as f:
-				self.configs = yaml.safe_load(f)
+				self.configs = yaml.load(f)
 			
 
 	def close(self):
@@ -45,7 +47,7 @@ class ModuleLoader:
 	def get_available_modules(self):
 		# Load enabled modules from config file
 		with open('configs.yaml', 'r') as f:
-			self.configs = yaml.safe_load(f)
+			self.configs = yaml.load(f)
 
 		enabled_modules = self.configs['enabled_modules']
 		if not self.loaded:
@@ -192,12 +194,12 @@ class ModuleLoader:
 	def enable_module(self, module_name):
 		logging.info("Enabling module: " + module_name)
 		with open('configs.yaml', 'r') as f:
-			config = yaml.safe_load(f)
+			config = yaml.load(f)
 
 		if module_name not in config['enabled_modules']:
 			config['enabled_modules'].append(module_name)
 			with open('configs.yaml', 'w') as f:
-				yaml.safe_dump(config, f)
+				yaml.dump(config, f)
 
 			self.loaded = False
 		else:
@@ -208,12 +210,12 @@ class ModuleLoader:
 	def disable_module(self, module_name):
 		logging.info("Disabling module: " + module_name)
 		with open('configs.yaml', 'r') as f:
-			config = yaml.safe_load(f)
+			config = yaml.load(f)
 
 		if module_name in config['enabled_modules']:
 			config['enabled_modules'].remove(module_name)
 			with open('configs.yaml', 'w') as f:
-				yaml.safe_dump(config, f)
+				yaml.dump(config, f)
 
 			self.loaded = False
 		else:

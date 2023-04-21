@@ -6,9 +6,10 @@ import time
 import threading
 from sqlite3 import Error
 import sqlite3
-import yaml
 import system_modules.Chat as cht
 import re
+from ruamel.yaml import YAML
+yaml = YAML()
 
 class ConnectionPool:
 	def __init__(self, db_path, max_connections=5):
@@ -16,6 +17,7 @@ class ConnectionPool:
 		self.max_connections = max_connections
 		self.connections = {}
 		self.lock = threading.Lock()
+
 
 
 	def get_connection(self):
@@ -54,7 +56,7 @@ class ContextHandlers:
 		#Get and set conversation_id from configs.yaml
 		self.conversation_id = None
 		with open("configs.yaml", "r") as f:
-			configs = yaml.safe_load(f)
+			configs = yaml.load(f)
 		if 'conversation_id' in configs:
 			self.conversation_id = configs.get("conversation_id")
 			print("Using conversation id from configs: " + str(self.conversation_id))
@@ -116,7 +118,7 @@ class ContextHandlers:
 
 			cursor = conn.cursor()
 
-			#Get the conversation ID
+			# Get the conversation ID
 			if not self.conversation_id:
 				cursor.execute('''
 				SELECT id FROM conversations ORDER BY id DESC LIMIT 1;
@@ -126,15 +128,21 @@ class ContextHandlers:
 					self.conversation_id = str(row[0])
 					logging.info("No conversation id found in configs.yaml, loading latest conversation: " + str(self.conversation_id))
 
-			#If conversation still is not set, create a new conversation ID
+			# If conversation still is not set, create a new conversation ID
 			if not self.conversation_id:
 				self.conversation_id = str(int(time.time()))
 				logging.info("No conversation found, creating new conversation: " + str(self.conversation_id))
 
+				# Set the new conversation ID in configs.yaml
+				with open("configs.yaml", "r") as f:
+					configs = yaml.load(f)
+				configs['conversation_id'] = self.conversation_id
+				with open("configs.yaml", "w") as f:
+					yaml.dump(configs, f)
+
 			print("Conversation id: " + str(self.conversation_id))
 
-
-			#Get the messages from the conversation ID
+			# Get the messages from the conversation ID
 			cursor.execute('''
 				SELECT * FROM messages WHERE id = ?
 			''', (self.conversation_id,))
@@ -144,6 +152,7 @@ class ContextHandlers:
 					message = json.loads(row[1])
 					self.messages.append(message)
 				print("Loaded "+ str(len(rows)) + " messages from conversation id: " + str(self.conversation_id))
+
 
 
 	def create_conversations_table_if_not_exists(self):
