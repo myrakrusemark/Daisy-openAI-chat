@@ -7,6 +7,7 @@ import system_modules.Chat as chat
 import system_modules.LoadTts as loadtts
 import modules.Daisy.DaisyMethods as dm
 import modules.RgbLed as led
+from system_modules.Text import print_text
 
 class Daisy:
 	description = "Provides a user flow for Chat"
@@ -35,7 +36,7 @@ class Daisy:
 
 	def main(self, ml=None, ch=None):
 		self.sounds.play_sound("beep", 0.5)
-		print("🌼 DAISY - Voice Assistant 🌼")
+		print_text("🌼 DAISY - Voice Assistant 🌼", "pink", "\n")
 
 		self.chat = chat.Chat(ml, ch)
 
@@ -59,9 +60,11 @@ class Daisy:
 
 			awake = self.dm.listen_for_daisy_wake(self.daisy_stop_event, self.awake_stop_event)
 
+
 			self.led.breathe_color(100, 100, 100)  # Breathe Blue
 
 			if awake:
+				print_text("٩(ˊ〇ˋ*)و", "pink", "\n")
 				#Check for "Daisy Cancel" sleep word
 				dc_t = threading.Thread(target=self.dm.listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
 				threads.append(dc_t)

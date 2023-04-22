@@ -27,7 +27,7 @@ class Logging():
         logger = logging.getLogger()
         logger.addHandler(file_handler)
         logger.addHandler(stream_handler)
-        logger.setLevel(logging.DEBUG)  # Set the root logger level to DEBUG
+        logger.setLevel(logging.CRITICAL)  # Set the root logger level to CRITICAL to turn off all logging
         logger.propagate = False  # Disable propagation to avoid duplicate log messages
         
         # Set up a custom handler for the logging module

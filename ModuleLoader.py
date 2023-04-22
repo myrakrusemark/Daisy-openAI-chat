@@ -7,6 +7,8 @@ import time
 import threading
 from ruamel.yaml import YAML
 yaml = YAML()
+from system_modules.Text import print_text
+
 
 
 class ModuleLoader:
@@ -107,8 +109,8 @@ class ModuleLoader:
 									# the list of hook instances.
 									if enabled and module_hook:
 
-										#self.hook_instances[module_hook].append(instance)
-										logging.info(f"MODULE LOADED: {module_name} to {module_hook}")
+										#Module loaded
+										pass
 
 									elif not enabled:
 										logging.debug("MODULE DISABLED: " + module_name)
@@ -165,6 +167,8 @@ class ModuleLoader:
 
 					# Add the updated instance to the updated_hook_instances
 					updated_hook_instances[module['module_hook']].append(instance)
+					print_text("MODULE LOADED: ", "green", "", "italic")
+					print_text(module_name+" to "+module['module_hook'], None, "\n")
 
 					break
 
@@ -172,7 +176,10 @@ class ModuleLoader:
 		for hook in self.hook_instances:
 			for instance in self.hook_instances[hook]:
 				if hook not in updated_hook_instances or instance not in updated_hook_instances[hook]:
-					logging.info("MODULE REMOVED: " + instance.__class__.__name__ + " from " + hook + ".")
+
+					print_text("MODULE REMOVED: ", "green", "", "italic")
+					print_text(instance.__class__.__name__ + " from " + hook + ".", None, "\n")
+
 					if hasattr(instance, 'close') and callable(getattr(instance, 'close')):
 						instance.close()
 

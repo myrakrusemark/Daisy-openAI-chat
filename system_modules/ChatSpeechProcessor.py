@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import system_modules.SoundManager as sm
 import modules.RgbLed as led
+from system_modules.Text import print_text, delete_last_lines
 
 
 
@@ -49,6 +50,8 @@ class ChatSpeechProcessor:
 		#self.engine.setProperty('voice', "english-us")
 		self.led = led.RgbLed()
 		self.tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+		self.elapsed_time = 0
+		self.timeout_seconds = 0
 
 		self.tts_queue = queue.Queue()  # create a queue to hold the tts_sounds
 		self.tts_queue_complete = [False]	# use a list to make response_complete mutable
@@ -193,6 +196,7 @@ class ChatSpeechProcessor:
 		self.result_str = ""
 		self.new_result_str = ""
 		self.result_received = False
+		self.timeout_seconds = timeout_seconds
 
 		# Set up PyAudio
 		FRAMES_PER_BUFFER = 3200
@@ -221,17 +225,17 @@ class ChatSpeechProcessor:
 				logging.info(session_begins)
 				logging.info("AAI Listening ...")
 
-				async def timeout():
-					start_time = time.time()
-					elapsed_time = 0
+				async def timeout() -> None:
+					start_time: float = time.time()
+					self.elapsed_time: float = 0
 
 					while not self.result_received and not stop_event.is_set():
-						elapsed_time = time.time() - start_time
+						self.elapsed_time: float = time.time() - start_time
 						if stop_event.is_set():
 							logging.info("Timeout()")
 							break
 						if timeout_seconds > 0: # If timeout is 0s, then dont timeout
-							if elapsed_time > timeout_seconds:
+							if self.elapsed_time > timeout_seconds:
 								logging.info("Timeout reached")
 								stop_event.set()
 								return
@@ -285,7 +289,10 @@ class ChatSpeechProcessor:
 							self.new_result = await asyncio.wait_for(_ws.recv(), timeout=3) #Timeout if connection is lost
 							self.result_str_obj = json.loads(self.new_result)
 
-							logging.info("You: "+str(self.result_str_obj['text']))
+							delete_last_lines()
+							print_text("You ("+str(round(self.timeout_seconds - self.elapsed_time))+"s): ", "green", "", "bold")
+							print_text(str(self.result_str_obj['text']))
+
 							self.led.turn_on_color_random_brightness(0, 0, 100)  # Random brightness Blue
 
 							# If the message type is FinalTranscript, then we are done
@@ -296,6 +303,7 @@ class ChatSpeechProcessor:
 
 								self.result_str = self.result_str_obj['text']
 								self.result_received = True
+								print_text("", None, "\n")
 
 						except asyncio.TimeoutError:
 							logging.warning("receive(): Receive timed out")
