@@ -60,7 +60,7 @@ class ContextHandlers:
 			configs = yaml.load(f)
 		if 'conversation_id' in configs:
 			self.conversation_id = configs.get("conversation_id")
-			print("Using conversation id from configs: " + str(self.conversation_id))
+			logging.info("Using conversation id from configs: " + str(self.conversation_id))
 
 
 		self.db_path = db_path
@@ -148,7 +148,7 @@ class ContextHandlers:
 				with open("configs.yaml", "w") as f:
 					yaml.dump(configs, f)
 
-			print("Conversation id: " + str(self.conversation_id))
+			logging.info("Conversation id: " + str(self.conversation_id))
 
 			# Get the messages from the conversation ID
 			cursor.execute('''
@@ -159,7 +159,7 @@ class ContextHandlers:
 				for row in rows:
 					message = json.loads(row[1])
 					self.messages.append(message)
-				print("Loaded "+ str(len(rows)) + " messages from conversation id: " + str(self.conversation_id))
+				print_text("Loaded "+ str(len(rows)) + " messages from conversation id: " + str(self.conversation_id), "yellow", "\n")
 
 
 
