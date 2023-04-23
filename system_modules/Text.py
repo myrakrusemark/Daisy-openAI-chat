@@ -2,8 +2,13 @@ from typing import Dict, List, Optional
 import sys
 
 from ruamel.yaml import YAML
-
 yaml = YAML()
+
+# Define global variables
+with open("configs.yaml", "r") as f:
+    configs = yaml.load(f)
+if "print_text" in configs:
+    yaml_print_text = configs["print_text"]
 
 TEXT_COLOR_MAPPING = {
     "blue": "36;1",
@@ -40,11 +45,12 @@ def get_colored_text(text: str, color:[str] = None, style: Optional[str] = None)
 
 def print_text(text: str, color: Optional[str] = None, end: str = "", style: Optional[str] = None) -> None:
     """Print text with highlighting and optional styling."""
-    if color is None:
-        text_to_print = text
-    else:
-        text_to_print = get_colored_text(text, color, style)
-    print(text_to_print, end=end)
+    if yaml_print_text:
+        if color is None:
+            text_to_print = text
+        else:
+            text_to_print = get_colored_text(text, color, style)
+        print(text_to_print, end=end)
 
 
 def delete_last_lines(n=1): 

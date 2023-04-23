@@ -1,5 +1,6 @@
 import platform
 import logging
+from system_modules.Text import print_text
 
 import modules.Porcupine.Porcupine as porcupine
 
@@ -39,13 +40,18 @@ class DaisyMethods:
 
 	def listen_for_daisy_wake(self, stop_event, awake_stop_event):
 		awake_stop_event.clear()
-		return self.porcupine_daisy_wake.run(stop_event, awake_stop_event)
+		result = self.porcupine_daisy_wake.run(stop_event, awake_stop_event)
+		if result:
+			print_text("٩(ˊ〇ˋ*)و", "pink", "\n")
+		return result
+
 	
 	def listen_for_daisy_cancel(self, stop_event, awake_stop_event):
-		self.porcupine_daisy_cancel.run(stop_event, awake_stop_event)
-		logging.info("<------DAISY CANCEL------>")
-		awake_stop_event.set()
-		return 
+		result = self.porcupine_daisy_cancel.run(stop_event, awake_stop_event)
+		if result:
+			print_text("\n\n(∪｡∪)｡｡｡zzz", "pink", "\n")
+			awake_stop_event.set()
+		return result
 
 
 	def set_cancel_loop(self, boolean):

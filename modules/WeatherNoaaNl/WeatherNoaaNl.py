@@ -32,7 +32,6 @@ class WeatherNoaaNl:
 		arg = arg.strip().lower()
 		# Get the latlon from the location name
 		if arg:
-			print("arg: '" + arg+"'")
 			if arg != "no location" and arg != "none":
 				# A city name or other location was passed as an argument to main()
 				self.location = arg
@@ -40,7 +39,10 @@ class WeatherNoaaNl:
 			logging.info("WeatherNoaaNl: No location passed as argument. Using configured location.")
 
 		logging.info("WeatherNoaaNl: Getting coordinates for: " + self.location)
-		self.latlon = self.geolocator.geocode(self.location)
+		try:
+			self.latlon = self.geolocator.geocode(self.location, timeout=2)
+		except Exception as e:
+			self.latlon = None
 
 		# Get the weather forecast
 		if self.latlon:
@@ -51,14 +53,14 @@ class WeatherNoaaNl:
 					result = "Weather forecast: " + forecast["properties"]["periods"][0]["detailedForecast"]
 				except:
 					logging.error("Error getting forecast")
-					result = "Weather forecast: There was an error and the forecast could not be retrieved for "+self.location+". If the city is outside the US, data may not be available." + str(forecast)
+					result = "Weather forecast for "+self.location+": There was an error and the forecast could not be retrieved for "+self.location+". If the city is outside the US, data may not be available." + str(forecast)
 				# Print the weather forecast
-				logging.info("WeatherNoaaNl: " + result)
+				logging.info("Weather forecast for "+self.location+": " + result)
 				# Return the weather forecast
 				return result
 			else:
-				return "Weather forecast: There was an error and the forecast could not be retrieved for "+self.location+". " + str(forecast)
-		return "Weather forecast: There was an error retrieving the right location based on the location name."
+				return "Weather forecast for "+self.location+": There was an error and the forecast could not be retrieved for "+self.location+". " + str(forecast)
+		return "Weather forecast for "+self.location+": There was an error retrieving the right location. Please wait five minuts and try again."
 
 	def get_forecast(self):
 		"""Get the forecast from the grid url"""

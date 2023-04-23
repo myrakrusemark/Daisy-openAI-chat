@@ -25,6 +25,9 @@ hardware:
   input_device_index: 1
   led: False
 
+print_text: True
+log_level: WARNING
+
 TTS:
   speed: SPEED
 

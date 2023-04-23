@@ -9,6 +9,8 @@ import requests
 
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.SoundManager as sm
+from system_modules.Text import print_text, delete_last_lines
+
 
 
 
@@ -27,7 +29,16 @@ class Chat:
 
 		nltk.data.load('tokenizers/punkt/english.pickle')
 
-	def request(self, messages, stop_event=None, sound_stop_event=None, tts=None, tool_check=True, model="gpt-3.5-turbo", ):
+	def request(self,
+	     messages,
+		 stop_event=None,
+		 sound_stop_event=None,
+		 tts=None,
+		 tool_check=True,
+		 model="gpt-3.5-turbo",
+		 silent=False,
+		 response_label=True
+		 ):
 		#Handle LLM request. Optionally convert to sentences and queue for tts, if needed.
 
 		#Queues for handling chunks, sentences, and tts sounds
@@ -48,13 +59,19 @@ class Chat:
 		text_stream = [""]
 		return_text = [""]
 
-
-
+		#If tool check enabled, find the appropriate tool, and append the output to the messages list.
 		if tool_check:
-			response = self.toolform_checker(messages, stop_event, sound_stop_event, tts)
+			response = self.toolform_checker(
+				messages=messages, 
+				stop_event=stop_event,
+				response_label=response_label
+				)
 			if response:
-				#self.ch.add_message_object("system", response)
-				messages.append(self.ch.single_message_context("system", response, False))
+
+				print_text("SYSTEM:", "red", "", "bold")
+				print_text(response, None, "\n")
+				self.ch.add_message_object("system", response)
+				#messages.append(self.ch.single_message_context("system", response, False))
 
 		try:
 			logging.info("Sending request to OpenAI model...")
@@ -67,19 +84,40 @@ class Chat:
 			)
 
 			#Handle chunks. Optionally convert to sentences for sentence_queue, if needed.
-			t = threading.Thread(target=self.stream_queue_sentences, args=(response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts))
+			arguments = {
+				'response': response,
+				'text_stream': text_stream,
+				'sentences': sentences,
+				'sentence_queue_canceled': sentence_queue_canceled,
+				'sentence_queue_complete': sentence_queue_complete,
+				'return_text': return_text,
+				'stop_event': stop_event,
+				'sound_stop_event': sound_stop_event,
+				'silent': silent,
+				'model': model,
+				'response_label': response_label
+			}
+			t = threading.Thread(target=self.stream_queue_sentences, args=(arguments,))
 			t.start()
 			threads.append(t)
 
 			if tts:
-				self.csp.queue_and_tts_sentences(tts, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event)
+				self.csp.queue_and_tts_sentences(
+					tts=tts, 
+					sentences=sentences, 
+					sentence_queue_canceled=sentence_queue_canceled, 
+					sentence_queue_complete=sentence_queue_complete, 
+					stop_event=stop_event, 
+					sound_stop_event=sound_stop_event
+					)
 
 			while not return_text[0] and not stop_event.is_set():
 				time.sleep(0.1)  # wait a bit before checking again
 
 			# return response_complete and return_text[0] when return_text is set
-			#for thread in threads:
+
 			t.join()
+
 			return return_text[0]
 		
 		# Handle different types of errors that may occur when sending request to OpenAI model
@@ -112,7 +150,12 @@ class Chat:
 			#self.csp.tts("Type Error. Sorry, I can't talk right now.")
 			return False  
 
-	def toolform_checker(self, messages, stop_event, sound_stop_event, tts=None):
+	def toolform_checker(
+			self, 
+			messages, 
+			stop_event=None, 
+			response_label=True
+			):
 		logging.info("Checking for tool forms...")
 
 		#HOOK: Chat_request_inner
@@ -152,12 +195,18 @@ Tools:
 				last_three_messages = messages[-3:]
 				for message in last_three_messages:
 					prompt += str(message)+"\n"
-				print("PROMPT",prompt)
+				logging.info(prompt)
 				message = [{'role': 'system', 'content': prompt}]
 				logging.debug(prompt)
 
-				#Send prompt to OpenAI model
-				response = self.request(message, stop_event, None, None, False)
+				response = self.request(
+					messages=message, 
+					stop_event=stop_event, 
+					tool_check=False,
+					model="gpt-3.5-turbo",
+					silent=True,
+					response_label=response_label
+					)
 
 				logging.info("Tool form response: "+str(response))
 
@@ -169,8 +218,10 @@ Tools:
 					json_data = response[start_index:end_index]
 					try:
 						data = json.loads(json_data)
+
+
 					except json.decoder.JSONDecodeError as e:
-						print("JSONDecodeError: "+str(e))
+						logging.error("JSONDecodeError: "+str(e))
 						data = None
 					if data and data[0] == "None":
 						data = None
@@ -185,7 +236,9 @@ Tools:
 						for module in self.ml.get_available_modules():
 							if "tool_form_name" in module:
 								if module["tool_form_name"] == d["name"]:
-									logging.info("Tool form found: "+module["tool_form_name"])
+									print_text("Tool: ", "green")
+									print_text(module["tool_form_name"] + " (" + d['arg']+")", None, "\n\n")
+
 									class_name = module["class_name"]
 									chat_request_inner_hook_instances = self.ml.get_hook_instances()["Chat_request_inner"]
 									for instance in chat_request_inner_hook_instances:
@@ -194,25 +247,35 @@ Tools:
 											result = instance.main(d['arg'], stop_event)
 
 											prompt += """Below is the response from the tool: """+module["tool_form_name"]+". Use it to continue the conversation. Do not mention that you received this information. If the information is irrelevant, ignore it and do not mention it.\n"
-											prompt += result + "\n\n"
-											print("PROMPT",prompt)
-
+											prompt += result+"\n"
 				if prompt:
 					return prompt
 				else:
-					logging.warning("No data found.")
+					logging.info("No data found.")
 					return False
-
 		return False
 
 
-	def stream_queue_sentences(self, response, text_stream, sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts=None):
-		sentence_queue_complete[0] = False
-		sentence_queue_canceled[0] = False
+	def stream_queue_sentences(self, arguments_dict):
+		response = arguments_dict['response']
+		text_stream = arguments_dict['text_stream']
+		sentences = arguments_dict['sentences']
+		sentence_queue_canceled = arguments_dict.get('sentence_queue_canceled', [False])
+		sentence_queue_complete = arguments_dict.get('sentence_queue_complete', [False])
+		return_text = arguments_dict['return_text']
+		stop_event = arguments_dict['stop_event']
+		sound_stop_event = arguments_dict['sound_stop_event']
+		silent = arguments_dict['silent']
+		model = arguments_dict['model']
+		response_label = arguments_dict['response_label']
+
 		collected_chunks = []
 		collected_messages = []
 
 		try:
+			if not silent and response_label:
+				print_text("Daisy ("+model+"): ", "blue", "", "bold")
+
 			for chunk in response:
 				if not sentence_queue_canceled[0]:
 					if not stop_event.is_set():
@@ -223,15 +286,9 @@ Tools:
 						text_stream[0] = ''.join([m.get('content', '') for m in collected_messages])
 						logging.debug(text_stream[0])
 
-						#Check for tool forms every 10 iterations to prevent slowdown
-						#logging.debug("Checking for tool forms...")
-
-						#response = self.toolform_checker(text_stream[0], sentences, sentence_queue_canceled, sentence_queue_complete, return_text, stop_event, sound_stop_event, tts)
-						#if response:
-						#	sentence_queue_complete[0] = True
-						#	return_text[0] = response
-						#	logging.info("Sentence queue complete by found toolform")
-						#	return
+						if not silent:
+							if 'content' in chunk_message:
+								print_text(chunk_message['content'])
 						
 						#Tokenize the text into sentences
 						temp_sentences = self.csp.nltk_sentence_tokenize(text_stream[0])
@@ -240,10 +297,10 @@ Tools:
 						sentence_queue_canceled[0] = True
 						logging.info("Sentence queue canceled")
 						return
+			print_text("\n\n")
 		except requests.exceptions.ConnectionError as e:
 			logging.error("stream_queue_sentences(): Request timeout. Check your internet connection.")
 			sentence_queue_canceled[0] = True
-
 
 		time.sleep(0.01)
 		sentence_queue_complete[0] = True

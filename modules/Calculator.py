@@ -2,7 +2,6 @@ import logging
 import math
 import numpy
 import datetime
-import scipy
 
 class Calculator:
 	"""

@@ -64,7 +64,6 @@ class Daisy:
 			self.led.breathe_color(100, 100, 100)  # Breathe Blue
 
 			if awake:
-				print_text("٩(ˊ〇ˋ*)و", "pink", "\n")
 				#Check for "Daisy Cancel" sleep word
 				dc_t = threading.Thread(target=self.dm.listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
 				threads.append(dc_t)
@@ -102,7 +101,13 @@ class Daisy:
 							self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
 
 							try:
-								text = self.chat.request(self.ch.get_context_without_timestamp(), self.awake_stop_event, sound_stop_event, self.tts)
+								text = self.chat.request(
+									messages=self.ch.get_context_without_timestamp(),
+									stop_event=self.awake_stop_event,
+									sound_stop_event=sound_stop_event,
+									tool_check=True,
+									tts=self.tts
+									)
 							except Exception as e:
 								logging.error("Daisy request error: "+ e)
 								self.awake_stop_event.set()
@@ -115,7 +120,6 @@ class Daisy:
 
 							self.ch.add_message_object('assistant', text)
 
-							self.chat.display_messages(self.ch)
 							if self.awake_stop_event.is_set():
 								break
 

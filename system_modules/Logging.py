@@ -1,6 +1,15 @@
 import logging
 import sys
 
+from ruamel.yaml import YAML
+yaml = YAML()
+
+# Define global variables
+with open("configs.yaml", "r") as f:
+    configs = yaml.load(f)
+if "print_text" in configs:
+    yaml_log_level = configs["log_level"]
+
 class Logging():
     def __init__(self, file_name):
         self.file_name = file_name
@@ -27,7 +36,7 @@ class Logging():
         logger = logging.getLogger()
         logger.addHandler(file_handler)
         logger.addHandler(stream_handler)
-        logger.setLevel(logging.CRITICAL)  # Set the root logger level to CRITICAL to turn off all logging
+        logger.setLevel(getattr(logging, yaml_log_level.upper()))
         logger.propagate = False  # Disable propagation to avoid duplicate log messages
         
         # Set up a custom handler for the logging module

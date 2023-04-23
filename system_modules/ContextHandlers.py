@@ -9,6 +9,7 @@ import sqlite3
 import system_modules.Chat as cht
 import re
 from ruamel.yaml import YAML
+from system_modules.Text import print_text
 yaml = YAML()
 
 class ConnectionPool:
@@ -71,16 +72,23 @@ class ContextHandlers:
 
 	def update_conversation_name_summary(self):
 		# Get the name of the current conversation from the LLM
+		time.sleep(1)
 		logging.info("Updating conversation name and summary...")
-		context = self.get_context_without_timestamp()
+		messages = self.get_context_without_timestamp()
 		prompt = """
 		Please respond with a name, and summary for this conversation.
 		1. The name should be a single word or short phrase, no more than 5 words."
-		2. The summary should be a short description of the conversation, no more than 2 paragraphs.
+		2. The summary should be a short description of the conversation, no more than 2 SHORT sentences.
 		3. The output must follow the following JSON format: {"name": name, "summary": summary}
 		"""
-		context.append(self.single_message_context('system', prompt, False))
-		response = self.chat.request(context)
+		messages.append(self.single_message_context('system', prompt, False))
+
+		print_text("Conversation info ("+str(self.conversation_id)+"): ", "yellow")
+		response = self.chat.request(
+			messages=messages, 
+			silent=False, 
+			response_label=False
+			)
 
 		# Extract the JSON response from the string
 		response_match = re.search(r"{.*}", response)

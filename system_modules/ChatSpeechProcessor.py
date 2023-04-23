@@ -67,14 +67,49 @@ class ChatSpeechProcessor:
 		audio = tts.create_tts_audio(text)
 		self.sounds.play_sound(audio, 1.0, stop_event, sound_stop_event, self.tts_speed)
 
-	def queue_and_tts_sentences(self, tts, sentences, sentence_queue_canceled, sentence_queue_complete, stop_event, sound_stop_event=None):
+	def queue_and_tts_sentences(
+			self, 
+			tts, 
+			sentences, 
+			sentence_queue_canceled, 
+			sentence_queue_complete, 
+			stop_event, 
+			sound_stop_event=None
+			):
 
 		with ThreadPoolExecutor(max_workers=2) as executor:
-			executor.submit(self.queue_tts_from_sentences, tts, sentences, sentence_queue_complete, sentence_queue_canceled, self.tts_queue_complete, self.tts_queue, stop_event)
-			executor.submit(self.play_tts_queue, self.tts_queue, sentence_queue_canceled, sentence_queue_complete, self.tts_queue_complete, stop_event, sound_stop_event)
+			arguments = {
+				'tts':tts, 
+				'sentences':sentences, 
+				'sentence_queue_complete':sentence_queue_complete, 
+				'sentence_queue_canceled':sentence_queue_canceled, 
+				'tts_queue_complete':self.tts_queue_complete,
+				'tts_queue':self.tts_queue,
+				'stop_event':stop_event, 
+			}
+			executor.submit(self.queue_tts_from_sentences, arguments)
+
+			arguments = {
+				'play_tts_queue':self.play_tts_queue, 
+				'tts_queue':self.tts_queue, 
+				'sentence_queue_complete':sentence_queue_complete, 
+				'sentence_queue_canceled':sentence_queue_canceled, 
+				'tts_queue_complete':self.tts_queue_complete,
+				'stop_event':stop_event,
+				'sound_stop_event':sound_stop_event, 
+			}
+			executor.submit(self.play_tts_queue, arguments)
 		return
 		  
-	def queue_tts_from_sentences(self, tts, sentences, sentence_queue_complete, sentence_queue_canceled, tts_queue_complete, tts_queue, stop_event):
+	def queue_tts_from_sentences(self, arguments_dict):
+		tts = arguments_dict['tts']
+		sentences = arguments_dict['sentences']
+		sentence_queue_canceled = arguments_dict.get('sentence_queue_canceled', [False])
+		sentence_queue_complete = arguments_dict.get('sentence_queue_complete', [False])
+		tts_queue_complete = arguments_dict['tts_queue_complete']
+		tts_queue = arguments_dict['tts_queue']
+		stop_event = arguments_dict['stop_event']
+
 		tts_queue_complete[0] = False
 		sentences_length = 1
 
@@ -157,7 +192,17 @@ class ChatSpeechProcessor:
 			time.sleep(0.5) #Wait juuuust a bit to prevent sentence overlap
 				
 
-	def play_tts_queue(self, tts_queue, sentence_queue_canceled, sentence_queue_complete, tts_queue_complete, stop_event, sound_stop_event=None):
+
+
+	def play_tts_queue(self, arguments_dict):
+		play_tts_queue = arguments_dict['play_tts_queue']
+		tts_queue = arguments_dict['tts_queue']
+		sentence_queue_canceled = arguments_dict.get('sentence_queue_canceled', [False])
+		sentence_queue_complete = arguments_dict.get('sentence_queue_complete', [False])
+		tts_queue_complete = arguments_dict['tts_queue_complete']
+		stop_event = arguments_dict['stop_event']
+		sound_stop_event = arguments_dict['sound_stop_event']
+		
 		tts = []
 
 		# Wait for tts to be generated

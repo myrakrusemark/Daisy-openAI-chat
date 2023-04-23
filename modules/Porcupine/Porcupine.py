@@ -9,7 +9,7 @@ import threading
 import pvporcupine
 from pvrecorder import PvRecorder
 import yaml
-from system_modules.Text import get_colored_text
+from system_modules.Text import print_text
 
 
 
@@ -73,10 +73,10 @@ class Porcupine():
 
 			logging.debug('Using device: %s' % recorder.selected_device)
 
-			display_text = 'Listening for '
+			display_text = '\nListening for '
 			for keyword, sensitivity in zip(keywords, self._sensitivities):
 				display_text += '[%s (%.2f)] ' % (keyword, sensitivity)
-			print(get_colored_text(display_text, 'blue'))
+			print_text(display_text, 'blue', "\n\n")
 
 
 
