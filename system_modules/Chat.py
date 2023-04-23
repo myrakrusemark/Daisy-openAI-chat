@@ -6,10 +6,12 @@ import time
 import yaml
 import json
 import requests
+import re
 
 import system_modules.ChatSpeechProcessor as csp
 import system_modules.SoundManager as sm
 from system_modules.Text import print_text, delete_last_lines
+import pprint
 
 
 
@@ -64,15 +66,19 @@ class Chat:
 			response = self.toolform_checker(
 				messages=messages, 
 				stop_event=stop_event,
-				response_label=response_label
+				response_label=response_label,
+				model='gpt-3.5-turbo'
 				)
 			if response:
 
 				print_text("SYSTEM:", "red", "", "bold")
 				print_text(response, None, "\n")
-				self.ch.add_message_object("system", response)
-				#messages.append(self.ch.single_message_context("system", response, False))
 
+				#Append to CH_context, and the local messages list.
+				self.ch.add_message_object("system", response)
+				messages.append(self.ch.single_message_context("system", response, False))
+
+		#pprint.pprint(messages)
 		try:
 			logging.info("Sending request to OpenAI model...")
 			response = openai.ChatCompletion.create(
@@ -154,7 +160,8 @@ class Chat:
 			self, 
 			messages, 
 			stop_event=None, 
-			response_label=True
+			response_label=True,
+			model='gpt-3.5-turbo'
 			):
 		logging.info("Checking for tool forms...")
 
@@ -197,13 +204,15 @@ Tools:
 					prompt += str(message)+"\n"
 				logging.info(prompt)
 				message = [{'role': 'system', 'content': prompt}]
-				logging.debug(prompt)
+				logging.info(prompt)
+
+			
 
 				response = self.request(
 					messages=message, 
 					stop_event=stop_event, 
 					tool_check=False,
-					model="gpt-3.5-turbo",
+					model=model,
 					silent=True,
 					response_label=response_label
 					)
@@ -217,7 +226,34 @@ Tools:
 					end_index = response.find(']', start_index) + 1
 					json_data = response[start_index:end_index]
 					try:
-						data = json.loads(json_data)
+						# Check if the input string matches the expected JSON format
+						if not re.fullmatch(r'\[.*\]', json_data):
+							# Input string does not match expected format
+							logging.warning('Input is not valid JSON')
+						else:
+							# Attempt to load the input string as JSON
+							try:
+								data = json.loads(json_data)
+								logging.info('Data:', data)
+							except json.decoder.JSONDecodeError as e:
+								# Input string contains errors, attempt to fix them
+								logging.error('JSONDecodeError:', e)
+								
+								# Search for keys with missing values
+								match = json_data.search(json_data)
+								if match:
+									# Replace missing values with empty strings
+									fixed_str = json_data[:match.end()] + '""' + json_data[match.end()+1:]
+									logging.warning('Fixed input:', fixed_str)
+									try:
+										data = json.loads(fixed_str)
+										logging.info('Data:', data)
+									except json.decoder.JSONDecodeError:
+										logging.error('Could not fix input')
+								else:
+									logging.error('Could not fix input')
+	    
+						#data = json.loads(json_data)
 
 
 					except json.decoder.JSONDecodeError as e:
@@ -246,8 +282,8 @@ Tools:
 											logging.info("Found instance: "+instance.__class__.__name__)
 											result = instance.main(d['arg'], stop_event)
 
-											prompt += """Below is the response from the tool: """+module["tool_form_name"]+". Use it to continue the conversation. Do not mention that you received this information. If the information is irrelevant, ignore it and do not mention it.\n"
-											prompt += result+"\n"
+											prompt += """Below is the response from the tool: """+module["tool_form_name"]+". It is the information the user is requesting.  Don't mention the existence of this information. Use it to continue the conversation. If the information is irrelevant to the conversation, then ignore it.\n"
+											prompt += "\n"+result+"\n"
 				if prompt:
 					return prompt
 				else:

@@ -5,8 +5,12 @@ import logging
 import yaml
 import time
 import threading
+
 from ruamel.yaml import YAML
 yaml = YAML()
+yaml.allow_duplicate_keys = True
+
+
 from system_modules.Text import print_text
 
 
@@ -48,81 +52,85 @@ class ModuleLoader:
 		
 	def get_available_modules(self):
 		# Load enabled modules from config file
-		with open('configs.yaml', 'r') as f:
-			self.configs = yaml.load(f)
+		try:
+			with open('configs.yaml', 'r') as f:
+				self.configs = yaml.load(f)
+		except Exception as e:
+			logging.warning(f"Failed to load configs.yaml: {str(e)}")
 
-		enabled_modules = self.configs['enabled_modules']
-		if not self.loaded:
-			self.loaded = True
-			logging.info("Updating modules...")
+		if "enabled_modules" in self.configs:
+			enabled_modules = self.configs['enabled_modules']
+			if not self.loaded:
+				self.loaded = True
+				logging.info("Updating modules...")
 
-			for module_name in enabled_modules:
-				# If module is in configs.yaml, it is enabled.
-				enabled = True
-				# Check if the module is already in available modules
-				module_in_available = False
-				for module in self.available_modules:
-					if module['class_name'] == module_name:
-						module_in_available = True
-						if module_in_available:
-							module["enabled"] = enabled
-						break
-				# Add the module if it's NOT in available modules
-				if not module_in_available:
-					# Attempt to import the module, and handle exceptions.
-					try:
-						module = importlib.import_module(module_name, package=None)
-					except ModuleNotFoundError as e:
-						logging.warning(f"Failed to load {module_name} due to missing dependency: {str(e)}")
-						continue  # Skip this module and proceed with the next one
+				for module_name in enabled_modules:
+					# If module is in configs.yaml, it is enabled.
+					enabled = True
+					# Check if the module is already in available modules
+					module_in_available = False
+					for module in self.available_modules:
+						if module['class_name'] == module_name:
+							module_in_available = True
+							if module_in_available:
+								module["enabled"] = enabled
+							break
+					# Add the module if it's NOT in available modules
+					if not module_in_available:
+						# Attempt to import the module, and handle exceptions.
+						try:
+							module = importlib.import_module(module_name, package=None)
+						except ModuleNotFoundError as e:
+							logging.warning(f"Failed to load {module_name} due to missing dependency: {str(e)}")
+							continue  # Skip this module and proceed with the next one
 
-					# Find all classes in the module, and extract their methods and initialization parameters.
-					for name in dir(module):
+						# Find all classes in the module, and extract their methods and initialization parameters.
+						for name in dir(module):
 
-						if name == module.__name__.split(".")[-1]:
-							obj = getattr(module, name)
-							if isinstance(obj, type):
-								module_hook = getattr(obj, "module_hook", "")
+							if name == module.__name__.split(".")[-1]:
+								obj = getattr(module, name)
+								if isinstance(obj, type):
+									module_hook = getattr(obj, "module_hook", "")
 
-								if module_hook:
-									class_description = getattr(obj, "description", "No description.")
-									tool_form_name = getattr(obj, "tool_form_name", None)
-									tool_form_description = getattr(obj, "tool_form_description", None)
-									tool_form_argument = getattr(obj, "tool_form_argument", None)
+									if module_hook:
+										class_description = getattr(obj, "description", "No description.")
+										tool_form_name = getattr(obj, "tool_form_name", None)
+										tool_form_description = getattr(obj, "tool_form_description", None)
+										tool_form_argument = getattr(obj, "tool_form_argument", None)
 
-									# Add module_hook and enabled attributes to module dictionary
-									module_dict = {}
-									module_dict["class_name"] = module_name
-									module_dict["description"] = class_description
-									module_dict["module_hook"] = module_hook
-									module_dict["enabled"] = enabled
-									if tool_form_name:
-										module_dict["tool_form_name"] = tool_form_name
-									if tool_form_description:
-										module_dict["tool_form_description"] = tool_form_description
-									if tool_form_argument:
-										module_dict["tool_form_argument"] = tool_form_argument
+										# Add module_hook and enabled attributes to module dictionary
+										module_dict = {}
+										module_dict["class_name"] = module_name
+										module_dict["description"] = class_description
+										module_dict["module_hook"] = module_hook
+										module_dict["enabled"] = enabled
+										if tool_form_name:
+											module_dict["tool_form_name"] = tool_form_name
+										if tool_form_description:
+											module_dict["tool_form_description"] = tool_form_description
+										if tool_form_argument:
+											module_dict["tool_form_argument"] = tool_form_argument
 
-									self.available_modules.append(module_dict)
+										self.available_modules.append(module_dict)
 
-									# If the class has a module_hook attribute, create an instance of it and add it to
-									# the list of hook instances.
-									if enabled and module_hook:
+										# If the class has a module_hook attribute, create an instance of it and add it to
+										# the list of hook instances.
+										if enabled and module_hook:
 
-										#Module loaded
-										pass
+											#Module loaded
+											pass
 
-									elif not enabled:
-										logging.debug("MODULE DISABLED: " + module_name)
-									else:
-										logging.debug("Class " + module_name + " has no module_hook value. Skipped.")
+										elif not enabled:
+											logging.debug("MODULE DISABLED: " + module_name)
+										else:
+											logging.debug("Class " + module_name + " has no module_hook value. Skipped.")
 
-			#If config.yaml item is no longer available, set enabled to False
-			for available_module in self.available_modules:
-				if available_module["class_name"] not in enabled_modules:
-					available_module["enabled"] = False
+				#If config.yaml item is no longer available, set enabled to False
+				for available_module in self.available_modules:
+					if available_module["class_name"] not in enabled_modules:
+						available_module["enabled"] = False
 
-			self.build_hook_instances()
+				self.build_hook_instances()
 		return self.available_modules
 
 		

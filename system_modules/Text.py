@@ -5,6 +5,7 @@ from ruamel.yaml import YAML
 yaml = YAML()
 
 # Define global variables
+yaml_print_text = True
 with open("configs.yaml", "r") as f:
     configs = yaml.load(f)
 if "print_text" in configs:

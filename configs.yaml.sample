@@ -18,8 +18,11 @@ keys:
   elevenlabs: API_KEY
   porcupine: API_KEY
 
-#Set natural language location. Currently only used for weather.
+#Set natural language location.
 location: CITY_NAME
+#Set latlon to bypass geocoding (sometimes the service is not available).
+latlon: LAT_LON
+
 
 hardware:
   input_device_index: 1
