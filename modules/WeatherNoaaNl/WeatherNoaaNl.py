@@ -83,8 +83,7 @@ class WeatherNoaaNl:
 
 				except:
 					logging.error("Error getting forecast")
-					result += "Weather forecast: There was an error and the forecast for the location could not be retrieved. If the city is outside the US, data may not be available." + str(forecast)
-
+					return "Weather forecast: There was a server issue."
 				logging.info("Result: "+result)
 
 				if self.no_config_location:

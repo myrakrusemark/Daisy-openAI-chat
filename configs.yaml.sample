@@ -9,7 +9,7 @@ enabled_modules:
 - modules.WeatherNoaaNl.WeatherNoaaNl
 - modules.DiskFree
 - modules.Memories
-- module.SetLocation
+- modules.SetLocation
 
 conversation_id: CONVERSATION_ID
 #Set the id of an existing conversation to load it.

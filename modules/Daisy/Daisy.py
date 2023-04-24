@@ -5,7 +5,7 @@ import system_modules.ConnectionStatus as cs
 import system_modules.SoundManager as sm
 import system_modules.Chat as chat
 import system_modules.LoadTts as loadtts
-import modules.Daisy.DaisyMethods as dm
+from modules.Daisy.DaisyMethods import listen_for_daisy_wake, listen_for_daisy_cancel
 import modules.RgbLed as led
 from system_modules.Text import print_text
 
@@ -21,7 +21,6 @@ class Daisy:
 		self.csp = csp.ChatSpeechProcessor()
 		self.cs = cs.ConnectionStatus()
 		self.sounds = sm.SoundManager()
-		self.dm = dm.DaisyMethods()
 		self.led = led.RgbLed()
 		self.tts = None
 
@@ -58,14 +57,14 @@ class Daisy:
 
 			self.led.turn_on_color(0, 100, 0)  # Solid Green
 
-			awake = self.dm.listen_for_daisy_wake(self.daisy_stop_event, self.awake_stop_event)
+			awake = listen_for_daisy_wake(self.daisy_stop_event, self.awake_stop_event)
 
 
 			self.led.breathe_color(100, 100, 100)  # Breathe Blue
 
 			if awake:
 				#Check for "Daisy Cancel" sleep word
-				dc_t = threading.Thread(target=self.dm.listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
+				dc_t = threading.Thread(target=listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
 				threads.append(dc_t)
 				dc_t.start()
 
