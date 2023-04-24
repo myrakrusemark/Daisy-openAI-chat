@@ -1,9 +1,15 @@
 #Modules are loaded in the order they are listed here.
 enabled_modules:
+- modules.DANPrompt
+- modules.DaisyPrompt
 - modules.Daisy
 - modules.TtsElevenLabs
 - modules.GoogleScraper
 - modules.Calculator
+- modules.WeatherNoaaNl.WeatherNoaaNl
+- modules.DiskFree
+- modules.Memories
+- module.SetLocation
 
 conversation_id: CONVERSATION_ID
 #Set the id of an existing conversation to load it.
