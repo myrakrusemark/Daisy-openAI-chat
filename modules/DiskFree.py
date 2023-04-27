@@ -1,4 +1,3 @@
-import logging
 import psutil
 import humanize
 import platform

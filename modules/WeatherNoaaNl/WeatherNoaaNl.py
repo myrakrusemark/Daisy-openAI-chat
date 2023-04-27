@@ -3,7 +3,7 @@ import logging
 import threading
 import yaml
 import geocoder
-from system_modules.Text import print_text
+from daisy_llm.Text import print_text
 
 
 class WeatherNoaaNl:

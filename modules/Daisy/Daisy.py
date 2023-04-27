@@ -1,13 +1,9 @@
 import logging
 import threading
-import system_modules.ChatSpeechProcessor as csp
-import system_modules.ConnectionStatus as cs
-import system_modules.SoundManager as sm
-import system_modules.Chat as chat
-import system_modules.LoadTts as loadtts
+from daisy_llm import ChatSpeechProcessor, ConnectionStatus, SoundManager, Chat, LoadTts
+from daisy_llm.Text import print_text
 from modules.Daisy.DaisyMethods import listen_for_daisy_wake, listen_for_daisy_cancel
 import modules.RgbLed as led
-from system_modules.Text import print_text
 
 class Daisy:
 	description = "Provides a user flow for Chat"
@@ -17,10 +13,10 @@ class Daisy:
 		self.ml = ml
 		self.ch = ml.ch
 
-		self.chat = chat.Chat(self.ml, self.ch)
-		self.csp = csp.ChatSpeechProcessor()
-		self.cs = cs.ConnectionStatus()
-		self.sounds = sm.SoundManager()
+		self.chat = Chat(self.ml, self.ch)
+		self.csp = ChatSpeechProcessor()
+		self.cs = ConnectionStatus()
+		self.sounds = SoundManager()
 		self.led = led.RgbLed()
 		self.tts = None
 
@@ -37,11 +33,11 @@ class Daisy:
 		self.sounds.play_sound("beep", 0.5)
 		print_text("🌼 DAISY - Voice Assistant 🌼", "pink", "\n")
 
-		self.chat = chat.Chat(ml, ch)
+		self.chat = Chat(ml, ch)
 
 		threads = []
 		# Create the TtsThread instance and start it in time for when its needed
-		t = loadtts.LoadTts(self, ml)
+		t = LoadTts(self, ml)
 		threads.append(t)
 		t.start()
 
@@ -70,7 +66,7 @@ class Daisy:
 
 				#HOOK: Daisy_wake
 				try:
-					import ModuleLoader as ml
+					from daisy_llm import ModuleLoader as ml
 					hook_instances = self.ml.hook_instances
 					if "Daisy_wake" in hook_instances:
 						Daisy_wake_instances = hook_instances["Daisy_wake"]

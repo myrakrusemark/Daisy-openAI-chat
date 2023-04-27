@@ -1,6 +1,4 @@
 from serpapi import GoogleSearch
-import logging
-import re
 import yaml
 
 class GoogleScraper():

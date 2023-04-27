@@ -9,7 +9,7 @@ import threading
 import pvporcupine
 from pvrecorder import PvRecorder
 import yaml
-from system_modules.Text import print_text
+from daisy_llm.Text import print_text
 
 
 

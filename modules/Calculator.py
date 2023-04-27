@@ -1,7 +1,4 @@
 import logging
-import math
-import numpy
-import datetime
 
 class Calculator:
 	"""
