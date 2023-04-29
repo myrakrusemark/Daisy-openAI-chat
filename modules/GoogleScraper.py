@@ -1,50 +1,55 @@
 from serpapi import GoogleSearch
 import yaml
 
-class GoogleScraper():
-	description = "A class for scraping Google search results based on a given search query."
-	module_hook = "Chat_request_inner"
-	tool_form_name = "Google"
-	tool_form_description = "A module that scrapes Google search results."
-	tool_form_argument = "Search term"
+class GoogleScraper:
+    description = "A class for scraping Google search results based on a given search query."
+    module_hook = "Chat_request_inner"
+    tool_form_name = "Google"
+    tool_form_description = "A module that scrapes Google search results."
+    tool_form_argument = "Search term"
 
-	def __init__(self, ml):
-		self.ch = ml.ch
+    def __init__(self, ml):
+        self.ch = ml.ch
+        with open("configs.yaml", "r") as f:
+            self.configs = yaml.safe_load(f)
+        self.api_key = self.configs["keys"]["serp_api"]
+        self.grid_url = None
 
-		with open("configs.yaml", "r") as f:
-			self.configs = yaml.safe_load(f)
-		
-		self.api_key = self.configs["keys"]["serp_api"]
+    def main(self, arg, stop_event):
+        params = self.create_search_params(arg)
+        search = self.create_google_search(params)
+        results = self.get_search_results(search)
+        if results:
+            return self.format_search_results(results)
+        else:
+            return False
 
-		self.grid_url = None
+    def create_search_params(self, search_term):
+        params = {
+            "engine": "google",
+            "q": search_term,
+            "api_key": self.api_key
+        }
+        return params
 
-	
-	def main(self, arg, stop_event):
+    def create_google_search(self, params):
+        try:
+            search = GoogleSearch(params)
+            return search
+        except Exception as e:
+            return False
 
+    def get_search_results(self, search):
+        if search:
+            results = search.get_dict()
+            organic_results = results.get("organic_results", [])
+            return organic_results
+        else:
+            return None
 
-		# Create the parameters for the Google Search API.
-		params = {
-			"engine": "google",
-			"q": arg,
-			"api_key": self.api_key
-		}
-
-		# Create a new instance of the GoogleSearch class.
-		try:
-			search = GoogleSearch(params)
-		except Exception as e:
-			return False
-
-		# Get a dictionary of the search results.
-		results = search.get_dict()
-		organic_results = results["organic_results"]
-		# If there are search results, create a new prompt with the snippets.
-		search_results = ""
-		if len(organic_results):
-			for organic_result in organic_results:
-				if("snippet" in organic_result):
-					search_results += organic_result['snippet']+"\n"
-
-			return search_results
-		else:
-			return False
+    def format_search_results(self, results):
+        search_results = ""
+        for result in results:
+            if "snippet" in result:
+                search_results += result["snippet"] + "\n"
+        return search_results
