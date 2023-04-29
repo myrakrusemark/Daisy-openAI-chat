@@ -55,8 +55,8 @@ class Daisy:
 
 			awake = listen_for_daisy_wake(self.daisy_stop_event, self.awake_stop_event)
 
-
 			self.led.breathe_color(100, 100, 100)  # Breathe Blue
+			self.ch.load_context()
 
 			if awake:
 				#Check for "Daisy Cancel" sleep word

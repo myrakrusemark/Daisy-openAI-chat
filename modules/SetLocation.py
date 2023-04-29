@@ -7,10 +7,6 @@ yaml.allow_duplicate_keys = True
 
 
 class SetLocation:
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A module that sets the current physical location."
 	module_hook = "Chat_request_inner"
 	tool_form_name = "Set Location"

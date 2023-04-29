@@ -3,7 +3,7 @@ from Logging import Logging
 logger = Logging('daisy.log')
 logger.set_up_logging()
 
-from daisy_llm import ModuleLoader, ContextHandlers
+from ..daisy_llm_tools.src.daisy_llm import ModuleLoader, ContextHandlers
 
 ch = ContextHandlers('daisy.db')
 ml = ModuleLoader(ch,
@@ -13,7 +13,7 @@ ml = ModuleLoader(ch,
 
 
 #Start ModuleLoader dynamic checker
-ml.start_update_modules_loop_thread()
+ml.start_update_configs_loop_thread()
 
 #Start front end sub processes
 ml.process_main_start_instances()

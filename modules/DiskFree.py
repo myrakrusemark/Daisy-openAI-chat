@@ -3,10 +3,6 @@ import humanize
 import platform
 
 class DiskFree:
-	"""
-	Description: A description of this class and its pip capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A module for checking available computer resources."
 	module_hook = "Chat_request_inner"
 	tool_form_name = "Available Computer Resources"

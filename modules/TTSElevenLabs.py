@@ -9,10 +9,6 @@ import requests
 import time
 
 class TTSElevenLabs:
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A TTS model using Eleven Lab's TTS service"
 	module_hook = "Tts"
 	

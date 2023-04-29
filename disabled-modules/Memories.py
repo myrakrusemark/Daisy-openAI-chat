@@ -1,9 +1,5 @@
 
 class Memories:
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A module for finding and talking about saved conversations."
 	module_hook = "Chat_request_inner"
 	tool_form_name = "Review Memories"
@@ -18,10 +14,11 @@ class Memories:
 
 
 	def main(self, arg, stop_event):
-		rows = self.ch.get_conversation_name_summary()
+		rows = self.ch.get_conversation_name_summary(limit=25)
 		if rows:
 			output = ""
-			for i, (name, summary) in enumerate(rows):
+			for i, (id, name, summary) in enumerate(rows):
+				output += f"Conversation {i+1} ID: {id}\n"
 				output += f"Conversation {i+1} Name: {name}\n"
 				output += f"Conversation {i+1} Summary: {summary}\n\n"
 		else:

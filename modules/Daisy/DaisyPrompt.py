@@ -2,10 +2,6 @@ import logging
 from datetime import datetime
 
 class DaisyPrompt():
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "Inserts initial Daisy prompt into the chat."
 	module_hook = "Start_prompt"
 
@@ -34,4 +30,4 @@ class DaisyPrompt():
 
 	def start(self):
 		logging.info("DaisyPrompt: Adding start prompt")
-		self.ch.add_start_propmpt('system', self.start_prompt)
+		self.ch.add_start_prompt('system', self.start_prompt)

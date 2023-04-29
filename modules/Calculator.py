@@ -1,10 +1,6 @@
 import logging
 
 class Calculator:
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A module for evaluating mathematical expressions."
 	module_hook = "Chat_request_inner"
 	tool_form_name = "Calculator"

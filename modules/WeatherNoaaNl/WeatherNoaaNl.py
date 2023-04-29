@@ -7,10 +7,6 @@ from daisy_llm.Text import print_text
 
 
 class WeatherNoaaNl:
-	"""
-	Description: A module that checks NOAA for the weather based on lat/lon
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A module that checks NOAA for the weather based on lat/lon"
 	module_hook = "Chat_request_inner"
 	tool_form_name = "Weather"

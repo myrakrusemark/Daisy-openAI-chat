@@ -2,10 +2,6 @@ from serpapi import GoogleSearch
 import yaml
 
 class GoogleScraper():
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A class for scraping Google search results based on a given search query."
 	module_hook = "Chat_request_inner"
 	tool_form_name = "Google"

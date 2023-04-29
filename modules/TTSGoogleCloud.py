@@ -8,10 +8,6 @@ import yaml
 import os
 
 class TTSGoogleCloud:
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A TTS model using Google Cloud's TTS service"
 	module_hook = "Tts"
 	

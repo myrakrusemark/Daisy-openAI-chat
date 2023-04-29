@@ -7,10 +7,6 @@ from pydub import AudioSegment
 from daisy_llm import ChatSpeechProcessor
 
 class TTSGoogle:
-	"""
-	Description: A description of this class and its capabilities.
-	Module Hook: The hook in the program where method main() will be passed into.
-	"""
 	description = "A TTS model using Google Translate's TTS service"
 	module_hook = "Tts"
 
