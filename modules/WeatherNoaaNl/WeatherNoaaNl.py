@@ -62,7 +62,7 @@ class WeatherNoaaNl:
 			# Get the detailed forecast for today
 			if forecast:
 				try:
-					result = "Weather forecast for the location: " + forecast["properties"]["periods"][0]["detailedForecast"]+"\n"
+					result = "Weather forecast for "+arg+": " + forecast["properties"]["periods"][0]["detailedForecast"]+"\n"
 					result += "\nCurrent conditions:\n"
 					result += "Temperature: " + str(forecast["properties"]["periods"][0]["temperature"]) + " " + forecast["properties"]["periods"][0]["temperatureUnit"] + "\n"
 					result += "Wind: " + forecast["properties"]["periods"][0]["windSpeed"] + " " + forecast["properties"]["periods"][0]["windDirection"] + "\n"
