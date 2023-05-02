@@ -31,7 +31,7 @@ class WebConfigDjango:
 		if self.server:
 			self.server.shutdown()
 
-	def main(self, ml=None, ch=None):
+	def main(self):
 		print("🌎 DAISY - Web Config 🖥️")
 
 		# Store ml, ch, and chat in the global scope
