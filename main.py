@@ -8,8 +8,8 @@ from daisy_llm import ModuleLoader, ContextHandlers
 ch = ContextHandlers('daisy.db')
 ml = ModuleLoader(ch,
                   configs_yaml="configs.yaml",
-                  modules=["modules.DaisyToo.DaisyToo",
-                           "modules.DaisyToo.DaisyPrompt"]
+                  modules=["modules.Daisy.Daisy",
+                           "modules.Daisy.DaisyPrompt"]
                   )
 
 
