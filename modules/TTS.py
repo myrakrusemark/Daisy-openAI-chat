@@ -4,8 +4,8 @@ from daisy_llm import ChatSpeechProcessor, LoadTts
 class TTS:
 	description = "A module for speaking aloud."
 	module_hook = "Chat_request_inner"
-	tool_form_name = "Text To Speech"
-	tool_form_description = """Speaks aloud any text provided. Great for responding to STT (Speech to Text) input."""
+	tool_form_name = "Speak"
+	tool_form_description = """Speaks aloud any text provided."""
 	tool_form_argument = "Text to speak aloud."
 
 	def __init__(self, ml):
