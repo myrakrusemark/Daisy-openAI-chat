@@ -7,8 +7,8 @@ class TextSaver:
     description = "A module for saving text to a file with a unique name."
     module_hook = "Chat_request_inner"
     tool_form_name = "Save Text To File"
-    tool_form_description = "Saves the provided text to a file with a unique name."
-    tool_form_argument = "{filename without extension surrounded by curly brackets} and text only"
+    tool_form_description = "This command takes one argument, which should be a string of text. The text will be saved to a file."
+    tool_form_argument = "String of text"
 
     def __init__(self, ml):
         self.ml = ml
