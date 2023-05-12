@@ -1,7 +1,15 @@
 import logging
 import threading
-from daisy_llm import ChatSpeechProcessor, ConnectionStatus, SoundManager, Chat, LoadTts
+
+import daisy_llm.ChatSpeechProcessor as csp
+import daisy_llm.ConnectionStatus as cs
+import daisy_llm.SoundManager as sm
+import daisy_llm.Chat as chat
+import daisy_llm.LoadTts as tts
+import daisy_llm.CommandHandlers as commh
+
 from daisy_llm.Text import print_text
+
 from modules.Daisy.DaisyMethods import listen_for_daisy_wake, listen_for_daisy_cancel
 import modules.RgbLed as led
 
@@ -13,10 +21,10 @@ class Daisy:
 		self.ml = ml
 		self.ch = ml.ch
 
-		self.chat = Chat(self.ml, self.ch)
-		self.csp = ChatSpeechProcessor()
-		self.cs = ConnectionStatus()
-		self.sounds = SoundManager()
+		self.chat = None
+		self.csp = csp.ChatSpeechProcessor()
+		self.cs = cs.ConnectionStatus()
+		self.sounds = sm.SoundManager()
 		self.led = led.RgbLed()
 		self.tts = None
 
@@ -27,11 +35,14 @@ class Daisy:
 
 		self.internet_warning_logged = False
 
+		self.commh = commh.CommandHandlers(ml, self_load=True)
+		self.commh.data = self.commh.load_embeddings()
+
 	def main(self):
 		self.sounds.play_sound("beep", 0.5)
 		print_text("🌼 DAISY - Voice Assistant 🌼", "pink", "\n")
 
-		#self.chat = Chat(ml, ch)
+		self.chat = chat.Chat(self.ml, self.ch)
 		self.initialize_tts()
 		self.check_internet()
 
@@ -60,12 +71,15 @@ class Daisy:
 								break
 
 							sound_stop_event = threading.Event()
-							self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
+							#self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
 
-							commands_output = self.chat.determine_and_run_commands(
-								messages = self.ch.get_context_without_timestamp(),
-								stop_event=self.awake_stop_event)
-							self.ch.add_message_object('system', commands_output)
+							try:
+								self.chat.determine_and_run_commands(self.ch.get_context_without_timestamp())
+							except Exception as e:
+								logging.error("determine_and_run_commands error: "+ str(e))
+							#	messages = self.ch.get_context(include_timestamp=False, include_system=False),
+							#	stop_event=self.awake_stop_event)
+							#self.ch.add_message_object('system', commands_output)
 
 							try:
 								text = self.chat.request(
@@ -103,8 +117,7 @@ class Daisy:
 		self.daisy_stop_event.set()
 
 	def initialize_tts(self):
-		self.chat = Chat(self.ml, self.ch)
-		t = LoadTts(self, self.ml)
+		t = tts.LoadTts(self, self.ml)
 		t.start()
 		t.join()
 
@@ -122,9 +135,9 @@ class Daisy:
 		return awake
 
 	def handle_wake(self):
-		self.dc_t = threading.Thread(target=listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
-		self.threads.append(self.dc_t)
-		self.dc_t.start()
+		#self.dc_t = threading.Thread(target=listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
+		#self.threads.append(self.dc_t)
+		#self.dc_t.start()
 		try:
 			from daisy_llm import ModuleLoader as ml
 			hook_instances = self.ml.hook_instances

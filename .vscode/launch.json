@@ -10,7 +10,19 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "justMyCode": true
+            //"justMyCode": true
+        },
+        {
+            "name": "Debug daisy_llm",
+            "type": "python",
+            "request": "launch",
+            "module": "daisy_llm",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/daisy/Lib/site-packages/daisy_llm"
         }
+        
+        
+        
+        
     ]
 }

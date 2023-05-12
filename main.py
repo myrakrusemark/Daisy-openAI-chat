@@ -3,10 +3,11 @@ from Logging import Logging
 logger = Logging('daisy.log')
 logger.set_up_logging()
 
-from daisy_llm import ModuleLoader, ContextHandlers
+import daisy_llm.ModuleLoader as ml
+import daisy_llm.ContextHandlers as ch
 
-ch = ContextHandlers('daisy.db')
-ml = ModuleLoader(ch,
+ch = ch.ContextHandlers('daisy.db')
+ml = ml.ModuleLoader(ch,
                   configs_yaml="configs.yaml",
                   modules=["modules.Daisy.Daisy",
                            "modules.Daisy.DaisyPrompt"]

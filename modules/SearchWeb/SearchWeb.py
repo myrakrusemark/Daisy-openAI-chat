@@ -1,12 +1,9 @@
 from serpapi import GoogleSearch
 import yaml
 
-class GoogleScraper:
+class SearchWeb:
     description = "A class for scraping Google search results based on a given search query."
     module_hook = "Chat_request_inner"
-    tool_form_name = "Google"
-    tool_form_description = "A module that scrapes Google search results."
-    tool_form_argument = "Search term"
 
     def __init__(self, ml):
         self.ch = ml.ch
@@ -51,5 +48,7 @@ class GoogleScraper:
         search_results = ""
         for result in results:
             if "snippet" in result:
-                search_results += result["snippet"] + "\n"
+                search_results += '"'+result["title"] + '"\n'
+                search_results += "["+result["link"] + "]\n"
+                search_results += result["snippet"] + "\n\n"
         return search_results

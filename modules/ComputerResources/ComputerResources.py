@@ -2,12 +2,9 @@ import psutil
 import humanize
 import platform
 
-class DiskFree:
+class ComputerResources:
     description = "A module for checking available computer resources."
     module_hook = "Chat_request_inner"
-    tool_form_name = "Available Computer Resources"
-    tool_form_description = "A module that describes the available computer resources: Hard disk space, memory, CPU utilization, and CPU temperature."
-    tool_form_argument = "Drive letter (Or 'None')"
 
     def __init__(self, ml):
         self.ml = ml

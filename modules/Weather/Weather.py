@@ -6,12 +6,9 @@ import geocoder
 from daisy_llm.Text import print_text
 
 
-class WeatherNoaaNl:
+class Weather:
 	description = "A module that checks NOAA for the weather based on lat/lon"
 	module_hook = "Chat_request_inner"
-	tool_form_name = "Weather"
-	tool_form_description = "A module that provides current weather data based on location, or configured location. If no location is provided, respond with 'No Location' as the argument."
-	tool_form_argument = "Location (City, Zip, Lat/Lon, etc.) / Or 'None' if not specified."
 
 	def __init__(self, ml):
 		self.ch = ml.ch
