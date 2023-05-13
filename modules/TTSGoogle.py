@@ -4,14 +4,14 @@ from io import BytesIO
 import io
 import threading
 from pydub import AudioSegment
-from daisy_llm import ChatSpeechProcessor
+import daisy_llm.ChatSpeechProcessor as csp
 
 class TTSGoogle:
     description = "A TTS model using Google Translate's TTS service"
     module_hook = "Tts"
 
     def __init__(self, ml):
-        self.csp = ChatSpeechProcessor()
+        self.csp = csp.ChatSpeechProcessor()
 
     def main(self, text, as_thread=False): 
         if as_thread:

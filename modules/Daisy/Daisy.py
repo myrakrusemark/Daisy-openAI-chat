@@ -70,22 +70,26 @@ class Daisy:
 							if self.awake_stop_event.is_set():
 								break
 
-							sound_stop_event = threading.Event()
+							#sound_stop_event = threading.Event()
 							#self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
 
 							try:
-								self.chat.determine_and_run_commands(self.ch.get_context_without_timestamp())
+								commands_output = self.chat.determine_and_run_commands(self.ch.get_context_without_timestamp())
 							except Exception as e:
 								logging.error("determine_and_run_commands error: "+ str(e))
-							#	messages = self.ch.get_context(include_timestamp=False, include_system=False),
-							#	stop_event=self.awake_stop_event)
-							#self.ch.add_message_object('system', commands_output)
+
+							messages = self.ch.get_context(include_timestamp=False, include_system=False)
+							command_output_message = self.ch.single_message_context('system', commands_output, incl_timestamp=False)
+							messages.append(command_output_message)
+
+							print_text("SYSTEM: ", "red")
+							print_text(commands_output, None, "\n")
 
 							try:
 								text = self.chat.request(
-									messages=self.ch.get_context_without_timestamp(),
+									messages=messages,
 									stop_event=self.awake_stop_event,
-									sound_stop_event=sound_stop_event,
+									#sound_stop_event=sound_stop_event,
 									tts=self.tts
 									)
 							except Exception as e:
@@ -152,7 +156,7 @@ class Daisy:
 		self.ch.load_context()
 
 	def handle_sleep(self):
-		self.dc_t.join()
+		#self.dc_t.join()
 		self.sounds.play_sound_with_thread('end', 1.0)
 		thread = threading.Thread(target=self.ch.update_conversation_name_summary, args=())
 		thread.start()

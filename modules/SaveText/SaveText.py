@@ -17,7 +17,10 @@ class SaveText:
         filename = self.generate_unique_filename(data["filename"])
         success = self.save_text_to_file(data['text'], filename)
         if success:
-            return "Text saved to file: " + filename
+            output = "Text saved to file (" + filename + "):"
+            output += "\n\n\"" + data['text']+"\""
+            return output
+        
         else:
             return "Error: Unable to save text to file."
 

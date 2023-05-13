@@ -1,8 +1,8 @@
 {
     "module": {
         "name": "ComputerResources",
-        "description": "A module that describes the available computer resources: Hard disk space, memory, CPU utilization, and CPU temperature.",
-        "argument": "None"
+        "description": "Available computer resources: Hard disk space, memory, CPU utilization, and CPU temperature.",
+        "argument": "'None'"
     },
     "embeddings": [
         {
