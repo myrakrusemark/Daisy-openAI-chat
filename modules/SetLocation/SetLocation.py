@@ -33,7 +33,7 @@ class SetLocation:
         if not self.set_location_configs(location, latlon):
             return "Error setting location in configs.yaml. Please try again in about 5 minutes."
 
-        return "Location and coordinates updated successfully for {}".format(location)
+        return "Location and coordinates have been set to "+arg+" ({})".format(location)
 
     def get_coordinates(self, location):
         try:

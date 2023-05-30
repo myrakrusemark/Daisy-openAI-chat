@@ -2,7 +2,7 @@
     "module": {
         "name": "BrowseWeb",
         "description": "Load the full text of any web page URL in text form, and return relevant information based on the search term provided.",
-        "argument": "{\\\"url\\\": \\\"a webpage url\\\", \\\"request\\\": \\\"Your full current Thought or question.\\\"}"
+        "argument": "{\\\"url\\\": \\\"a webpage url\\\", \\\"request\\\": \\\"Your current Thought\\\"}"
     },
     "embeddings": [
         {

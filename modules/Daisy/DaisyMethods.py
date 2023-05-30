@@ -34,8 +34,6 @@ porcupine_daisy_wake = porcupine.Porcupine(
 def listen_for_daisy_wake(stop_event, awake_stop_event):
 	awake_stop_event.clear()
 	result = porcupine_daisy_wake.run(stop_event, awake_stop_event)
-	if result:
-		print_text("٩(ˊ〇ˋ*)و", "pink", "\n")
 	return result
 
 
@@ -45,3 +43,4 @@ def listen_for_daisy_cancel(stop_event, awake_stop_event):
 		print_text("\n\n(∪｡∪)｡｡｡zzz", "pink", "\n")
 		awake_stop_event.set()
 	return result
+

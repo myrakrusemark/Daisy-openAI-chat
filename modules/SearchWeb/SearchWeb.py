@@ -1,54 +1,54 @@
-from serpapi import GoogleSearch
-import yaml
+import logging
+import json
+from googleapiclient.discovery import build
+import os
 
 class SearchWeb:
-    description = "A class for scraping Google search results based on a given search query."
+    description = "A module for retrieving search results from Google Cloud."
     module_hook = "Chat_request_inner"
 
     def __init__(self, ml):
+        self.ml = ml
         self.ch = ml.ch
-        with open("configs.yaml", "r") as f:
-            self.configs = yaml.safe_load(f)
-        self.api_key = self.configs["keys"]["serp_api"]
-        self.grid_url = None
 
-    def main(self, arg, stop_event):
-        params = self.create_search_params(arg)
-        search = self.create_google_search(params)
-        results = self.get_search_results(search)
-        if results:
-            return self.format_search_results(results)
-        else:
-            return False
+        self.credentials = self.load_credentials()
 
-    def create_search_params(self, search_term):
-        params = {
-            "engine": "google",
-            "q": search_term,
-            "api_key": self.api_key
-        }
-        return params
-
-    def create_google_search(self, params):
+    def load_credentials(self):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, 'credentials.json')
         try:
-            search = GoogleSearch(params)
-            return search
-        except Exception as e:
-            return False
-
-    def get_search_results(self, search):
-        if search:
-            results = search.get_dict()
-            organic_results = results.get("organic_results", [])
-            return organic_results
-        else:
+            with open(filepath) as f:
+                credentials = json.load(f)
+            return credentials
+        except FileNotFoundError:
+            logging.error("GoogleCloudSearch: credentials.json file not found.")
             return None
 
-    def format_search_results(self, results):
-        search_results = ""
-        for result in results:
-            if "snippet" in result:
-                search_results += '"'+result["title"] + '"\n'
-                search_results += "["+result["link"] + "]\n"
-                search_results += result["snippet"] + "\n\n"
-        return search_results
+    def main(self, arg, stop_event):
+        logging.info("GoogleCloudSearch: Searching: " + arg)
+        results = self.retrieve_search_results(arg)
+        return results
+
+    def retrieve_search_results(self, search_term):
+        if not self.credentials:
+            return "Error: Unable to load credentials."
+
+        try:
+            api_key = self.credentials.get('api_key')
+            cse_id = self.credentials.get('cse_id')
+
+            service = build("customsearch", "v1", developerKey=api_key)
+            response = service.cse().list(q=search_term, cx=cse_id).execute()
+            items = response.get('items', [])
+            search_results = ""
+
+            for item in items:
+                title = item.get('title', '')
+                link = item.get('link', '')
+                snippet = item.get('snippet', '')
+                search_results += f"{title} ({link})\n{snippet}\n\n"
+
+            return search_results
+        except Exception as e:
+            logging.error("GoogleCloudSearch: Error retrieving search results: " + str(e))
+            return "Error: Unable to retrieve search results."

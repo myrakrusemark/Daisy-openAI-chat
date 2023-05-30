@@ -14,3 +14,6 @@ ffcachelzRhbI
 ffcachempdonx
 ffcacheRWd2Yv
 reinstall_daisy_llm.py
+modules/Reddit/credentials.json
+modules/Reddit/reddit_credentials.json
+modules/SearchWeb/credentials.json

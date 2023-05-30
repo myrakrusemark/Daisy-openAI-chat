@@ -1,8 +1,8 @@
 {
     "module": {
-        "name": "SaveText",
-        "description": "This command takes one argument, which should be a string of text. The text will be saved to a file.",
-        "argument": "{\\\"filename\\\": \\\"filename without extension\\\", \\\"text\\\": \\\"string of text to save\\\"}"
+        "name": "SaveFile",
+        "description": "Save content to TXT, CSV, JSON, PY or HTML file.",
+        "argument": "{\\\"filename\\\": \\\"filename without extension\\\", \\\"filetype\\\": \\\"txt, csv, json, py, or, html\\\", \\\"content\\\": \\\"string of text to save\\\"}"
     },
     "embeddings": [
         {
