@@ -1,8 +1,8 @@
 {
     "module": {
         "name": "BrowseWeb",
-        "description": "Load the full text of any web page URL in text form, and return relevant information based on the search term provided.",
-        "argument": "{\\\"url\\\": \\\"a webpage url\\\", \\\"request\\\": \\\"Your full current Thought or question.\\\"}"
+        "description": "Browse up to 3 web pages. Please use this often to fact check or retrieve comprehensive truthful information.",
+        "argument": "{\\\"urls\\\": [\\\"up to 3\\\", \\\"webpage URLs\\\", \\\"in a list\\\"], \\\"request\\\": \\\"1-3 keywords\\\"}"
     },
     "embeddings": [
         {

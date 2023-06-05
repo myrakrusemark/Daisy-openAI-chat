@@ -27,6 +27,7 @@ class SearchWeb:
     def main(self, arg, stop_event):
         logging.info("GoogleCloudSearch: Searching: " + arg)
         results = self.retrieve_search_results(arg)
+        results += "\n\nNOTE: It is typically not a good idea to get your answers from search results. If possible, use BrowseWeb to retrieve more comprehensive information."
         return results
 
     def retrieve_search_results(self, search_term):

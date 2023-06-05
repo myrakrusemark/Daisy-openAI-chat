@@ -35,8 +35,9 @@ class BrowseWeb:
 		self.ch = ml.ch
 	
 		self.avg_token_length = 3
-		self.max_tokens_returned = 3000
-		self.max_length = self.max_tokens_returned * self.avg_token_length
+		self.max_tokens_returned = 5000
+		self.max_output_length = self.max_tokens_returned * self.avg_token_length
+		self.search_results_per_url = 2
 
 		self.batch_size = 1
 
@@ -46,77 +47,110 @@ class BrowseWeb:
 
 	def main(self, arg, stop_event):
 		arg_data = dirtyjson.loads(arg)
-		url = arg_data["url"]
+		urls = arg_data["urls"]
 
-		if not url.startswith("https://"):
-			url = "https://" + url
-		search_term = arg_data["request"]
+		combined_output = ""
+		for url in urls:
+			output = ""
 
-		# Generate embedding for search term
-		search_term_embedding = self.generate_embedding([search_term])[0]
-		if isinstance(search_term_embedding, list):  
-			search_term_embedding = torch.Tensor(search_term_embedding)
+			if not url.startswith("https://"):
+				url = "https://" + url
+				
+			if "request" in arg_data:
+				search_term = arg_data["request"]
+			else:
+				search_term = ""
 
-		# Retrieve webpage content and strip HTML tags
-		animation = LoadingAnimation()
-		animation.start()
-		passages, full_text = self.get_webpage_content(url, animation)
-		if not passages:
-			return "Error: Unable to retrieve webpage content."
+			# Generate embedding for search term
+			search_term_embedding = self.generate_embedding([search_term])[0]
+			if isinstance(search_term_embedding, list):  
+				search_term_embedding = torch.Tensor(search_term_embedding)
+
+			# Retrieve webpage content and strip HTML tags
+			animation = LoadingAnimation()
+			animation.start(url)
+			passages, full_text = self.get_webpage_content(url, animation)
+			if not passages:
+				output += "------------------------------------------------------\n"
+				output += "Error: Unable to retrieve webpage content for "+url+"\n"
+				output += "------------------------------------------------------\n\n"
+				combined_output += output
+				continue
+
+			
+			#If the page is small, then just return the full text
+			if len(full_text) <= self.max_output_length:
+				output += "------------------------------------------------------\n"
+				output += "Full text for "+url+"\n"
+				output += "------------------------------------------------------\n\n"
+				output += full_text+"\n\n"
+
+				combined_output += output
+				continue
 		
-		#If the page is small, then just return the full text
-		if len(full_text) <= self.max_length:
-			return full_text
-	
-		# Compare each passage to the search term and order by relevance
-		num_passages = len(passages)
-		results = []
-		print("Searching " + str(num_passages) + " passages for relevant information...")
-		with concurrent.futures.ThreadPoolExecutor() as executor:
-			# Batch the passages
-			passage_to_future = {}  # Map from batch of passages to Future
-			for i in range(0, len(passages), self.batch_size):
-				batch = passages[i:i + self.batch_size]
-				future = executor.submit(self.get_passage_result, batch, search_term_embedding)
-				passage_to_future[tuple(batch)] = future
-			passages_to_future = len(passage_to_future)
-			while passage_to_future:
-				# Wait for the next future to complete
-				#print number of threads
-				done, _ = concurrent.futures.wait(passage_to_future.values(), return_when=concurrent.futures.FIRST_COMPLETED)
-				for future in done:
-					batch = [s for s, f in passage_to_future.items() if f == future][0]
-					del passage_to_future[batch]
+			# Compare each passage to the search term and order by relevance
+			num_passages = len(passages)
+			results = []
+			print("Searching " + str(num_passages) + " passages for relevant information...")
+			with concurrent.futures.ThreadPoolExecutor() as executor:
+				# Batch the passages
+				passage_to_future = {}  # Map from batch of passages to Future
+				for i in range(0, len(passages), self.batch_size):
+					batch = passages[i:i + self.batch_size]
+					future = executor.submit(self.get_passage_result, batch, search_term_embedding)
+					passage_to_future[tuple(batch)] = future
+				passages_to_future = len(passage_to_future)
+				while passage_to_future:
+					# Wait for the next future to complete
+					#print number of threads
+					done, _ = concurrent.futures.wait(passage_to_future.values(), return_when=concurrent.futures.FIRST_COMPLETED)
+					for future in done:
+						batch = [s for s, f in passage_to_future.items() if f == future][0]
+						del passage_to_future[batch]
 
-					for passage in batch:
-						index = passages.index(passage)
+						for passage in batch:
+							index = passages.index(passage)
 
-						results_from_future = future.result()
+							results_from_future = future.result()
 
-						for result in results_from_future:
-							index = result['index']  # get the original index from the result
-							score = result['confidence']
-							passage = result['passage']
+							for result in results_from_future:
+								index = result['index']  # get the original index from the result
+								score = result['confidence']
+								passage = result['passage']
+								
+								#Append the last half of the passage preceding and the first half of the next passage
+								if index > 0:
+									passage_before = passages[index-1][1]
+									last_half_before = passage_before[len(passage_before)//2:]
+									result['passage'] = last_half_before + result['passage']
 
-							results.append(result)
+								if index < len(passages) - 1:
+									passage_after = passages[index+1][1]
+									first_half_after = passage_after[:len(passage_after)//2]
+									result['passage'] += first_half_after
 
-							progress = 100 - (len(passage_to_future) / passages_to_future) * 100
-							progress_message = "Progress: {:.2f}% ({} of {})".format(progress, passages_to_future - len(passage_to_future), passages_to_future)
-							print('\r' + ' '*100, end='\r')
-							print("Score: {:.2f}".format(score)+" | Matches: " + str(len(results)) + " | " + progress_message)
-		
-		#Sort results by confidence
-		results.sort(key=lambda x: x['confidence'], reverse=True)			
+								results.append(result)
 
-		#Generate output
-		output = ""
-		for result in results:
-			output += result["passage"]+"\n\n"
-			output += "----------------------------------------\n\n"
-		output += str(len(results))+" relevant page passages above.\n\n"
+								progress = 100 - (len(passage_to_future) / passages_to_future) * 100
+								progress_message = "Progress: {:.2f}% ({} of {})".format(progress, passages_to_future - len(passage_to_future), passages_to_future)
+								print('\r' + ' '*100, end='\r')
+								print("Score: {:.2f}".format(score)+" | Matches: " + str(len(results)) + " | " + progress_message)
+			
+			#Sort results by confidence
+			results.sort(key=lambda x: x['confidence'], reverse=True)			
+
+			#Generate output
+			output += "------------------------------------------------------\n"
+			output += "Relevant passages for "+url+"\n"
+			output += "------------------------------------------------------\n\n"
+
+			for result in results[:self.search_results_per_url]:
+				output += result["passage"] + "\n\n"
+
+			combined_output += output
 
 		#Return truncated, ordered, results
-		return output[:self.max_length]
+		return combined_output
 
 	def get_passage_result(self, passages: list, search_term_embedding: torch.Tensor):
 		passage_embeddings = self.generate_embedding([p[1] for p in passages])
@@ -163,15 +197,14 @@ class BrowseWeb:
 			# Remove duplicate newline characters
 			full_text = re.sub('\n+', '\n', full_text)
 
-			# Tokenize full text
-			tokens = self.feature_extraction.tokenizer.tokenize(full_text)
+			passage_length = self.max_passage_token_length * self.avg_token_length
 
 			# Split tokens into sections of max_passage_word_length each
 			sections = []
-			for i in range(0, len(full_text), self.max_passage_token_length):
-				section_tokens = tokens[i:i+self.max_passage_token_length]
-				section_text = self.feature_extraction.tokenizer.convert_tokens_to_string(section_tokens)
-				sections.append((int(i/self.max_passage_token_length), section_text))
+			for i in range(0, len(full_text), passage_length):
+				passage_text = full_text[i:i+passage_length]
+				sections.append((int(i/passage_length), passage_text))
+
 
 			# Close the WebDriver
 			driver.quit()
@@ -188,15 +221,15 @@ class LoadingAnimation:
 	def __init__(self):
 		self.stop_loading = False
 
-	def start(self):
-		self.animation = Thread(target=self.animate)
+	def start(self, text):
+		self.animation = Thread(target=self.animate, args=(text,))
 		self.animation.start()
 
-	def animate(self):
+	def animate(self, text):
 		for c in itertools.cycle(['.  ', '.. ', '...', '   ']):
 			if self.stop_loading:
 				break
-			sys.stdout.write('\rLoading URL' + c)
+			sys.stdout.write('\rLoading '+ text + c)
 			sys.stdout.flush()
 			time.sleep(0.5)
 		sys.stdout.write('\rDone!        ')

@@ -27,10 +27,11 @@ class ComputerResources:
             try:
                 partition_usage = psutil.disk_usage(partition.mountpoint)
                 disk_free_space[partition.device] = partition_usage.free
-            except:
-                pass
+            except Exception as e:
+                print(f"Error getting disk usage for {partition.mountpoint}: {e}")
 
         return disk_free_space
+
 
     def get_free_memory(self):
         mem = psutil.virtual_memory()
