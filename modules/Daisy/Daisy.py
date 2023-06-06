@@ -1,16 +1,13 @@
 import logging
 import threading
-import time
-import queue
 
 import daisy_llm.ChatSpeechProcessor as csp
-import daisy_llm.ConnectionStatus as cs
 import daisy_llm.SoundManager as sm
 import daisy_llm.Chat as chat
 
 from daisy_llm.Text import print_text
 
-from modules.Daisy.DaisyMethods import listen_for_daisy_wake, listen_for_daisy_cancel
+from modules.Daisy.DaisyMethods import listen_for_daisy_cancel, check_internet, wait_for_wake_word_or_input
 import modules.RgbLed as led
 
 class Daisy:
@@ -24,8 +21,7 @@ class Daisy:
 		self.commh = ml.commh
 
 		self.chat = None
-		self.csp = csp.ChatSpeechProcessor()
-		self.cs = cs.ConnectionStatus()
+		self.csp = csp.ChatSpeechProcessor(self.ml)
 		self.sounds = sm.SoundManager()
 		self.led = led.RgbLed()
 
@@ -44,23 +40,28 @@ class Daisy:
 		self.sounds.play_sound("beep", 0.5)
 		print_text("🌼 DAISY - Voice Assistant 🌼", "pink", "\n")
 
-		self.chat = chat.Chat(self.ml)
-		self.csp.initialize_tts(self.ml)
-		self.check_internet()
+		self.chat = chat.Chat(self.ml, self.csp)
+
+		check_internet(self.awake_stop_event, self.daisy_stop_event, self.threads)
 
 		self.awake_stop_event.clear()
 
 		self.ch.load_context()
 
 		continue_conversation = False
-		sound = self.csp.tts
+		sound = True
 		awake_or_text = None
 		while not self.daisy_stop_event.is_set():
 
 			#Wait for wake word or get input from the keyboard
 			self.awake_stop_event.clear()
-
-			awake_or_text = self.wait_for_wake_word_or_input(continue_conversation, sound)
+			awake_or_text = wait_for_wake_word_or_input(
+				im=self.im, 
+				continue_conversation=continue_conversation, 
+				sound=sound,
+				daisy_stop_event=self.daisy_stop_event, 
+				led=self.led
+				)
 			continue_conversation = False
 
 			self.handle_wake()
@@ -70,15 +71,16 @@ class Daisy:
 			input_text = None
 			if type(awake_or_text) == bool:
 				input_text = self.csp.stt(self.awake_stop_event) #30s timeout
-				sound = self.csp.tts
+				sound = True
 			elif type(awake_or_text) == str:
 				input_text = awake_or_text
-				sound = None
+				sound = False
 
 			if self.awake_stop_event.is_set():
 				awake_or_text = self.handle_sleep(sound)
 				continue
 
+			response = None
 			if input_text:
 				self.led.breathe_color(100,0,100)  # Breathe Blue #NEEDS CANCEL LOOP
 
@@ -90,48 +92,61 @@ class Daisy:
 
 				sound_stop_event = threading.Event()
 				if sound:
-					self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
+					self.sounds.play_sound_with_thread(
+						name_or_bytes='waiting', 
+						volume=0.2, 
+						awake_stop_event=self.awake_stop_event, 
+						sound_stop_event=sound_stop_event
+						)
 
 				#Determine and run commands
 				commands_output = "None"
 				messages = self.ch.get_context(include_timestamp=False, include_system=False)
 
 				try:
-					commands_output = self.chat.determine_and_run_commands(messages=self.ch.get_context_without_timestamp(), tts=sound)
+					commands_output = self.chat.determine_and_run_commands(
+						messages=self.ch.get_context_without_timestamp(), 
+						tts=sound
+						)
 				except Exception as e:
 					logging.error("determine_and_run_commands error: "+ str(e))
 
 				if commands_output:
-					commands_output_message = self.ch.single_message_context('user', commands_output, incl_timestamp=False)
-					messages.append(commands_output_message)
+					self.ch.add_message_object('assistant', commands_output)
+
+					arguments = {
+						'text': commands_output,
+						'stop_event': self.awake_stop_event,
+						'sound_stop_event': sound_stop_event
+					}
+					t = threading.Thread(target=self.csp.speak_tts, args=(arguments,))
+					t.start()
+
 					print_text("Module Output (Daisy): ", "red")
 					print_text(commands_output, None, "\n")
 
-				#Get LLM response
-				if commands_output:
-					model = 'gpt-4'
+					response = commands_output
+
 				else:
-					model = 'gpt-3.5-turbo'
 
-				try:
-					text = self.chat.request(
-						messages=messages,
-						model=model,
-						stop_event=self.awake_stop_event,
-						sound_stop_event=sound_stop_event,
-						tts=sound
-						)
-				except Exception as e:
-					logging.error("Daisy request error: "+ str(e))
-					awake_or_text = self.handle_sleep(sound)
-					continue
+					try:
+						response = self.chat.request(
+							messages=messages,
+							stop_event=self.awake_stop_event,
+							sound_stop_event=sound_stop_event,
+							tts=sound
+							)
+					except Exception as e:
+						logging.error("Daisy request error: "+ str(e))
+						awake_or_text = self.handle_sleep(sound)
+						continue
 
-				if not text:
-					logging.error("Daisy request error: No response")
-					awake_or_text = self.handle_sleep(sound)
-					continue
+					if not response:
+						logging.error("Daisy request error: No response")
+						awake_or_text = self.handle_sleep(sound)
+						continue
 
-				self.ch.add_message_object('assistant', text)
+					self.ch.add_message_object('assistant', response)
 
 				if self.awake_stop_event.is_set():
 					awake_or_text = self.handle_sleep(sound)
@@ -141,7 +156,10 @@ class Daisy:
 			else:
 				continue
 
-			continue_conversation = self.chat.request_boolean("The following message is a question, or warrants a response: "+text)
+			continue_conversation = self.chat.request_boolean(
+				"The following message is a question, or warrants a response: "+response
+				)
+			
 			if continue_conversation:
 				continue
 			else:
@@ -150,54 +168,12 @@ class Daisy:
 	def close(self):
 		self.daisy_stop_event.set()
 
-	def check_internet(self):
-		self.awake_stop_event.clear()
-		t = threading.Thread(target=self.cs.check_internet, args=(self.daisy_stop_event, self.awake_stop_event))
-		self.threads.append(t)
-		t.start()		
-
-	def wait_for_wake_word_or_input(self, continue_conversation, sound):
-		self.led.turn_on_color(0, 100, 0)  # Solid Green
-		awake = [False]
-		stop_event = threading.Event()
-
-		# Listen for wake word
-		def listen_for_wake_word():
-			if continue_conversation and sound:
-				awake[0] = True
-			else:
-				listen_for_daisy_wake(self.daisy_stop_event, stop_event)
-				awake[0] = True
-
-		# Start the wake word thread
-		lw_t = threading.Thread(target=listen_for_wake_word, args=())
-		lw_t.start()
-
-		# Check for new inputs and wake word
-		print_text("Type text or say the wake word: ", "blue")
-		while lw_t.is_alive():
-			new_input = self.im.get_input()
-			if new_input is not None:
-				# Stop the wake word thread and return the new input
-				stop_event.set()
-				lw_t.join()
-				self.led.breathe_color(100, 100, 100)  # Breathe Blue
-				print_text("\n٩(ˊ〇ˋ*)و", "pink", "\n\n")
-				return new_input
-			elif awake[0]:
-				# Return True if the wake word is detected
-				return True
-
-		self.led.breathe_color(100, 100, 100)  # Breathe Blue
-		print_text("\n٩(ˊ〇ˋ*)و", "pink", "\n\n")
-
-		# Return None if no input was received and no wake word was detected
-		return None
-
-
 	def handle_wake(self):
 		if not self.dc_t or not self.dc_t.is_alive():
-			self.dc_t = threading.Thread(target=listen_for_daisy_cancel, args=(self.daisy_stop_event, self.awake_stop_event))
+			self.dc_t = threading.Thread(
+				target=listen_for_daisy_cancel, 
+				args=(self.daisy_stop_event, self.awake_stop_event)
+				)
 			self.threads.append(self.dc_t)
 			self.dc_t.start()
 		
@@ -223,47 +199,3 @@ class Daisy:
 		return None
 		#thread = threading.Thread(target=self.ch.update_conversation_name_summary, args=())
 		#thread.start()
-
-	def handle_user_input(self):
-		self.led.breathe_color(0, 0, 100)  # Breathe Blue
-		stt_text = self.csp.stt(self.awake_stop_event, 30, 'alert')  # 30s timeout
-		if self.awake_stop_event.is_set():
-			return None
-		if stt_text and not self.awake_stop_event.is_set():
-			self.led.breathe_color(100, 0, 100)  # Breathe Blue #NEEDS CANCEL LOOP
-			self.ch.add_message_object('user', stt_text)
-			if self.awake_stop_event.is_set():
-				return None
-			sound_stop_event = threading.Event()
-			self.sounds.play_sound_with_thread('waiting', 0.2, self.awake_stop_event, sound_stop_event)
-
-			try:
-				text = self.chat.request(
-					messages=self.ch.get_context_without_timestamp(),
-					stop_event=self.awake_stop_event,
-					sound_stop_event=sound_stop_event,
-					tool_check=True,
-					tts=self.csp.tts
-				)
-			except Exception as e:
-				logging.error("Daisy request error: " + str(e))
-				self.awake_stop_event.set()
-				return None
-
-			if not text:
-				logging.error("Daisy request error: No response")
-				self.awake_stop_event.set()
-				return None
-
-			self.ch.add_message_object('assistant', text)
-
-			if self.awake_stop_event.is_set():
-				return None
-
-			self.led.breathe_color(100, 100, 100)  # Breathe White
-
-			return text
-
-
-
-

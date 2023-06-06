@@ -12,6 +12,8 @@ from transformers import pipeline
 import re
 import math
 import itertools
+from transformers import BertTokenizer
+
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -24,6 +26,7 @@ chrome_options = Options()
 chrome_options.add_argument("--headless")  # Ensure GUI is off
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--log-level=3")
 
 
 class BrowseWeb:
@@ -38,20 +41,22 @@ class BrowseWeb:
 		self.max_tokens_returned = 5000
 		self.max_output_length = self.max_tokens_returned * self.avg_token_length
 		self.search_results_per_url = 2
+		self.max_urls = 3
 
-		self.batch_size = 1
+		self.batch_size = 5
 
 		# Create a pipeline for feature extraction
 		self.feature_extraction = pipeline('feature-extraction', model='bert-base-uncased', tokenizer='bert-base-uncased')
 		self.max_passage_token_length = 500
+
+		self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 	def main(self, arg, stop_event):
 		arg_data = dirtyjson.loads(arg)
 		urls = arg_data["urls"]
 
 		combined_output = ""
-		for url in urls:
-			output = ""
+		for url in urls[:self.max_urls]:
 
 			if not url.startswith("https://"):
 				url = "https://" + url
@@ -71,52 +76,49 @@ class BrowseWeb:
 			animation.start(url)
 			passages, full_text = self.get_webpage_content(url, animation)
 			if not passages:
-				output += "------------------------------------------------------\n"
+				print("UNABLE TO RETRIEVE PAGE CONTENT")
+				output = "------------------------------------------------------\n"
 				output += "Error: Unable to retrieve webpage content for "+url+"\n"
 				output += "------------------------------------------------------\n\n"
-				combined_output += output
-				continue
 
+				combined_output += output
 			
-			#If the page is small, then just return the full text
-			if len(full_text) <= self.max_output_length:
-				output += "------------------------------------------------------\n"
+			#If the page is small, then just give the full text
+			elif len(full_text) <= self.max_output_length:
+				print("Using full page content")
+				output = "------------------------------------------------------\n"
 				output += "Full text for "+url+"\n"
 				output += "------------------------------------------------------\n\n"
 				output += full_text+"\n\n"
 
 				combined_output += output
-				continue
-		
-			# Compare each passage to the search term and order by relevance
-			num_passages = len(passages)
-			results = []
-			print("Searching " + str(num_passages) + " passages for relevant information...")
-			with concurrent.futures.ThreadPoolExecutor() as executor:
-				# Batch the passages
-				passage_to_future = {}  # Map from batch of passages to Future
-				for i in range(0, len(passages), self.batch_size):
-					batch = passages[i:i + self.batch_size]
-					future = executor.submit(self.get_passage_result, batch, search_term_embedding)
-					passage_to_future[tuple(batch)] = future
-				passages_to_future = len(passage_to_future)
-				while passage_to_future:
-					# Wait for the next future to complete
-					#print number of threads
-					done, _ = concurrent.futures.wait(passage_to_future.values(), return_when=concurrent.futures.FIRST_COMPLETED)
-					for future in done:
-						batch = [s for s, f in passage_to_future.items() if f == future][0]
-						del passage_to_future[batch]
 
-						for passage in batch:
-							index = passages.index(passage)
+			else:		
+				# Compare each passage to the search term and order by relevance
+				num_passages = len(passages)
+				results = []
+				print("Searching " + str(num_passages) + " passages for relevant information...")
+				with concurrent.futures.ThreadPoolExecutor() as executor:
+					# Batch the passages
+					passage_to_future = {}  # Map from Future to batch of passages
+					for i in range(0, len(passages), self.batch_size):
+						batch = passages[i:i + self.batch_size]
+						future = executor.submit(self.get_passage_result, batch, search_term_embedding)
+						passage_to_future[future] = batch
+					passages_to_future = len(passage_to_future)
+
+					while passage_to_future:
+						# Wait for the next future to complete
+						done, _ = concurrent.futures.wait(passage_to_future.keys(), return_when=concurrent.futures.FIRST_COMPLETED)
+						for future in done:
+							batch = passage_to_future[future]
+							del passage_to_future[future]
 
 							results_from_future = future.result()
 
+							results = []
 							for result in results_from_future:
 								index = result['index']  # get the original index from the result
-								score = result['confidence']
-								passage = result['passage']
 								
 								#Append the last half of the passage preceding and the first half of the next passage
 								if index > 0:
@@ -131,23 +133,24 @@ class BrowseWeb:
 
 								results.append(result)
 
-								progress = 100 - (len(passage_to_future) / passages_to_future) * 100
-								progress_message = "Progress: {:.2f}% ({} of {})".format(progress, passages_to_future - len(passage_to_future), passages_to_future)
-								print('\r' + ' '*100, end='\r')
-								print("Score: {:.2f}".format(score)+" | Matches: " + str(len(results)) + " | " + progress_message)
+							#progress = 100 - (len(passage_to_future) / passages_to_future) * 100
+							#progress_message = "Progress: {:.2f}% ({} of {})".format(progress, passages_to_future - len(passage_to_future), passages_to_future)
+							#print('\r' + ' '*100, end='\r')
+							#print("Score: {:.2f}".format(score)+" | Matches: " + str(len(results)) + " | " + progress_message)
+
 			
-			#Sort results by confidence
-			results.sort(key=lambda x: x['confidence'], reverse=True)			
+				#Sort results by confidence
+				results.sort(key=lambda x: x['confidence'], reverse=True)			
 
-			#Generate output
-			output += "------------------------------------------------------\n"
-			output += "Relevant passages for "+url+"\n"
-			output += "------------------------------------------------------\n\n"
+				#Generate output
+				output = "------------------------------------------------------\n"
+				output += "Relevant passages for "+url+"\n"
+				output += "------------------------------------------------------\n\n"
 
-			for result in results[:self.search_results_per_url]:
-				output += result["passage"] + "\n\n"
+				for result in results[:self.search_results_per_url]:
+					output += result["passage"] + "\n\n"
 
-			combined_output += output
+				combined_output += output
 
 		#Return truncated, ordered, results
 		return combined_output
@@ -160,17 +163,25 @@ class BrowseWeb:
 			score = torch.cosine_similarity(search_term_embedding, passage_embedding, dim=-1)			
 			score = score.mean().item()
 			results.append({'passage': passage, 'confidence': score, 'index': index})
+			print("Score: {:.2f}".format(score))
+
 
 		return results
 	
 	def generate_embedding(self, texts):
 		embeddings = []
 		for text in texts:
-				passage = text[1] if isinstance(text, tuple) else text
-				all_embeddings = torch.tensor(self.feature_extraction(passage))
-				embeddings.append(all_embeddings[0][0])
+			passage = text[1] if isinstance(text, tuple) else text
+			inputs = self.tokenizer(passage, return_tensors='pt', truncation=True, padding=True, max_length=self.max_passage_token_length)
+			with torch.no_grad():
+				outputs = self.feature_extraction.model(**inputs)
+				all_embeddings = outputs.last_hidden_state
+				embeddings.append(all_embeddings.mean(dim=1))
 
 		return torch.stack(embeddings)
+
+
+
 
 	def get_webpage_content(self, url, animation):
 		# Set up the Chrome driver
